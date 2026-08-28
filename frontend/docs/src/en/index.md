@@ -4,24 +4,16 @@ editLink: true
 lastUpdated: true
 
 hero:
-  name: "FastApiAdmin"
-  text: "Web · H5 · Mini-Program, one stack"
-  tagline: Built on FastAPI + Vue3 + TypeScript, frontend and backend share types. 30+ business modules out of the box, the AI Code Generator covers 90% of routine CRUD, and Docker Compose brings the whole stack online in one command.
+  name: "FastAPI Admin Starter"
+  text: "Web · H5 · Admin foundation"
+  tagline: An extensible admin starter built with FastAPI + Vue3 + TypeScript, retaining authentication, permissions, jobs, storage, and code generation capabilities.
   image:
     src: /logo.svg
-    alt: AI Code Generator — select a table, get the full CRUD
+    alt: FastAPI Admin Starter
   actions:
     - theme: brand
       text: Quick Start
       link: /en/guide/start
-    - theme: alt
-      text: Live Demo
-      link: https://service.fastapiadmin.com/web
-      target: _blank
-    - theme: alt
-      text: Mobile
-      link: https://service.fastapiadmin.com/app
-      target: _blank
 
 features:
   - icon: 📦
@@ -33,8 +25,8 @@ features:
     details: Native async/await in FastAPI, Pydantic auto type validation, Redis caching. Built for high concurrency from day one.
 
   - icon: 🤖
-    title: AI Code Generator
-    details: Select a database table → AI generates Controller / Service / Model / Vue pages. Routine CRUD is mostly automatic, so the team can focus on the business logic.
+    title: Code Generator
+    details: Generate routine CRUD code from existing database tables so the team can start extending business modules quickly.
 
   - icon: 🛡️
     title: Enterprise RBAC
@@ -48,9 +40,3 @@ features:
     title: Web + Mobile Unified
     details: UniApp-based solution — one codebase for H5, WeChat, Alipay Mini Programs, and native App.
 ---
-
-<script setup lang="ts">
-import HomeSections from "../../.vitepress/components/HomeSections.vue";
-</script>
-
-<HomeSections />

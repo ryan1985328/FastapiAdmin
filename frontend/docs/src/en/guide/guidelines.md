@@ -7,7 +7,7 @@ description: "Team dev guidelines: code style, Git workflow, code review, commit
 
 ## 📚 Guidelines Overview
 
-To ensure project code consistency, readability, and maintainability, the FastApiAdmin project has established the following development guidelines. All developers participating in the project should follow these guidelines.
+To ensure project code consistency, readability, and maintainability, FastAPI Admin Starter follows the development guidelines below. All developers participating in the project should follow them.
 
 ## 🎨 Frontend Development Guidelines
 
@@ -218,7 +218,7 @@ backend/app/
 - Key operations should be logged
 - Errors should be logged with detailed information
 
-## 📦 FastApp Mobile Development Guidelines
+## 📦 App/H5 Mobile Development Guidelines
 
 ### 1. Code Style
 
@@ -232,7 +232,7 @@ backend/app/
 ### 2. Directory Structure
 
 ```
-FastApp/src/
+frontend/app/src/
 ├── api/             # API interfaces
 ├── components/      # Components
 ├── composables/     # Composable functions
@@ -447,4 +447,4 @@ If you have any suggestions or improvements for the development guidelines, plea
 
 ## 📄 License Agreement
 
-This development guidelines document adopts the MIT License, consistent with the FastApiAdmin project.
+This development guidelines document adopts the MIT License, consistent with the Starter project.

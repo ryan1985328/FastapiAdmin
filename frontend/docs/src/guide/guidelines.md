@@ -2,12 +2,12 @@
 layout: doc
 outline: "deep"
 title: 开发规范
-description: FastApiAdmin 团队开发规范,涵盖代码风格、Git 提交规范、命名约定、测试要求、Code Review 标准与项目协作流程。
+description: FastAPI Admin Starter 开发规范,涵盖代码风格、Git 提交规范、命名约定、测试要求、Code Review 标准与项目协作流程。
 ---
 
 ## 📚规范概述
 
-为了保证项目代码的一致性、可读性和可维护性，FastApiAdmin 项目制定了以下开发规范。所有参与项目开发的开发者都应该遵循这些规范。
+为了保证项目代码的一致性、可读性和可维护性，FastAPI Admin Starter 采用以下开发规范。所有参与项目开发的开发者都应该遵循这些规范。
 
 ## 🎨前端开发规范
 
@@ -218,7 +218,7 @@ backend/app/
 - 关键操作应该记录日志
 - 错误应该记录详细信息
 
-## 📦FastApp 移动端开发规范
+## 📦 App/H5 移动端开发规范
 
 ### 1. 代码风格
 
@@ -232,7 +232,7 @@ backend/app/
 ### 2. 目录结构
 
 ```
-FastApp/src/
+frontend/app/src/
 ├── api/             # API 接口
 ├── components/      # 组件
 ├── composables/     # 组合式函数
@@ -447,5 +447,4 @@ docs: 更新开发文档
 
 ## 📄许可协议
 
-本开发规范文档采用 MIT 许可协议，与 FastApiAdmin 项目保持一致。
-
+本开发规范文档采用 MIT 许可协议，与 Starter 项目保持一致。

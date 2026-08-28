@@ -9,7 +9,7 @@
  * - 网站图标配置（登录背景、favicon、Logo）
  * - 安全隐私配置（服务条款、版权、隐私政策）
  * - 接口安全配置（白名单、黑名单）
- * - 演示环境配置
+ * - 开发保护配置
  *
  * ## 使用场景
  *
@@ -68,7 +68,7 @@ export const useConfigStore = defineStore(
           configData.value = {};
         }
 
-        // 获取系统级配置（演示模式、IP黑白名单等）
+        // 获取系统级配置（开发保护、IP黑白名单等）
         const response = await ParamsAPI.getInitConfig();
         const list = response?.data?.data;
         if (!Array.isArray(list)) {

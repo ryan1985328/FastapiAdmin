@@ -56,7 +56,7 @@
     <ElCarouselItem>
       <FaBasicBanner
         height="100%"
-        title="欢迎使用 FastapiAdmin"
+        title="欢迎使用 FastAPI Admin Starter"
         subtitle="基于 Vue 3 + TypeScript + Element Plus 构建的现代化管理系统。"
         titleColor="#333"
         subtitleColor="#666"

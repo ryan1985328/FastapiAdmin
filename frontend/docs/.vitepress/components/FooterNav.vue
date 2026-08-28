@@ -2,16 +2,13 @@
   <footer class="footer-nav" :aria-label="t.footerLabel" :data-mode="mode">
     <div class="fn-content">
       <div class="fn-section fn-brand">
-        <div class="fn-section-title">FastApiAdmin</div>
+        <div class="fn-section-title">FastAPI Admin Starter</div>
         <p v-if="mode === 'full'" class="fn-section-desc">
           {{ description }}
         </p>
         <div class="fn-social">
           <a href="https://github.com/fastapiadmin/FastapiAdmin" target="_blank" rel="noreferrer" class="fn-social-link" :title="t.github">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-          </a>
-          <a href="https://gitee.com/fastapiadmin/FastapiAdmin" target="_blank" rel="noreferrer" class="fn-social-link" :title="t.gitee">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.984 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.016 0zm6.09 5.333c.328 0 .593.266.593.593v1.482a.594.594 0 0 1-.593.593H9.777c-.982 0-1.778.796-1.778 1.778v5.63c0 .327.266.592.593.592h1.482c.327 0 .593-.265.593-.592v-4.445h6.667c.327 0 .593.265.593.593v1.482a.594.594 0 0 1-.593.593h-4.445v1.63c0 1.963-1.595 3.557-3.56 3.557H6.67a.594.594 0 0 1-.593-.593V9.778c0-2.456 1.995-4.445 4.445-4.445h5.552z"/></svg>
           </a>
         </div>
       </div>
@@ -41,7 +38,7 @@
 
     <div class="fn-bottom">
       <div class="fn-bottom-left">
-        <span>Copyright © 2025-{{ currentYear }} service.fastapiadmin.com</span>
+        <span>FastAPI Admin Starter · Copyright © 2025-{{ currentYear }}</span>
         <span>
           <a href="https://github.com/fastapiadmin/FastapiAdmin/blob/master/LICENSE" target="_blank" rel="noreferrer" class="fn-link">MIT License</a>
         </span>
@@ -78,7 +75,7 @@ const zhColumns: LinkColumn[] = [
   {
     title: '快速开始',
     links: [
-      { name: '为什么选择我们？', href: '/guide/why' },
+      { name: 'Starter 概述', href: '/guide/why' },
       { name: '项目概述', href: '/guide/overview' },
       { name: '快速开始', href: '/guide/start' },
       { name: '前端开发', href: '/guide/frontend' },
@@ -110,7 +107,7 @@ const enColumns: LinkColumn[] = [
   {
     title: 'Get Started',
     links: [
-      { name: 'Why FastApiAdmin?', href: '/en/guide/why' },
+      { name: 'Why this Starter?', href: '/en/guide/why' },
       { name: 'Overview', href: '/en/guide/overview' },
       { name: 'Quick Start', href: '/en/guide/start' },
       { name: 'Frontend', href: '/en/guide/frontend' },
@@ -140,20 +137,18 @@ const enColumns: LinkColumn[] = [
 
 const description = computed(() =>
   isEn.value
-    ? 'Enterprise-grade admin platform built with FastAPI + Vue3 + TypeScript. AI-powered full-stack development that fits your team’s workflow.'
-    : '基于 FastAPI + Vue3 + TypeScript 构建的企业级中后台解决方案，AI 驱动的全栈开发平台。'
+    ? 'An extensible admin starter built with FastAPI + Vue3 + TypeScript.'
+    : '基于 FastAPI + Vue3 + TypeScript 构建的可扩展后台 Starter。'
 )
 
 const t = computed(() => isEn.value
     ? {
         footerLabel: 'Site footer',
         github: 'GitHub',
-        gitee: 'Gitee',
       }
     : {
         footerLabel: '网站页脚',
         github: 'GitHub',
-        gitee: '码云',
       }
 )
 

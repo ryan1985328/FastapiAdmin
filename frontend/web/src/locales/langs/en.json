@@ -346,7 +346,7 @@
     "mobileLoginSubTitle": "Enter your mobile number to start managing your projects",
     "mobilePhonePlaceholder": "Mobile number",
     "getSmsCode": "Get code",
-    "smsCodeSentMock": "Verification code sent (demo only)",
+    "smsCodeSentMock": "Verification code sent (development simulation)",
     "smsCodeRequired": "Enter the 6-digit SMS code",
     "mobileLoginPending": "Mobile login API is not connected yet — UI preview only",
     "backToAccountLogin": "Back",
@@ -362,8 +362,7 @@
     "quickLoginTab": "Quick login",
     "roles": {
       "super": "Super Admin",
-      "admin": "Admin",
-      "user": "User"
+      "admin": "Admin"
     },
     "placeholder": {
       "username": "Please enter account",
@@ -557,9 +556,7 @@
       "title": "Dashboard",
       "workplace": "Workplace",
       "analysis": "Analysis",
-      "visualization": "3D Visualization",
-      "pricing": "Pricing",
-      "tutorial": "User manual"
+      "visualization": "3D Visualization"
     },
     "article": {
       "title": "Article",

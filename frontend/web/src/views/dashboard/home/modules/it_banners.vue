@@ -39,7 +39,7 @@
             <FaCardBanner
                 :image="icon4"
                 title="版本更新提醒"
-                description="FastapiAdmin v3.1.0 已发布，包含优化和新功能。"
+                description="系统工作台已就绪，可以开始配置你的业务模块。"
                 :button="{
                     show: true,
                     text: '立即更新',

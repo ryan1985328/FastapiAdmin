@@ -8,7 +8,7 @@ description: "Deployment guide: Docker Compose, production hardening, Nginx + SS
 
 ## Deployment Overview
 
-FastApiAdmin supports:
+FastAPI Admin Starter supports:
 
 - **Docker Compose** (recommended): Fast, portable
 - **Manual deployment**: For highly customized setups
@@ -16,7 +16,7 @@ FastApiAdmin supports:
 
 ## Docker Compose Deployment (Recommended)
 
-> See [docker/README.md](https://github.com/fastapiadmin/FastapiAdmin/blob/master/docker/README.md) for details.
+> See [docker/README.md](https://github.com/ryan1985328/FastapiAdmin/blob/master/docker/README.md) for details.
 
 ### 1. Prerequisites
 
@@ -40,8 +40,8 @@ sudo systemctl start docker && sudo systemctl enable docker
 ### 3. Deploy
 
 ```bash
-git clone https://github.com/fastapiadmin/FastApiAdmin.git
-cd FastApiAdmin
+git clone https://github.com/ryan1985328/FastapiAdmin.git
+cd FastapiAdmin
 
 # Configure environment
 cp docker/.env.example docker/.env
@@ -97,7 +97,7 @@ Add an A record pointing to your server IP.
 cd FastapiAdmin/backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp env/.env.dev.example env/.env.prod     # Edit as needed
+cp env/.env.example env/.env.prod         # Edit as needed
 
 # Start with Gunicorn + Uvicorn
 pip install gunicorn uvloop

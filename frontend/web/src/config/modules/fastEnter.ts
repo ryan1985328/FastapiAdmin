@@ -2,7 +2,6 @@
  * 快速入口配置
  * 包含：应用列表、快速链接等配置
  */
-import { WEB_LINKS } from "@utils";
 import type { FastEnterConfig } from "@/types/config";
 
 const fastEnterConfig: FastEnterConfig = {
@@ -29,49 +28,13 @@ const fastEnterConfig: FastEnterConfig = {
       routeName: "Role",
     },
     {
-      name: "定价",
-      description: "价格方案与套餐选择",
-      icon: "ri:money-cny-box-line",
-      iconColor: "#FF6B35",
-      enabled: true,
-      order: 3,
-      routeName: "FastlinkPricing",
-    },
-    {
-      name: "官方文档",
-      description: "使用指南与开发文档",
-      icon: "ri:book-open-line",
-      iconColor: "#ffb100",
-      enabled: true,
-      order: 5,
-      link: WEB_LINKS.DOCS,
-    },
-    {
-      name: "技术支持",
-      description: "技术支持与问题反馈",
-      icon: "ri:user-location-line",
-      iconColor: "#ff6b6b",
-      enabled: true,
-      order: 6,
-      link: WEB_LINKS.COMMUNITY,
-    },
-    {
       name: "更新日志",
       description: "版本更新与变更记录",
       icon: "ri:gamepad-line",
       iconColor: "#38C0FC",
       enabled: true,
-      order: 7,
+      order: 3,
       routeName: "FastlinkChangeLog",
-    },
-    {
-      name: "操作手册",
-      description: "产品操作指南",
-      icon: "ri:book-2-line",
-      iconColor: "#009688",
-      enabled: true,
-      order: 8,
-      routeName: "FastlinkTutorial",
     },
   ],
   // 快速链接

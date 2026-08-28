@@ -151,15 +151,15 @@
           </ParamTabPane>
         </ElTabPane>
 
-        <!-- 演示环境 -->
-        <ElTabPane label="演示环境" name="demo">
+        <!-- 开发保护 -->
+        <ElTabPane label="开发保护" name="demo">
           <ParamTabPane
-            title="演示环境"
+            title="开发保护"
             :modified="demoModified"
             @save-group="saveGroup(fieldsMap.demo)"
           >
             <template v-if="fieldsMap.demo.length > 0">
-              <!-- 演示模式 -->
+              <!-- 开发保护模式 -->
               <ParamFieldCard
                 :label="fieldsMap.demo[0]!.label"
                 :modified="fieldsMap.demo[0]!.modified"
@@ -175,8 +175,8 @@
                   <span class="text-xs text-(--el-text-color-secondary)">
                     {{
                       fieldsMap.demo[0]!.localValue === "on"
-                        ? "演示模式已开启，非白名单 IP 仅允许 GET 请求"
-                        : "演示模式已关闭，所有功能正常访问"
+                        ? "开发保护模式已开启，非白名单 IP 仅允许 GET 请求"
+                        : "开发保护模式已关闭，所有功能正常访问"
                     }}
                   </span>
                 </div>
@@ -319,7 +319,7 @@ function rebuildFields() {
     buildField("ip_black_list", "IP 黑名单"),
   ];
   fieldsMap.demo = [
-    buildField("demo_enable", "演示模式"),
+    buildField("demo_enable", "开发保护模式"),
     buildField("ip_white_list", "IP 白名单"),
   ];
 }

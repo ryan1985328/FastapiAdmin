@@ -1,6 +1,6 @@
 {
   "name": "fastapiadmin",
-  "description": "Vue3 + Vite + TypeScript + Element-Plus 的后台管理模板",
+  "description": "FastAPI Admin Starter Web Admin built with Vue 3, Vite, TypeScript, and Element Plus",
   "version": "3.0.0",
   "private": true,
   "type": "module",
@@ -184,14 +184,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://gitee.com/fastapiadmin/FastapiAdmin.git"
+    "url": "https://github.com/ryan1985328/FastapiAdmin.git"
   },
   "bugs": {
-    "url": "https://gitee.com/fastapiadmin/FastapiAdmin/issues"
+    "url": "https://github.com/ryan1985328/FastapiAdmin/issues"
   },
   "author": "fastapiadmin <948080782@qq.com>",
   "license": "MIT",
-  "homepage": "https://gitee.com/fastapiadmin/FastapiAdmin",
+  "homepage": "https://github.com/ryan1985328/FastapiAdmin",
   "browserslist": [
     "Chrome >= 84",
     "Firefox >= 83",

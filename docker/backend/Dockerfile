@@ -2,7 +2,7 @@
 FROM python:3.12-slim
 
 # 使用 LABEL 替代 MAINTAINER
-LABEL maintainer="948080782@qq.com"
+LABEL org.opencontainers.image.title="FastAPI Admin Starter"
 
 # 设置时区
 ENV TZ Asia/Shanghai

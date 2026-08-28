@@ -26,8 +26,6 @@ import Exception500 from "@views/exception/500/index.vue";
 import DashboardHome from "@views/dashboard/home/index.vue";
 import FastlinkProfile from "@views/fastlink/current/profile.vue";
 import FastlinkChangelog from "@views/fastlink/changelog/index.vue";
-import FastlinkPricing from "@views/fastlink/pricing/index.vue";
-import FastlinkTutorial from "@views/fastlink/tutorial/index.vue";
 
 // ──────── IframeRouteManager ────────
 
@@ -270,7 +268,7 @@ export const staticRoutes: AppRouteRecordRaw[] = [
         meta: DASHBOARD_PARENT_META,
         children: dashboardLayoutChildren,
       },
-      // 隐藏的壳层路由：个人中心、更新日志、定价、教程、AI 聊天
+      // 隐藏的壳层路由：个人中心、更新日志
       {
         path: "fastlink",
         name: "Fastlink",
@@ -294,30 +292,6 @@ export const staticRoutes: AppRouteRecordRaw[] = [
               isHideTab: true,
             },
             component: FastlinkChangelog,
-          },
-          {
-            path: "pricing",
-            name: "FastlinkPricing",
-            meta: {
-              title: $t("menus.dashboard.pricing"),
-              icon: "ri:money-cny-box-line",
-              hidden: true,
-              keepAlive: true,
-              isHideTab: true,
-            },
-            component: FastlinkPricing,
-          },
-          {
-            path: "tutorial",
-            name: "FastlinkTutorial",
-            meta: {
-              title: $t("menus.dashboard.tutorial"),
-              icon: "ri:book-2-line",
-              hidden: true,
-              keepAlive: true,
-              isHideTab: true,
-            },
-            component: FastlinkTutorial,
           },
         ],
       },

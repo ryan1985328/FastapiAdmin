@@ -1,7 +1,7 @@
 {
   "name": "fastdocs",
   "version": "3.1.0",
-  "description": "FastapiAdmin 项目文档",
+  "description": "FastAPI Admin Starter project documentation",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.3",

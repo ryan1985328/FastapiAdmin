@@ -2,8 +2,8 @@
   <div class="fa-card p-5 flex justify-between h-100">
     <div>
       <h2 class="text-2xl font-medium">关于项目</h2>
-      <p class="text-g-700 mt-1">{{ systemName }} 是一款兼具设计美学与高效开发的后台系统</p>
-      <p class="text-g-700 mt-1">使用了 Vue3、TypeScript、Vite、Element Plus 等前沿技术</p>
+      <p class="text-g-700 mt-1">{{ systemName }} 是一个可扩展的通用后台 Starter</p>
+      <p class="text-g-700 mt-1">使用 Vue 3、TypeScript、Vite、Element Plus 与 FastAPI 构建</p>
 
       <div class="grid grid-cols-2 gap-3.5 max-w-150 mt-9">
         <div
@@ -28,10 +28,8 @@ import { WEB_LINKS } from "@utils";
 const systemName = AppConfig.systemInfo.name;
 
 const linkList = [
-  { label: "项目官网", url: WEB_LINKS.DOCS },
-  { label: "文档", url: WEB_LINKS.INTRODUCE },
-  { label: "Github", url: WEB_LINKS.GITHUB_HOME },
-  { label: "Gitee", url: WEB_LINKS.GITEE },
+  { label: "更新日志", url: "#/fastlink/changelog" },
+  { label: "上游源码", url: WEB_LINKS.UPSTREAM_REPO },
 ];
 
 /**

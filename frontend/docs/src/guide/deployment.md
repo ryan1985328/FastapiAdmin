@@ -2,12 +2,12 @@
 layout: doc
 outline: "deep"
 title: 部署指南
-description: FastApiAdmin 多种部署方式详解:Docker Compose 一键部署、生产环境 Nginx + SSL 配置、CI/CD 自动化、多节点架构与性能调优。
+description: FastAPI Admin Starter 部署方式：Docker Compose、Nginx + SSL 与多环境配置。
 ---
 
 ## 部署方式概述
 
-FastApiAdmin 支持以下部署方式：
+FastAPI Admin Starter 支持以下部署方式：
 
 - **Docker Compose 部署**（推荐）：快速、便捷、可移植
 - **手动部署**：适用于需要高度定制的场景
@@ -15,7 +15,7 @@ FastApiAdmin 支持以下部署方式：
 
 ## 🐳 Docker Compose 部署（推荐）
 
-> 详细说明见项目根目录 [docker/README.md](https://github.com/fastapiadmin/FastapiAdmin/blob/master/docker/README.md)。
+> 详细说明见项目根目录 [docker/README.md](https://github.com/ryan1985328/FastapiAdmin/blob/master/docker/README.md)。
 
 ### 1. 环境准备
 
@@ -39,8 +39,8 @@ sudo systemctl start docker && sudo systemctl enable docker
 ### 3. 部署步骤
 
 ```bash
-git clone https://github.com/fastapiadmin/FastApiAdmin.git
-cd FastApiAdmin
+git clone https://github.com/ryan1985328/FastapiAdmin.git
+cd FastapiAdmin
 
 # 配置环境变量
 cp docker/.env.example docker/.env
@@ -99,7 +99,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # 配置环境
-cp env/.env.dev.example env/.env.prod
+cp env/.env.example env/.env.prod
 # 编辑 env/.env.prod
 
 # 启动（使用 Gunicorn + Uvicorn）

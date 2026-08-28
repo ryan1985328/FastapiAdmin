@@ -1,7 +1,7 @@
 [project]
 name = "backend"
 version = "2.0.0"
-description = "fastapiadmin后端工程"
+description = "FastAPI Admin Starter backend"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

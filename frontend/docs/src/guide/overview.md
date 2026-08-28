@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: 项目概述
-description: FastApiAdmin 项目概述,基于 FastAPI + Vue3 + UniApp 的全栈中后台快速开发平台,支持 Web、移动端、小程序三端融合与模块化开发。
+description: FastAPI Admin Starter 项目概述,基于 FastAPI + Vue3 + UniApp 的可扩展后台基础工程。
 outline: "deep"
 ---
 
@@ -9,32 +9,22 @@ outline: "deep"
   <div align="center">
      <img src="/logo.svg" width="150" height="150" alt="logo" />
   </div>
-  <h1>FastApiAdmin <sup style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.4em; vertical-align: super; margin-left: 5px;">v3.1.0</sup></h1>
-  <h3>一套现代、开源、全栈融合的中后台快速开发平台</h3>
-  <p>如果你喜欢这个项目，给个 ⭐️ 支持一下吧！</p>
-  <p align="center" style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
-    <a href="https://gitee.com/fastapiadmin/FastApiAdmin"><img src="https://gitee.com/fastapiadmin/FastapiAdmin/badge/star.svg?theme=dark" alt="Gitee Stars"></a>
-    <a href="https://github.com/fastapiadmin/FastApiAdmin"><img src="https://img.shields.io/github/stars/fastapiadmin/FastApiAdmin?style=social" alt="GitHub Stars"></a>
-    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-orange.svg" alt="License"></a>
-    <img src="https://img.shields.io/badge/Python-≥3.10-blue" alt="Python">
-    <img src="https://img.shields.io/badge/NodeJS-≥20.0-blue" alt="NodeJS">
-    <img src="https://img.shields.io/badge/MySQL-≥8.0-blue" alt="MySQL">
-    <img src="https://img.shields.io/badge/Redis-≥7.0-blue" alt="Redis">
-  </p>
+  <h1>FastAPI Admin Starter</h1>
+  <h3>可扩展的 FastAPI 后台基础工程</h3>
 </div>
 
 ## 📘项目介绍
 
-**FastApiAdmin** 是一套 **完全开源、高度模块化、技术先进的现代化快速开发平台**，旨在帮助开发者高效搭建高质量的企业级中后台系统。该项目采用 **前后端分离架构**，融合 Python 后端框架 `FastAPI` 和前端主流框架 `Vue3` 实现多端统一开发，提供了一站式开箱即用的开发体验。
+**FastAPI Admin Starter** 是一套基于 FastAPI、Vue 3 和 TypeScript 的通用后台基础工程。它采用前后端分离架构，保留系统管理、权限、日志、任务、存储、代码生成和多端壳等可复用能力。
 
-> **设计初心**: 以模块化、松耦合为核心，追求丰富的功能模块、简洁易用的接口、详尽的开发文档和便捷的维护方式。通过统一框架和组件，降低技术选型成本，遵循开发规范和设计模式，构建强大的代码分层模型，搭配完善的本地中文化支持，专为团队和企业开发场景量身定制。
+> **设计边界**: 保持现有异步 SQLAlchemy、Auth/RBAC、Redis、插件注册、Generator、Storage 和 Scheduler 架构，业务模块在其上按现有结构扩展。
 
 ## 📦 工程结构概览
 
 项目采用 **Monorepo** 架构，所有子工程在同一仓库中协同开发：
 
 ```sh
-FastapiAdmin/
+FastAPI-Admin-Starter/
 ├─ backend/               # 后端工程 (FastAPI + Python)
 ├─ frontend/              # 前端工程
 │   ├── web/              # Web 前端 (Vue3 + Element Plus)
@@ -66,8 +56,7 @@ FastapiAdmin/
 | 🚀 快速部署 | 支持 Docker/Docker Compose/Nginx 一键部署。 |
 | 📄 开发友好 | 提供完善的中文文档 + 中文化界面 + 可视化工具链，降低学习成本。 |
 | 🧩 快速接入 | 基于 Vue3、Vite5、Pinia、ElementPlus 等主流前端技术栈，开箱即用。 |
-| 📱 移动端支持 | 基于 UniApp 开发的 FastApp 移动端，支持多端运行（H5、微信小程序、支付宝小程序、App 等）。 |
-| 🤖 智能体框架 | 集成智能体框架，提供 AI 能力。 |
+| 📱 移动端支持 | 保留 UniApp App/H5 shell，支持未来按需扩展多端应用。 |
 | 🎨 主题定制 | 支持深色/浅色主题切换，提供个性化界面体验。 |
 | 🌍 国际化支持 | 内置国际化框架，支持多语言切换。 |
 | 📈 数据可视化 | 集成图表库，提供丰富的数据可视化能力。 |

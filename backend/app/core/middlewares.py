@@ -63,9 +63,9 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
                     request.method,
                     path,
                     client_ip,
-                    "IP黑名单" if is_blacklisted else "演示模式",
+                    "IP黑名单" if is_blacklisted else "开发保护模式",
                 )
-                return ErrorResponse(msg="IP已被黑名单" if is_blacklisted else "演示环境，禁止操作")
+                return ErrorResponse(msg="IP已被黑名单" if is_blacklisted else "开发保护模式，禁止操作")
 
             return await call_next(request)
         except CustomException as e:
@@ -149,4 +149,3 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
             return response
         finally:
             reset_correlation_id(token)
-

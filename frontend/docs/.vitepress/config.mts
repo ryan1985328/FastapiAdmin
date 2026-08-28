@@ -6,7 +6,7 @@ const zhGuideSidebar = [
     text: '快速开始',
     items: [
       { text: '项目概述', link: '/guide/overview' },
-      { text: '为什么选择 FastApiAdmin？', link: '/guide/why' },
+      { text: 'Starter 概述', link: '/guide/why' },
       { text: '快速开始', link: '/guide/start' },
     ],
   },
@@ -34,7 +34,7 @@ const enGuideSidebar = [
     text: 'Getting Started',
     items: [
       { text: 'Project Overview', link: '/en/guide/overview' },
-      { text: 'Why FastApiAdmin?', link: '/en/guide/why' },
+      { text: 'Why this Starter?', link: '/en/guide/why' },
       { text: 'Quick Start', link: '/en/guide/start' },
     ],
   },
@@ -59,8 +59,8 @@ const enGuideSidebar = [
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: '/',
-  title: 'FastApiAdmin',
-  description: '基于 FastAPI + Vue3 + TypeScript 构建的企业级中后台解决方案,AI 驱动的全栈开发平台。',
+  title: 'FastAPI Admin Starter',
+  description: '基于 FastAPI + Vue3 + TypeScript 构建的可扩展后台 Starter。',
   srcDir: 'src',
   outDir: 'dist',
   lang: 'zh-CN',
@@ -114,7 +114,7 @@ export default defineConfig({
             text: '快速开始',
             items: [
               { text: '项目概述', link: '/guide/overview' },
-              { text: '为什么选择 FastApiAdmin？', link: '/guide/why' },
+              { text: 'Starter 概述', link: '/guide/why' },
               { text: '快速开始', link: '/guide/start' },
             ],
           },
@@ -142,7 +142,6 @@ export default defineConfig({
         },
         socialLinks: [
           { icon: 'github', link: 'https://github.com/fastapiadmin/FastapiAdmin' },
-          { icon: 'gitee', link: 'https://gitee.com/fastapiadmin/FastapiAdmin'},
         ],
         outline: {
             level: [2, 3],
@@ -175,7 +174,7 @@ export default defineConfig({
             text: 'Quick Start',
             items: [
               { text: 'Project Overview', link: '/en/guide/overview' },
-              { text: 'Why FastApiAdmin?', link: '/en/guide/why' },
+              { text: 'Why this Starter?', link: '/en/guide/why' },
               { text: 'Quick Start', link: '/en/guide/start' },
             ],
           },
@@ -203,7 +202,6 @@ export default defineConfig({
         },
         socialLinks: [
           { icon: 'github', link: 'https://github.com/fastapiadmin/FastapiAdmin' },
-          { icon: 'gitee', link: 'https://gitee.com/fastapiadmin/FastapiAdmin' },
         ],
         outline: {
           level: [2, 3],

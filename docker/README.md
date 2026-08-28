@@ -1,6 +1,6 @@
-# FastapiAdmin 部署说明
+# FastAPI Admin Starter Docker 部署说明
 
-> **与仓库根文档的关系**：项目总览、快速开始、演示账号等请以 [根目录 README.md](../README.md) 为准；**本文档**侧重 Docker 部署的详细操作。
+> **与仓库根文档的关系**：项目总览、本地启动、开发账号等请以 [根目录 README.md](../README.md) 为准；**本文档**侧重 Docker 部署的详细操作。
 
 ## 项目结构
 
@@ -65,7 +65,7 @@ docker/
    | `DEPLOY_ENV` | 否 | `prod` | 部署环境（dev/prod） |
    | `BACKEND_IMAGE_TAG` | 否 | `3.0.0` | 后端镜像标签 |
    | `BUILD_WEB` | 否 | `false` | 部署时构建前端 Web |
-   | `NGINX_SERVER_NAME` | 否 | `service.fastapiadmin.com` | Nginx 域名 |
+   | `NGINX_SERVER_NAME` | 否 | `localhost` | Nginx 域名 |
 
 2. **SSL 证书配置**（可选，但生产环境必须）
 
@@ -74,7 +74,7 @@ docker/
    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
      -keyout docker/nginx/ssl/server.key \
      -out docker/nginx/ssl/server.pem \
-     -subj "/CN=service.fastapiadmin.com"
+     -subj "/CN=localhost"
 
    # 生产环境请使用正规 CA 签发的证书
    ```

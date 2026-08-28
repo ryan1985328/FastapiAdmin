@@ -1,8 +1,8 @@
 # FastAPI Admin · 前端工程（web）
 
-基于 **Vue 3 + Vite + TypeScript + Element Plus** 的后台管理前端，与 FastAPI Admin 后端配套使用。状态管理为 **Pinia**，样式以 **Tailwind CSS 4** 与 **SCSS** 为主，接口请求使用 **Axios**。
+基于 **Vue 3 + Vite + TypeScript + Element Plus** 的 FastAPI Admin Starter Web Admin。状态管理为 **Pinia**，样式以 **Tailwind CSS 4** 与 **SCSS** 为主，接口请求使用 **Axios**。
 
-> **与仓库根文档的关系**：项目总览、一键前后端启动、演示账号、Docker 部署等请以 [根目录 README.md](../../README.md) 为准；**本文档**侧重 `frontend/web/` 目录结构、环境变量与前端开发约定。
+> **与仓库根文档的关系**：项目总览、本地开发账号、Docker 部署等请以 [根目录 README.md](../../README.md) 为准；**本文档**侧重 `frontend/web/` 目录结构、环境变量与前端开发约定。
 
 ## 快速开始
 
@@ -23,11 +23,11 @@ pnpm install
 pnpm dev
 ```
 
-默认开发端口由 **`.env`** 中的 **`VITE_PORT`** 决定（当前模板为 **5173**）。
+默认开发端口由 **`.env`** 中的 **`VITE_PORT`** 决定（当前模板为 **5180**）。
 
 ### 与后端联调
 
-1. 先启动 **FastAPI Admin 后端**，监听地址与 **`.env.dev`** 里 **`VITE_API_BASE_URL`** 一致（模板默认为 **`http://127.0.0.1:8001`**）。
+1. 先启动 **FastAPI Admin Starter 后端**，监听地址与 **`.env.development`** 里 **`VITE_API_BASE_URL`** 一致（模板默认为 **`http://127.0.0.1:8001`**）。
 2. 前端开发时，浏览器请求发往当前页面同源路径，由 **Vite `server.proxy`** 把 **`VITE_APP_BASE_API`**（如 `/api/v1`）转发到上述后端。
 3. 若页面提示「连接被拒绝」，检查后端是否启动、端口是否一致，或把 **`VITE_API_BASE_URL`** 改成你的实际后端地址。
 
@@ -67,14 +67,14 @@ main.ts 启动
 
 | 命令                                          | 说明                                                          |
 | --------------------------------------------- | ------------------------------------------------------------- |
-| `pnpm dev`                                    | 本地开发（读取 `.env` + `.env.dev`）                          |
+| `pnpm dev`                                    | 本地开发（读取 `.env` + `.env.development`）                  |
 | `pnpm dev:force`                              | 强制预打包依赖后启动（缓存异常时）                            |
 | `pnpm build`                                  | `vue-tsc` 类型检查 + 生产构建，产物在 **`dist/`**             |
 | `pnpm build:dev` / `build:test` / `build:pro` | 按 mode 构建（需对应 env 文件）                               |
 | `pnpm preview`                                | 本地预览构建结果                                              |
 | `pnpm type-check`                             | 仅 TypeScript 检查                                            |
 | `pnpm lint`                                   | ESLint + Prettier + Stylelint                                 |
-| `pnpm clean:dev`                              | 执行 `scripts/clean-dev.ts`（清理演示等，使用前阅读脚本说明） |
+| `pnpm clean:dev`                              | 执行 `scripts/clean-dev.ts`（清理本地开发数据，使用前阅读脚本说明） |
 | `pnpm clean:cache`                            | 清理 Vite 等缓存                                              |
 
 ## 目录结构（src）
@@ -124,7 +124,7 @@ src/
 | `VITE_API_URL`         | 浏览器侧发出的 API 根前缀（开发时常为 `/`）      |
 | `VITE_API_BASE_URL`    | **代理目标**：后端 HTTP 根地址                   |
 | `VITE_ACCESS_MODE`     | `frontend` / `backend` / `mixed`，菜单与路由来源 |
-| `VITE_APP_WS_ENDPOINT` | WebSocket（如 AI 对话）                          |
+| `VITE_APP_WS_ENDPOINT` | 可选实时功能的 WebSocket 端点                    |
 | `VITE_APP_TITLE`       | 页面标题（可被后端参数配置覆盖）                 |
 
 完整列表以仓库内 **`.env`**、**`.env.dev`** 为准；模板说明见 **`.env.example`**。修改任一 env 后需 **重启** `pnpm dev`。

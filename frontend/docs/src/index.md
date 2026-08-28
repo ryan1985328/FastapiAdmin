@@ -4,24 +4,16 @@ editLink: true
 lastUpdated: true
 
 hero:
-  name: "FastApiAdmin"
-  text: "Web · H5 · 小程序,一套全栈"
-  tagline: 基于 FastAPI + Vue3 + TypeScript,前后端类型共享。30+ 业务模块开箱即用,AI 代码生成器覆盖 90% 常规 CRUD,Docker Compose 一条命令上线。
+  name: "FastAPI Admin Starter"
+  text: "Web · H5 · 后台基础工程"
+  tagline: 基于 FastAPI + Vue3 + TypeScript 的可扩展后台 Starter，保留认证、权限、任务、存储和代码生成等通用能力。
   image:
     src: /logo.svg
-    alt: AI 代码生成器 - 选表即生成完整 CRUD
+    alt: FastAPI Admin Starter
   actions:
     - theme: brand
       text: 立即开始
       link: /guide/start
-    - theme: alt
-      text: 在线预览
-      link: https://service.fastapiadmin.com/web
-      target: _blank
-    - theme: alt
-      text: 移动端
-      link: https://service.fastapiadmin.com/app
-      target: _blank
 
 features:
   - icon: 📦
@@ -33,8 +25,8 @@ features:
     details: FastAPI 原生 async/await 支持，Pydantic 自动类型校验，Redis 缓存加速，轻松应对高并发场景。
 
   - icon: 🤖
-    title: AI 代码生成器
-    details: 选数据库表 → AI 自动生成 Controller / Service / Model / Vue 页面代码。常规 CRUD 几乎不用手写，团队聚焦业务逻辑。
+    title: 代码生成器
+    details: 以现有数据库表为基础生成常规 CRUD 代码，帮助团队快速开始业务模块开发。
 
   - icon: 🛡️
     title: 企业级 RBAC 权限
@@ -48,9 +40,3 @@ features:
     title: Web + 移动端一体
     details: 基于 UniApp 的移动端，一套代码同时生成 H5、微信小程序、支付宝小程序、App 等多端应用。
 ---
-
-<script setup lang="ts">
-import HomeSections from "../.vitepress/components/HomeSections.vue";
-</script>
-
-<HomeSections />

@@ -48,10 +48,10 @@ goto :end
 echo %CYAN%🚀 开始启动所有服务...%RESET%
 echo.
 
-call :start_service "backend"   "%SCRIPT_DIR%backend"             "uv run main.py run --env=dev"    "FastapiAdmin.Backend"  "%BACKEND_PID%"
-call :start_service "frontend"  "%SCRIPT_DIR%frontend\web"        "pnpm dev"                         "FastapiAdmin.Web"      "%WEB_PID%"
-REM call :start_service "app"       "%SCRIPT_DIR%frontend\app"        "pnpm dev:h5"                      "FastapiAdmin.App"      "%APP_PID%"
-REM call :start_service "docs"      "%SCRIPT_DIR%frontend\docs"       "pnpm dev"                         "FastapiAdmin.Docs"     "%DOCS_PID%"
+call :start_service "backend"   "%SCRIPT_DIR%backend"             "uv run main.py run --env=dev"    "FastAPIAdminStarter.Backend"  "%BACKEND_PID%"
+call :start_service "frontend"  "%SCRIPT_DIR%frontend\web"        "pnpm dev"                         "FastAPIAdminStarter.Web"      "%WEB_PID%"
+REM call :start_service "app"       "%SCRIPT_DIR%frontend\app"        "pnpm dev:h5"                      "FastAPIAdminStarter.App"      "%APP_PID%"
+REM call :start_service "docs"      "%SCRIPT_DIR%frontend\docs"       "pnpm dev"                         "FastAPIAdminStarter.Docs"     "%DOCS_PID%"
 
 echo.
 echo %GREEN%🎉 所有服务启动完成！%RESET%

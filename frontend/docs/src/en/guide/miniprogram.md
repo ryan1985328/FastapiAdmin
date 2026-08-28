@@ -2,13 +2,13 @@
 layout: doc
 outline: "deep"
 title: Miniprogram Development Guide
-description: "Mobile dev guide: UniApp + Vue3 + Wot Design, H5/WeChat/Alipay mini-programs, App builds."
+description: "Mobile shell guide: UniApp + Vue3 + Wot Design, H5/WeChat/Alipay mini-programs, and App builds."
 ---
 # Miniprogram Development Guide
 
 ## 📋Project Overview
 
-FastApp is the mobile application component of FastApiAdmin, based on **Uni App + Vue3 + TypeScript + Wot Design Uni**, supporting multi-platform deployment including WeChat Mini Program, Alipay Mini Program, Web H5, iOS, and Android.
+The **App/H5 shell** is the Starter's mobile foundation, based on **Uni App + Vue3 + TypeScript + Wot Design Uni**, supporting multi-platform deployment including WeChat Mini Program, Alipay Mini Program, Web H5, iOS, and Android.
 
 ### Core Features
 
@@ -19,7 +19,7 @@ FastApp is the mobile application component of FastApiAdmin, based on **Uni App 
 - **Personal Center**: User information management, avatar upload
 - **Workbench**: Quick access to commonly used functions
 - **Message Push**: Real-time message notification
-- **API Integration**: Seamless integration with FastApiAdmin backend
+- **API Integration**: Seamless integration with the Starter backend
 - **Responsive Design**: Adaptive layout for different screen sizes
 - **Performance Optimization**: Code splitting, lazy loading, etc.
 
@@ -40,7 +40,7 @@ FastApp is the mobile application component of FastApiAdmin, based on **Uni App 
 ## 📁Project Structure
 
 ```
-FastApp/
+frontend/app/
 ├── public/              # Static assets
 ├── src/
 │   ├── api/             # API request modules
@@ -108,8 +108,7 @@ FastApp/
 1. **Clone the repository**
 
    ```sh
-   git clone https://github.com/fastapiadmin/FastApp.git
-   cd FastApp
+   cd frontend/app
    ```
 
 2. **Install dependencies**
@@ -518,7 +517,7 @@ onLoad((options) => {
 2. **Create the page files**:
 
 ```
-FastApp/src/pages/
+frontend/app/src/pages/
 └─ new-page/
    ├─ index.vue      # Page component
    ├─ data.ts        # Data definitions (optional)
@@ -540,7 +539,7 @@ FastApp/src/pages/
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const message = ref('Hello FastApp!')
+const message = ref('Hello App/H5!')
 </script>
 
 <style scoped>
@@ -729,9 +728,9 @@ For development purposes, you can use mock data to simulate API responses.
 export const mockData = {
   user: {
     id: 1,
-    username: 'demo',
-    name: 'Demo User',
-    email: 'demo@example.com',
+    username: 'sample-user',
+    name: 'Example User',
+    email: 'example@example.com',
     phone: '13800138000',
     avatar: '/static/avatar-default.png'
   },
@@ -784,7 +783,7 @@ export const mockData = {
     <view class="login-form">
       <view class="logo-container">
         <image src="/static/logo.svg" class="logo" mode="aspectFit" />
-        <text class="app-name">FastApp</text>
+        <text class="app-name">App/H5</text>
       </view>
       <wd-form @submit="handleSubmit">
         <wd-input
@@ -807,8 +806,7 @@ export const mockData = {
         </wd-button>
       </wd-form>
       <view class="login-info">
-        <text class="demo-account">Demo Account: demo / 123456 (demo site only)</text>
-        <text class="admin-account">Admin Account: admin / 123456 (demo site only)</text>
+        <text class="local-account">Local development: admin / 123456</text>
       </view>
     </view>
   </view>
@@ -904,7 +902,7 @@ const handleSubmit = async () => {
   text-align: center;
 }
 
-.demo-account {
+.local-account {
   display: block;
   margin-bottom: 8px;
 }
@@ -1319,7 +1317,7 @@ Auto-import is configured for the following — no manual import needed:
 
 ## 🎉Conclusion
 
-FastApp provides a comprehensive mobile application solution for FastApiAdmin, leveraging the power of Uni App to achieve cross-platform deployment. By following the guidelines in this document, you can develop high-quality, performant, and maintainable mobile applications that seamlessly integrate with the FastApiAdmin backend.
+The App/H5 shell provides a Uni App foundation for cross-platform deployment. By following this document, you can develop maintainable mobile applications that integrate with the Starter backend.
 
 For more detailed information about Uni App, Vue3, or Wot Design Uni, please refer to their official documentation:
 

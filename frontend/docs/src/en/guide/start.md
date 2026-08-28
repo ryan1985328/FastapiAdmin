@@ -2,36 +2,28 @@
 layout: doc
 outline: "deep"
 title: Quick Start
-description: "Spin up a working MVP in 15-30 minutes: prerequisites, source, Docker Compose, first run."
+description: "Run FastAPI Admin Starter locally: prerequisites, dependencies, Docker services, initialization, and development access."
 ---
-
-## Demo Environment
-
-- Website: [https://service.fastapiadmin.com](https://service.fastapiadmin.com)
-- Web: [https://service.fastapiadmin.com/web](https://service.fastapiadmin.com/web)
-- Mobile: [https://service.fastapiadmin.com/app](https://service.fastapiadmin.com/app)
-- Demo account: `admin` / `123456` (**for the official demo site only — do not use in production**; change the default password immediately after first deployment)
 
 ## Prerequisites
 
 | Type | Technology | Version |
 |------|------------|---------|
-| Backend | Python | ≥ 3.10 (3.12 recommended) |
-| Backend | FastAPI | 0.109+ |
+| Backend | Python | ≥ 3.12 |
+| Backend | FastAPI | 0.138.2 |
 | Frontend | Node.js | ≥ 20.0 |
 | Frontend | pnpm | ≥ 9.0 |
 | Web UI | Element Plus | 2.10+ |
 | Mobile | UniApp | 3.0+ |
 | App UI | Wot Design Uni | 1.9+ |
-| Database | MySQL | 8.0+ / PostgreSQL 13+ / SQLite |
+| Database | MySQL | 8.0+ (8.4 is the local baseline) |
 | Middleware | Redis | 7.0+ |
 
 ## Get the Code
 
 ```bash
-git clone https://github.com/fastapiadmin/FastApiAdmin.git
-# or via Gitee
-git clone https://gitee.com/fastapiadmin/FastApiAdmin.git
+git clone https://github.com/ryan1985328/FastapiAdmin.git
+cd FastapiAdmin
 ```
 
 ## Backend Setup
@@ -39,8 +31,8 @@ git clone https://gitee.com/fastapiadmin/FastApiAdmin.git
 ### 1. Configure Environment
 
 ```bash
-cd FastapiAdmin/backend
-cp env/.env.dev.example env/.env.dev
+cd backend
+cp env/.env.example env/.env.dev
 # Edit env/.env.dev with your database, Redis, JWT secret, etc.
 ```
 
@@ -58,7 +50,7 @@ pip install -r requirements.txt
 python main.py run --env=dev
 ```
 
-**First start auto-initializes database schema & seed data** — no manual migration needed.
+**First start auto-initializes database schema & seed data** — no manual migration needed. The default `admin / 123456` credential is for local development only.
 
 ### 3. Database Migrations (when changing models)
 
@@ -72,17 +64,17 @@ python main.py upgrade --env=dev
 
 ```bash
 # Web Frontend (Vue3)
-cd FastapiAdmin/frontend/web
+cd frontend/web
 pnpm install
 pnpm run dev
 
 # Mobile (UniApp)
-cd FastapiAdmin/frontend/app
+cd frontend/app
 pnpm install
 pnpm run dev:h5
 
 # Documentation Site (VitePress)
-cd FastapiAdmin/frontend/docs
+cd frontend/docs
 pnpm install
 pnpm run dev
 ```
@@ -91,11 +83,11 @@ pnpm run dev
 
 | Service | URL |
 |---------|-----|
-| Web Frontend | `http://127.0.0.1:5173` |
+| Web Frontend | `http://127.0.0.1:5180/web#/login` |
 | Mobile H5 | `http://127.0.0.1:8080` |
 | Documentation | `http://127.0.0.1:5174` |
 | Backend API | `http://127.0.0.1:8001` |
-| Swagger | `http://127.0.0.1:8001/docs` |
+| Swagger | `http://127.0.0.1:8001/api/v1/docs` |
 
 ## Docker Deployment
 

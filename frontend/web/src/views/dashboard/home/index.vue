@@ -110,7 +110,7 @@
                         class="mt-0.5 text-xs font-normal leading-[1.45]"
                         style="color: var(--el-text-color-secondary)"
                       >
-                        点击日期添加或编辑（本地演示）
+                        点击日期添加或编辑（本地开发数据）
                       </p>
                     </div>
                   </div>

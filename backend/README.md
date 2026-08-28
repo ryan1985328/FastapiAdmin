@@ -1,20 +1,20 @@
-# FastApiAdmin - Backend
+# FastAPI Admin Starter - Backend
 
-基于 FastAPI 框架构建的企业级后端架构，为前端 Vue3 管理系统提供完整的 API 服务支持。
+基于 FastAPI 框架构建的通用异步后台，为 Web Admin 与 App/H5 shell 提供 API 服务。
 
-> **与仓库根文档的关系**：项目总览、一键前后端启动、演示账号、Docker 部署、架构图与默认端口等请以 [根目录 README.md](../README.md) 为准；**本文档**侧重 `backend/` 目录结构、迁移命令与后端开发约定。
+> **与仓库根文档的关系**：项目总览、本地开发账号、Docker 部署、默认端口等请以 [根目录 README.md](../README.md) 为准；**本文档**侧重 `backend/` 目录结构、迁移命令与后端开发约定。
 
 ## 技术栈
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
-| FastAPI | 0.115.2 | 现代 Web 框架 |
-| SQLAlchemy | 2.0.36 | ORM 框架 |
-| Alembic | 1.15.1 | 数据库迁移工具 |
+| FastAPI | 0.138.2 | 现代 Web 框架 |
+| SQLAlchemy | 2.0.51 | ORM 框架 |
+| Alembic | 1.18.4 | 数据库迁移工具 |
 | Pydantic | 2.x | 数据验证与序列化 |
 | APScheduler | 3.11.0 | 定时任务调度 |
-| Redis | 5.2.1 | 缓存与会话存储 |
-| Uvicorn | 0.30.6 | ASGI 服务器 |
+| Redis | 7.1.0 | 缓存与会话存储 |
+| Uvicorn | 0.49.0 | ASGI 服务器 |
 | Python | 3.12+ | 运行环境 |
 
 ## 项目结构
@@ -27,7 +27,6 @@ backend/
 │   │   └── v1/              # API v1 版本
 │   │       ├── module_system/   # 系统管理模块
 │   │       ├── module_monitor/  # 系统监控模块
-│   │       ├── module_ai/       # AI 功能模块
 │   │       └── module_*/       # 其他业务模块
 │   ├── common/              # 公共组件（常量、枚举、响应封装）
 │   ├── config/              # 项目配置文件
@@ -60,7 +59,7 @@ module_*/
 └── param.py         # 参数模型 - 请求参数
 ```
 
-分包理念（按业务竖切 vs 按技术层次分包）详见 [项目概述](https://service.fastapiadmin.com/guide/overview)。
+模块按业务域组织；新增业务时优先沿用现有模块的 Controller、Service、CRUD、Model、Schema 结构。
 
 ## 快速开始
 
@@ -72,9 +71,9 @@ module_*/
 
 ### 第一次在本机跑起来
 
-1. 复制 `env/.env.dev.example` → `env/.env.dev`，填写数据库、Redis 等（先在 DB 中建好空库）。
+1. 复制 `env/.env.example` → `env/.env.dev`，填写数据库、Redis 等（先在 DB 中建好空库）。
 2. 在 **`backend/` 目录下** 安装依赖：推荐 **`uv sync`**；或 `pip install -r requirements.txt`。
-3. **启动**：`uv run main.py run --env=dev`（或 `python main.py run --env=dev`）。**首次启动会自动初始化数据库表与基础数据**，一般**无需**先执行 `upgrade`。接口文档示例：`http://127.0.0.1:8001/docs`（端口见 `.env.dev` 中 `SERVER_PORT`）。
+3. **启动**：`uv run main.py run --env=dev`（或 `python main.py run --env=dev`）。**首次启动会自动初始化数据库表与基础数据**，一般**无需**先执行 `upgrade`。接口文档示例：`http://127.0.0.1:8001/api/v1/docs`（端口见 `.env.dev` 中 `SERVER_PORT`）。
 
 ### 数据库迁移命令（模型变更时使用）
 

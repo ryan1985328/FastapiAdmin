@@ -3,15 +3,7 @@
 /** 移动端断点（小于此值视为 H5/移动端） */
 export const MOBILE_BREAKPOINT = 768;
 
+/** Official source retained for technical attribution. */
 export const WEB_LINKS = {
-  GITHUB_HOME: "https://github.com/fastapiadmin",
-  GITHUB: "https://github.com/fastapiadmin/FastapiAdmin",
-  GITEE: "https://gitee.com/fastapiadmin/FastapiAdmin",
-  BLOG: "https://blog.csdn.net/weixin_46768253?type=blog",
-  DOCS: "https://service.fastapiadmin.com/guide/overview.html",
-  LiteVersion: "https://gitee.com/fastapiadmin/FastCloud",
-  OldVersion: "https://github.com/fastapiadmin/FastapiAdmin/tree/v2.0.0",
-  COMMUNITY: "https://service.fastapiadmin.com",
-  BILIBILI: "https://space.bilibili.com/425500936?spm_id_from=333.1007.0.0",
-  INTRODUCE: "https://service.fastapiadmin.com",
-};
+  UPSTREAM_REPO: "https://github.com/fastapiadmin/FastapiAdmin",
+} as const;

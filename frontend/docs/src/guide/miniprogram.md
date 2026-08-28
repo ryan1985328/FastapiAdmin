@@ -1,14 +1,14 @@
 ---
 layout: doc
 outline: "deep"
-title: FastApp 移动端开发指南
-description: FastApp 移动端开发指南,基于 UniApp + Vue3 + Wot Design Uni 实现 H5、微信小程序、Android/iOS App 三端统一开发,涵盖环境配置、组件使用、API 接入与发布流程。
+title: App/H5 移动端开发指南
+description: App/H5 移动端开发指南,基于 UniApp + Vue3 + Wot Design Uni 实现 H5、微信小程序、Android/iOS App 多端开发。
 ---
-# FastApp 移动端开发指南
+# App/H5 移动端开发指南
 
 ## 📱项目概述
 
-**FastApp** 是 FastApiAdmin 项目的移动端应用，基于 **Uni App** 框架开发，支持一套代码多端运行（包括 H5、微信小程序、支付宝小程序、App 等）。采用 Vue 3 + TypeScript + Vite 等现代化技术栈，集成了完善的代码规范和开发工具链，为开发者提供开箱即用的移动端开发解决方案。
+**App/H5 shell** 是 Starter 的移动端基础工程，基于 **Uni App** 框架开发，支持一套代码多端运行（包括 H5、微信小程序、支付宝小程序、App 等）。采用 Vue 3 + TypeScript + Vite 等技术栈，保留独立的移动端基础工程供未来扩展。
 
 ### 核心功能
 
@@ -45,7 +45,7 @@ description: FastApp 移动端开发指南,基于 UniApp + Vue3 + Wot Design Uni
 ## 📁项目结构
 
 ```
-FastApp/
+frontend/app/
 ├─ public/             # 静态资源
 │  └─ favicon.ico      # 网站图标
 ├─ src/                # 源代码
@@ -134,7 +134,7 @@ FastApp/
 
 ```sh
 # 进入项目目录
-cd FastApp
+cd frontend/app
 
 # 安装项目依赖
 pnpm install
@@ -175,7 +175,7 @@ pnpm run dev:h5
 # 启动微信小程序开发服务器
 pnpm run dev:mp-weixin
 
-# 在微信开发者工具中导入项目目录：FastApp/dist/dev/mp-weixin
+# 在微信开发者工具中导入项目目录：frontend/app/dist/dev/mp-weixin
 ```
 
 #### 其他平台开发
@@ -217,7 +217,7 @@ pnpm run dev:mp-qq
 2. **创建页面文件**：
 
 ```
-FastApp/src/pages/
+frontend/app/src/pages/
 └─ new-page/
    ├─ index.vue      # 页面组件
    ├─ data.ts        # 数据定义（可选）
@@ -239,7 +239,7 @@ FastApp/src/pages/
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const message = ref('Hello FastApp!');
+const message = ref('Hello App/H5!');
 </script>
 
 <style scoped>
@@ -307,7 +307,7 @@ onLoad((options) => {
 
 ### 1. 封装的 API 工具
 
-FastApp 使用封装的 `request.ts` 工具进行 API 调用，支持自动添加认证 token、错误处理等功能。
+App/H5 使用封装的 `request.ts` 工具进行 API 调用，支持自动添加认证 token、错误处理等功能。
 
 ### 2. API 接口定义
 
@@ -368,7 +368,7 @@ const updateUser = async () => {
 
 ### 4. WebSocket 实时通信
 
-FastApp 集成了 `@stomp/stompjs` 库，支持 WebSocket 实时通信，通过封装的 `useStomp` 组合式函数可以方便地使用：
+App/H5 shell 集成了 `@stomp/stompjs` 库，支持 WebSocket 实时通信，通过封装的 `useStomp` 组合式函数可以方便地使用：
 
 ```typescript
 // 使用 WebSocket
@@ -494,7 +494,7 @@ onLoad(() => {
 
 ### 1. 使用 Wot Design Uni
 
-FastApp 使用 **Wot Design Uni** 作为 UI 组件库，提供了丰富的移动端组件：
+App/H5 使用 **Wot Design Uni** 作为 UI 组件库，提供了丰富的移动端组件：
 
 ```vue
 <template>
@@ -532,14 +532,14 @@ const handleClick = () => {
 
 ### 2. 使用 UnoCSS
 
-FastApp 集成了 UnoCSS 原子化 CSS 引擎，支持类名方式快速开发：
+App/H5 集成了 UnoCSS 原子化 CSS 引擎，支持类名方式快速开发：
 
 ```vue
 <template>
   <view class="flex flex-col items-center p-4">
-    <view class="text-xl font-bold mb-4">Hello FastApp</view>
+    <view class="text-xl font-bold mb-4">Hello App/H5</view>
     <view class="w-full max-w-md bg-white rounded-lg shadow-md p-4">
-      <view class="text-gray-700">Welcome to FastApp</view>
+      <view class="text-gray-700">Welcome to App/H5</view>
     </view>
   </view>
 </template>
@@ -804,7 +804,7 @@ pnpm run type-check
 
 ## 🤝贡献指南
 
-欢迎为 FastApp 项目贡献代码！请遵循以下步骤：
+欢迎为 App/H5 shell 贡献代码！请遵循以下步骤：
 
 1. Fork 本仓库
 2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
@@ -814,4 +814,4 @@ pnpm run type-check
 
 ## 📄许可协议
 
-FastApp 项目采用 MIT 许可协议，详见 [LICENSE](https://github.com/fastapiadmin/FastApp/blob/master/LICENSE) 文件。
+本移动端 shell 与 Starter 一样采用 MIT 许可协议，详见仓库根目录 `LICENSE` 文件。

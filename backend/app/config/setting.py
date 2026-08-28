@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # ******************* API文档配置 ****************** #
     # ================================================= #
     DEBUG: bool = True  # 调试模式
-    TITLE: str = "🎉 FastapiAdmin 🎉 "  # 文档标题
+    TITLE: str = "FastAPI Admin Starter"  # 文档标题
     VERSION: str = "3.0.0"  # 版本号
     DESCRIPTION: str = "一个基于fastapi、sqlalchemy、redis实现的轻量化框架"  # 文档描述
     SUMMARY: str = "接口汇总"  # 文档概述
@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ******************* 登录认证配置 ****************** #
     # ================================================= #
-    SECRET_KEY: str = "fastapiadmin-dev-secret-key-do-not-use-in-production"  # JWT密钥（必须通过环境变量 SECRET_KEY 设置，无默认值）
+    SECRET_KEY: str = "fastapi-admin-starter-dev-secret-key-do-not-use-in-production"  # JWT密钥（必须通过环境变量 SECRET_KEY 设置，无默认值）
     ALGORITHM: str = "HS256"  # JWT算法
     ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 12  # access_token过期时间(秒)12 小时
     REFRESH_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 12  # refresh_token过期时间(秒)12 小时
@@ -168,7 +168,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ******************* 安全中间件配置 ****************** #
     # ================================================= #
-    ALLOWED_HOSTS: list[str] = ["service.fastapiadmin.com", "*.fastapiadmin.com"]  # 允许访问的主机名列表
+    ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]  # 允许访问的主机名列表
 
     # 操作日志保留天数（调度器按此天数定期清理过期日志）
     OPERATION_LOG_RETENTION_DAYS: int = 90

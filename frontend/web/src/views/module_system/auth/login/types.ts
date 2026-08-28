@@ -1,4 +1,4 @@
-export type AccountKey = "super" | "admin" | "user";
+export type AccountKey = "super" | "admin";
 
 export interface Account {
   key: AccountKey;

@@ -289,7 +289,7 @@
     },
     {
         "dict_sort": 1,
-        "dict_label": "演示函数",
+        "dict_label": "基础任务函数",
         "dict_value": "scheduler_test.job",
         "dict_type": "sys_job_function",
         "dict_type_id": 8,
@@ -297,7 +297,7 @@
         "list_class": null,
         "is_default": true,
         "status": 0,
-        "description": "演示函数"
+        "description": "内置任务处理器示例"
     },
     {
         "dict_sort": 1,

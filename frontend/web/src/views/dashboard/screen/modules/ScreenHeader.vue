@@ -6,7 +6,7 @@
     </div>
     <h1 class="screen-title">
       <span class="deco-line" />
-      FastapiAdmin · 智能运营数据监控平台
+      FastAPI Admin Starter · 系统运行概览
       <span class="deco-line" />
     </h1>
     <div class="header-right">

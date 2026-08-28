@@ -15,7 +15,7 @@
  * - count: 烟花播放次数（可选，默认为 3 次）
  * - fireworkInterval: 两次发射间隔毫秒（可选，默认 1000；调小更密集，如雪花连续感）
  * - skipFireworks: 为 true 时不放烟花，仅显示 scrollText（适合长期顶栏公告）
- * - scrollText 可使用占位符 {{version}}、{{introduceUrl}}（构建时替换为版本号与演示链接）
+ * - scrollText 可使用占位符 {{version}}（构建时替换为版本号）
  *
  * ## 礼花图与快捷键补充
  *
@@ -60,8 +60,7 @@ export const festivalConfigList: FestivalConfig[] = [
     skipFireworks: true,
     isResidentBanner: true,
     count: 3,
-    scrollText:
-      '🎉 {{version}}版本正式上线！能力全面提升，配套完整交付方案，助力高效开发与商业落地。 <a href="{{introduceUrl}}" target="_blank" rel="noopener noreferrer">👉 立即体验演示</a>',
+    scrollText: "欢迎使用 FastAPI Admin Starter。请先完成本地配置，再开始扩展业务模块。",
   },
 
   /**
