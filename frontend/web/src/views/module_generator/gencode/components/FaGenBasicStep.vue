@@ -108,7 +108,7 @@
                 <template #label>
                   包名
                   <ElTooltip
-                    content="插件包名（plugin 顶层目录）。三段式示例：module_example"
+                    content="插件包名（plugin 顶层目录）。三段式示例：module_custom"
                     placement="top"
                   >
                     <ElIcon><QuestionFilled /></ElIcon>
@@ -118,7 +118,7 @@
                   <ElInput
                     v-model="info.package_name"
                     class="flex-1 min-w-0"
-                    placeholder="例如 module_example"
+                    placeholder="例如 module_custom"
                     clearable
                   />
                 </div>

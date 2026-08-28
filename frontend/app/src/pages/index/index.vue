@@ -12,7 +12,6 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DashboardAPI } from '@/api/module_monitor/dashboard'
 import { NoticeAPI } from '@/api/module_system/notice'
-import { TicketAPI } from '@/api/module_system/ticket'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { useShare } from '@/composables/useShare'
 import { useTabbarActive } from '@/composables/useTabbarActive'
@@ -65,7 +64,6 @@ function getRouter() {
 
 const loading = ref(false)
 const dashboardStats = ref<DashboardStats | null>(null)
-const pendingTickets = ref(0)
 const recentNotices = ref<NoticeItem[]>([])
 
 /** 最新公告标题（通知栏展示，无公告则隐藏通知栏） */
@@ -89,9 +87,6 @@ onPageScroll((e) => {
 
 const NAV_LIST = [
   { icon: 'notification', titleKey: 'common.nav.notices', name: 'work-notices', color: 'var(--wot-green-6)', soft: 'wot-bg-green-1' },
-  { icon: 'message', titleKey: 'common.nav.tickets', name: 'work-tickets', color: 'var(--wot-orange-6)', soft: 'wot-bg-orange-1' },
-  { icon: 'interaction', titleKey: 'common.nav.aiChat', name: 'work-chat', color: 'var(--wot-cyan-6)', soft: 'wot-bg-cyan-1' },
-  { icon: 'robot', titleKey: 'common.nav.aiModels', name: 'work-ai-models', color: 'var(--wot-purple-6)', soft: 'wot-bg-purple-1' },
 ]
 
 /** 轮播 Banner 条目 */
@@ -108,7 +103,7 @@ interface BannerItem extends SwiperItem {
 
 /**
  * 顶部轮播 Banner（轮播图风格首页核心）：
- * 1. 今日问候  2. 待办工单  3. 数据概览
+ * 1. 今日问候  2. 数据概览
  */
 const banners = computed<BannerItem[]>(() => [
   {
@@ -120,16 +115,6 @@ const banners = computed<BannerItem[]>(() => [
     desc: t('index.welcomeBack'),
     cta: t('index.dataTitle'),
     onClick: () => scrollToMonitor(),
-  },
-  {
-    key: 'ticket',
-    tag: t('index.todo'),
-    cls: pendingTickets.value > 0 ? 'banner-slide--ticket' : 'banner-slide--ticket-empty',
-    title: pendingTickets.value > 0 ? t('index.pendingCount', { count: pendingTickets.value }) : t('index.allDone'),
-    subtitle: pendingTickets.value > 0 ? t('index.todoSubtitle') : t('index.doneSubtitle'),
-    desc: t('index.ticketDesc'),
-    cta: pendingTickets.value > 0 ? t('index.goHandle') : t('index.viewTickets'),
-    onClick: () => navigateTo('work-tickets'),
   },
   {
     key: 'stats',
@@ -269,16 +254,11 @@ function scrollToMonitor() {
 async function loadData() {
   loading.value = true
   try {
-    const [statsRes, ticketRes] = await Promise.allSettled([
-      DashboardAPI.getStats(),
-      TicketAPI.getPage({ page_no: 1, page_size: 1, status: '0' }),
-    ])
+    const [statsRes] = await Promise.allSettled([DashboardAPI.getStats()])
     if (statsRes.status === 'fulfilled') {
       dashboardStats.value = statsRes.value
       loginTrend.value = statsRes.value.login_trend || []
     }
-    if (ticketRes.status === 'fulfilled')
-      pendingTickets.value = ticketRes.value.total || 0
   }
   catch { /* silent */ }
   finally {
@@ -618,10 +598,8 @@ function getGreeting() {
     50% { transform: translateY(-14rpx) scale(1.06); }
   }
 
-  /* 问候 Banner：品牌卡，跟随主题色（primary），与用户卡/图表主色换肤一致；下方 ticket/stats 为语义色保留 */
+  /* 问候 Banner：品牌卡，跟随主题色（primary），与用户卡/图表主色换肤一致；下方 stats 为语义色保留 */
   &--greet { background: linear-gradient(135deg, var(--wot-primary-6), var(--wot-primary-4)); }
-  &--ticket { background: linear-gradient(135deg, var(--wot-orange-6), var(--wot-orange-4)); }
-  &--ticket-empty { background: linear-gradient(135deg, var(--wot-green-6), var(--wot-green-4)); }
   &--stats { background: linear-gradient(135deg, var(--wot-purple-6), var(--wot-purple-4)); }
 
   &__body {

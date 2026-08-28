@@ -28,7 +28,6 @@ import FastlinkProfile from "@views/fastlink/current/profile.vue";
 import FastlinkChangelog from "@views/fastlink/changelog/index.vue";
 import FastlinkPricing from "@views/fastlink/pricing/index.vue";
 import FastlinkTutorial from "@views/fastlink/tutorial/index.vue";
-import FastlinkFachat from "@views/fastlink/fachat/index.vue";
 
 // ──────── IframeRouteManager ────────
 
@@ -319,18 +318,6 @@ export const staticRoutes: AppRouteRecordRaw[] = [
               isHideTab: true,
             },
             component: FastlinkTutorial,
-          },
-          {
-            path: "fachat",
-            name: "FastlinkFachat",
-            meta: {
-              title: $t("menus.fachat.title"),
-              icon: "ri:message-3-line",
-              hidden: true,
-              keepAlive: true,
-              isHideTab: true,
-            },
-            component: FastlinkFachat,
           },
         ],
       },

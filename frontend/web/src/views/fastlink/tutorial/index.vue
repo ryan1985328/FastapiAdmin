@@ -184,37 +184,11 @@
                             <ElLink href="#page-cronnode" type="primary" underline="never">
                               节点管理
                             </ElLink>
-                            ·
-                            <ElLink href="#page-workflow" type="primary" underline="never">
-                              流程编排
-                            </ElLink>
-                            ·
-                            <ElLink href="#page-nodetype" type="primary" underline="never">
-                              节点类型
-                            </ElLink>
-                          </div>
-                        </li>
-                        <li>
-                          <ElLink href="#mod-ai" type="primary" underline="never">
-                            四、AI 模块
-                          </ElLink>
-                          <div class="toc-l2">
-                            <ElLink href="#page-ai-chat" type="primary" underline="never">
-                              AI智能助手
-                            </ElLink>
-                            ·
-                            <ElLink href="#page-ai-fachat" type="primary" underline="never">
-                              会话聊天
-                            </ElLink>
-                            ·
-                            <ElLink href="#page-ai-memory" type="primary" underline="never">
-                              会话记忆
-                            </ElLink>
                           </div>
                         </li>
                         <li>
                           <ElLink href="#mod-generator" type="primary" underline="never">
-                            五、代码生成器
+                            四、代码生成器
                           </ElLink>
                           <div class="toc-l2">
                             <ElLink href="#page-gencode" type="primary" underline="never">
@@ -224,7 +198,7 @@
                         </li>
                         <li>
                           <ElLink href="#mod-app" type="primary" underline="never">
-                            六、应用管理
+                            五、应用管理
                           </ElLink>
                           <div class="toc-l2">
                             <ElLink href="#page-portal" type="primary" underline="never">
@@ -233,18 +207,8 @@
                           </div>
                         </li>
                         <li>
-                          <ElLink href="#mod-example" type="primary" underline="never">
-                            七、示例模块
-                          </ElLink>
-                          <div class="toc-l2">
-                            <ElLink href="#page-demo" type="primary" underline="never">
-                              示例管理
-                            </ElLink>
-                          </div>
-                        </li>
-                        <li>
                           <ElLink href="#mod-dashboard" type="primary" underline="never">
-                            八、仪表盘
+                            六、仪表盘
                           </ElLink>
                           <div class="toc-l2">
                             <ElLink href="#page-home" type="primary" underline="never">首页</ElLink>
@@ -1102,37 +1066,21 @@ const MANUAL_TOC: ManualModule[] = [
     pages: [
       { anchor: "page-cronjob", title: "调度器监控" },
       { anchor: "page-cronnode", title: "节点管理" },
-      { anchor: "page-workflow", title: "流程编排" },
-      { anchor: "page-nodetype", title: "节点类型" },
-    ],
-  },
-  {
-    anchor: "mod-ai",
-    title: "四、AI 模块",
-    pages: [
-      { anchor: "page-ai-chat", title: "AI智能助手" },
-      { anchor: "page-ai-fachat", title: "会话聊天" },
-      { anchor: "page-ai-memory", title: "会话记忆" },
     ],
   },
   {
     anchor: "mod-generator",
-    title: "五、代码生成器",
+    title: "四、代码生成器",
     pages: [{ anchor: "page-gencode", title: "代码生成" }],
   },
   {
     anchor: "mod-app",
-    title: "六、应用管理",
+    title: "五、应用管理",
     pages: [{ anchor: "page-portal", title: "插件市场" }],
   },
   {
-    anchor: "mod-example",
-    title: "七、示例模块",
-    pages: [{ anchor: "page-demo", title: "示例管理" }],
-  },
-  {
     anchor: "mod-dashboard",
-    title: "八、仪表盘",
+    title: "六、仪表盘",
     pages: [
       { anchor: "page-home", title: "首页" },
       { anchor: "page-profile", title: "个人中心" },
@@ -1149,7 +1097,7 @@ const MANUAL_TOC: ManualModule[] = [
   },
   {
     anchor: "mod-layout",
-    title: "九、布局与通用功能",
+    title: "七、布局与通用功能",
     pages: [
       { anchor: "layout-main", title: "主布局" },
       { anchor: "layout-sidebar", title: "侧栏菜单" },
@@ -1166,7 +1114,7 @@ const MANUAL_TOC: ManualModule[] = [
   },
   {
     anchor: "mod-exception",
-    title: "十、异常页",
+    title: "八、异常页",
     pages: [
       { anchor: "page-401", title: "401" },
       { anchor: "page-403", title: "403" },
@@ -1176,7 +1124,7 @@ const MANUAL_TOC: ManualModule[] = [
   },
   {
     anchor: "mod-swagger",
-    title: "十一、接口文档（API）",
+    title: "九、接口文档（API）",
     pages: [
       { anchor: "page-swagger", title: "Swagger文档" },
       { anchor: "page-redoc", title: "Redoc文档" },

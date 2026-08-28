@@ -1,5 +1,4 @@
 # 与 pyproject.toml [project] dependencies 一致（生产 pip；不含 dev 组：pytest / ruff / fakeredis）
-agno==2.5.8                            # AI agent框架
 aiofiles==24.1.0                       # 文件操作
 aiosqlite==0.22.1                      # sqlite 异步操作数据库
 alembic==1.18.4                        # 数据库迁移
@@ -15,7 +14,6 @@ greenlet==3.5.2                        # 协程核心依赖（SQLAlchemy 异步�
 httpx==0.28.1                          # HTTP 客户端
 jinja2==3.1.6                          # 模板引擎
 loguru==0.7.3                          # 日志
-openai==2.46.0                         # OpenAI API
 openpyxl==3.1.5                        # Excel
 psutil==7.2.2                          # 系统信息
 psycopg[binary]==3.3.2                 # postgresql 同步驱动（含预编译 libpq，开箱即用）

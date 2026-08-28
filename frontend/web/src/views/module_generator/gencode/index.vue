@@ -1043,7 +1043,7 @@ function clearMasterSub() {
   });
 }
 
-/** module_example 风格下业务名可空；模块名示例见 demo、gen_demo */
+/** module_custom 风格下业务名可空；模块名示例见 item、generated_item */
 function validateBusinessName(_rule: unknown, value: unknown, callback: (e?: Error) => void) {
   const pkg = (info.package_name || "").trim();
   const mod = (info.module_name || "").trim();

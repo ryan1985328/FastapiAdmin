@@ -5,8 +5,6 @@ import UserAPI from '@/api/module_system/user'
 import { useGlobalDialog } from '@/composables/useGlobalDialog'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { useShare } from '@/composables/useShare'
-import { useTabbarActive } from '@/composables/useTabbarActive'
-import { useTicketStats } from '@/composables/useTicketStats'
 import { useUserStore } from '@/store/userStore'
 
 const { t } = useI18n()
@@ -46,11 +44,6 @@ function handleLogout() {
   })
 }
 
-/** 工单统计（共享缓存，与 work 页面复用，30秒内不重复请求） */
-const { pendingTickets, processingTickets, doneTickets, loadTicketStats } = useTicketStats()
-
-useTabbarActive('pages/mine/index', 'mine', loadTicketStats)
-
 const settingsList = [
   { titleKey: 'common.profile', name: 'profile' },
   { titleKey: 'mine.changePassword', name: 'account', dialog: true },
@@ -59,9 +52,6 @@ const settingsList = [
 
 const quickLinks = [
   { titleKey: 'common.nav.notices', name: 'work-notices', icon: 'notification', color: 'var(--wot-green-6)', soft: 'wot-bg-green-1' },
-  { titleKey: 'common.nav.tickets', name: 'work-tickets', icon: 'message', color: 'var(--wot-orange-6)', soft: 'wot-bg-orange-1' },
-  { titleKey: 'common.nav.aiChat', name: 'work-chat', icon: 'interaction', color: 'var(--wot-cyan-6)', soft: 'wot-bg-cyan-1' },
-  { titleKey: 'common.nav.aiModels', name: 'work-ai-models', icon: 'robot', color: 'var(--wot-purple-6)', soft: 'wot-bg-purple-1' },
 ]
 
 /** 修改密码弹窗（内嵌于「我的」页，免跳转） */
@@ -151,42 +141,6 @@ async function handleSubmitPassword() {
       >
         <wd-icon name="settings" size="20px" color="rgba(255, 255, 255, 0.9)" />
       </view>
-    </view>
-
-    <!-- 工单统计 -->
-    <view class="mx-3 mb-3">
-      <wd-row :gutter="12">
-        <wd-col :span="8">
-          <view class="wot-bg-filled-oppo rounded-2 p-4 text-center active:opacity-70" @click="navigateTo('work-tickets')">
-            <view class="wot-text-warning-main text-5 font-bold">
-              {{ pendingTickets ?? '-' }}
-            </view>
-            <view class="wot-text-text-secondary mt-1 text-3">
-              {{ t('mine.pendingTickets') }}
-            </view>
-          </view>
-        </wd-col>
-        <wd-col :span="8">
-          <view class="wot-bg-filled-oppo rounded-2 p-4 text-center active:opacity-70" @click="navigateTo('work-tickets')">
-            <view class="wot-text-primary-6 text-5 font-bold">
-              {{ processingTickets ?? '-' }}
-            </view>
-            <view class="wot-text-text-secondary mt-1 text-3">
-              {{ t('mine.processingTickets') }}
-            </view>
-          </view>
-        </wd-col>
-        <wd-col :span="8">
-          <view class="wot-bg-filled-oppo rounded-2 p-4 text-center active:opacity-70" @click="navigateTo('work-tickets')">
-            <view class="wot-text-success-main text-5 font-bold">
-              {{ doneTickets ?? '-' }}
-            </view>
-            <view class="wot-text-text-secondary mt-1 text-3">
-              {{ t('mine.doneTickets') }}
-            </view>
-          </view>
-        </wd-col>
-      </wd-row>
     </view>
 
     <!-- 快捷入口 -->

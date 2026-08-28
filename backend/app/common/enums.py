@@ -48,7 +48,6 @@ class RedisInitKeyConfig(Enum):
     SYSTEM_CONFIG = {"key": "system_config", "remark": "系统配置"}
     SYSTEM_DICT = {"key": "system_dict", "remark": "数据字典"}
     APSCHEDULER_LOCK_KEY = {"key": "scheduler_job_lock", "remark": "定时任务初始化锁"}
-    AI_MODEL_CONFIG = {"key": "ai_model_config", "remark": "用户AI模型配置"}
     WX_MINI_ACCESS_TOKEN = {"key": "wx_mini_access_token", "remark": "微信小程序 access_token 缓存"}
 
     @property
@@ -122,16 +121,6 @@ class InvoiceTypeEnum(str, Enum):
 
     VAT_NORMAL = "vat_normal"
     VAT_SPECIAL = "vat_special"
-
-
-@unique
-class TicketTypeEnum(str, Enum):
-    """工单类型"""
-
-    SUGGESTION = "suggestion"
-    BUG = "bug"
-    OPTIMIZE = "optimize"
-    OTHER = "other"
 
 
 # ==================== 系统返回码 ====================

@@ -5,7 +5,6 @@ description = "fastapiadmin后端工程"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "agno==2.5.8",
     "aiofiles==24.1.0",                         # 文件操作
     "alembic==1.18.4",                          # 数据库迁移
     "apscheduler==3.11.0",                      # 定时任务
@@ -36,7 +35,6 @@ dependencies = [
     "asyncpg==0.31.0",
     "psycopg[binary]==3.3.2",
     "pymysql==1.2.0",
-    "openai==2.46.0",
     "pydantic[email]>=2.12.5",
     "cryptography==50.0.0",                  # Fernet 对称加密（存储源密码加密）
     "paramiko==5.0.0",                       # SFTP 协议

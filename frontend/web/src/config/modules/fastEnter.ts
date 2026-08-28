@@ -38,15 +38,6 @@ const fastEnterConfig: FastEnterConfig = {
       routeName: "FastlinkPricing",
     },
     {
-      name: "聊天",
-      description: "即时通讯功能",
-      icon: "ri:user-line",
-      iconColor: "#13DEB9",
-      enabled: true,
-      order: 4,
-      routeName: "FastlinkFachat",
-    },
-    {
       name: "官方文档",
       description: "使用指南与开发文档",
       icon: "ri:book-open-line",

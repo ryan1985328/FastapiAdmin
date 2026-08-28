@@ -45,6 +45,7 @@ node_modules
 
 backend/logs
 backend/*.db
+backend/*.db-*
 backend/alembic/versions/*
 backend/env/.env.dev
 backend/env/.env.prod
@@ -52,6 +53,10 @@ backend/env/.env.test
 !backend/alembic/versions/.gitkeep
 
 docker/.env
+docker/docker-compose.local.yaml
+docker/mysql/data/
+docker/redis/conf/
+docker/redis/data/
 docker/nginx/app/dist
 docker/nginx/docs/dist
 docker/nginx/web/dist

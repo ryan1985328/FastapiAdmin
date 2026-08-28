@@ -1,7 +1,7 @@
 """简化的动态路由发现与注册。
 
 目录与命名规范：
-- 插件放在 ``app/plugin`` 下，顶级目录名以 ``module_`` 开头（如 ``module_example``）。
+- 插件放在 ``app/plugin`` 下，顶级目录名以 ``module_`` 开头（如 ``module_custom``）。
 - 控制器文件必须为 ``controller.py``。
 - 从 ``module_xxx`` 到 ``controller.py`` 的每级目录名须为合法 Python 标识符。
 - 每级目录应有 ``__init__.py``（或符合 namespace package 规则）。

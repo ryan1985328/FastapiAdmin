@@ -86,7 +86,7 @@ class GenTableSchema(BaseModel):
     module_name: str | None = Field(default=None, description="生成模块名")
     business_name: str | None = Field(
         default=None,
-        description=("功能子目录/路由段；导入时默认表名；同 module_name 下多表须不同。可含斜杠表示嵌套，参考 module_example：demo、demo/subdir、gen_demo。"),
+        description=("功能子目录/路由段；导入时默认表名；同 module_name 下多表须不同。可含斜杠表示嵌套，参考 module_custom：item、item/subdir、generated_item。"),
     )
     function_name: str | None = Field(default=None, description="生成功能名")
     sub_table_name: str | None = Field(default=None, description="关联子表的表名")
@@ -288,5 +288,4 @@ class GenTableQueryParam(BaseQueryParam, UserByQueryParam):
     table_name: str | None = Field(None, description="表名称", json_schema_extra={"q": "like"})
     table_comment: str | None = Field(None, description="表注释", json_schema_extra={"q": "like"})
     status: int | None = Field(None, ge=0, le=1, description="状态(0:启动 1:停用)", json_schema_extra={"q": "eq"})
-
 

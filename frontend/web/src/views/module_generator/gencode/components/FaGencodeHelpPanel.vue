@@ -20,13 +20,13 @@
         class="gencode-help-footnote mt-2.5 text-xs leading-relaxed text-(--el-text-color-secondary)"
       >
         包名、模块名、业务名见下方表单（业务名对应 plugin 下功能目录，可与
-        <code>module_example</code>
+        <code>module_custom</code>
         中
-        <code>demo</code>
+        <code>item</code>
         、
-        <code>demo/subdir</code>
+        <code>item/subdir</code>
         、
-        <code>gen_demo</code>
+        <code>generated_item</code>
         对照）。权限为
         <code>包名:模块名:操作</code>
         ，第三段是操作类型（如

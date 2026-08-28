@@ -169,7 +169,7 @@ class GenTableService:
         # 目录菜单固定跳到模块根：/{module_xxx}/{module_name}
         catalog_route_path = f"/{route_first}/{mn}"
         redirect = f"/{route_first}/{mn}"
-        # route_name 须唯一且体现「分系统+模块目录」，勿仅用 package（会与 module_example 根混淆）
+        # route_name 须唯一且体现「分系统+模块目录」，勿仅用 package（会与插件根混淆）
         catalog_route_name = CamelCaseUtil.snake_to_camel(f"{route_first}_{mn}")
         created = await menu_crud.create(
             MenuCreateSchema(
@@ -682,7 +682,7 @@ class GenTableService:
 
         # 按“上级目录”规则矫正最终包名（分系统根）
         gen_table_schema.package_name = await self._effective_package_name(gen_table_schema.parent_menu_id, gen_table_schema.package_name)
-        # 统一权限前缀（对齐 module_example/demo）：
+        # 统一权限前缀（对齐 module_custom/item）：
         # - module_xxx:module_name（操作在按钮/模板中追加 :query/:create...）
         pn = (gen_table_schema.package_name or "").strip()
         mn = (gen_table_schema.module_name or "").strip()

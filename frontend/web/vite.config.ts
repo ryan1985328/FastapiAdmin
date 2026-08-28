@@ -95,7 +95,6 @@ export default ({ mode }: { mode: string }) => {
             if (id.includes("@wangeditor")) return "wangeditor";
             if (id.includes("codemirror")) return "codemirror";
             if (id.includes("exceljs")) return "exceljs";
-            if (id.includes("@vue-flow") || id.includes("dagre")) return "vue-flow";
             if (id.includes("highlight.js") || id.includes("highlightjs")) return "highlight";
             if (id.includes("xgplayer")) return "xgplayer";
             if (id.includes("markdown-it")) return "markdown";
@@ -241,10 +240,6 @@ export default ({ mode }: { mode: string }) => {
     ],
     optimizeDeps: {
       include: [
-        "@vue-flow/core",
-        "@vue-flow/background",
-        "@vue-flow/controls",
-        "@vue-flow/minimap",
         "vue",
         "vue-router",
         "element-plus",
@@ -357,7 +352,6 @@ export default ({ mode }: { mode: string }) => {
         "qrcode.vue",
         "xlsx",
         "highlight.js",
-        "dagre",
         "dompurify",
         "markdown-it",
         "crypto-js",

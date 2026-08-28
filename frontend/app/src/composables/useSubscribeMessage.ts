@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
  * 微信订阅消息 composable
  *
  * 封装 wx.requestSubscribeMessage，在用户操作时请求订阅消息授权。
- * 常见场景：工单状态变更、通知公告发布、系统到期提醒等。
+ * 常见场景：通知公告发布、系统到期提醒等。
  *
  * 使用前提：
  * 1. 在微信公众平台配置订阅消息模板
@@ -15,24 +15,20 @@ import { useI18n } from 'vue-i18n'
  * ```ts
  * const { subscribe } = useSubscribeMessage()
  *
- * // 提交工单时订阅"工单状态变更"通知
- * async function submitTicket() {
- *   await subscribe([TEMPLATE_IDS.TICKET_STATUS])
- *   // ...提交工单
+ * // 发布公告时订阅通知
+ * async function subscribeNotice() {
+ *   await subscribe([TEMPLATE_IDS.NOTICE_PUBLISH])
+ *   // ...发布公告
  * }
  * ```
  */
 
 /** 订阅消息模板 ID（在微信公众平台 → 订阅消息中配置） */
 export const TEMPLATE_IDS = {
-  /** 工单状态变更通知 */
-  TICKET_STATUS: '',
   /** 通知公告发布提醒 */
   NOTICE_PUBLISH: '',
   /** 系统到期提醒 */
   SYSTEM_EXPIRY: '',
-  /** 工单回复通知 */
-  TICKET_REPLY: '',
 } as const
 
 /** 订阅消息模板 ID 类型 */

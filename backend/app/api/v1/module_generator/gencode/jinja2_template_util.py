@@ -165,7 +165,7 @@ class Jinja2TemplateUtil:
         business_name = (gen_table.business_name or "").strip()
         function_name = gen_table.function_name or ""
 
-        # 生成规则（对齐 module_example/demo）：
+        # 生成规则（对齐 module_custom/item）：
         # - 分系统根：package_name = module_xxx
         # - 目录固定为：module_xxx / module_name（不再额外使用业务名作为目录层级）
         # - 权限前缀固定为：module_xxx:module_name（操作在模板里再拼 :query/:create...）
@@ -667,7 +667,7 @@ class Jinja2TemplateUtil:
         """获取前端 API 路径首段，与 `discover` 中插件路由前缀一致（`module_xxx` → `xxx`）。
 
         参数:
-        - module_name (str | None): 模块名，如 ``module_example``。
+        - module_name (str | None): 模块名，如 ``module_custom``。
 
         返回:
         - str: 路由前缀，如 ``example``。
