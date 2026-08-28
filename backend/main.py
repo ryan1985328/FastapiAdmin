@@ -8,7 +8,6 @@ from alembic.config import Config
 from fastapi import FastAPI
 
 from app.common.enums import EnvironmentEnum
-from app.config.setting import settings
 from app.utils.banner import worship
 
 fastapiadmin_cli = typer.Typer()
@@ -21,6 +20,7 @@ def create_app() -> FastAPI:
     返回:
     - FastAPI: 已配置生命周期的应用对象。
     """
+    from app.config.setting import settings
     from app.init_app import lifespan, register_docs, register_exceptions, register_frontend, register_middlewares, register_routers, register_static
 
     # 创建FastAPI应用
@@ -58,6 +58,7 @@ def run(
     """
     # 设置环境变量（必须在 import settings 之前，确保加载正确环境）
     os.environ["ENVIRONMENT"] = env.value
+    from app.config.setting import settings
 
     typer.secho(
         message=f"{worship()}",
