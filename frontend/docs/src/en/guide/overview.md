@@ -22,7 +22,7 @@ description: "Project overview: FastAPI Admin Starter, its async backend, admin 
 ## Engineering Structure
 
 ```sh
-FastAPI-Admin-Starter/
+FastapiAdmin/
 ├─ backend/               # Backend (FastAPI + Python)
 ├─ frontend/              # Frontend projects
 │   ├── web/              # Web frontend (Vue3 + Element Plus)

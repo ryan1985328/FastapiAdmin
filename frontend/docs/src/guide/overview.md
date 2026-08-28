@@ -24,7 +24,7 @@ outline: "deep"
 项目采用 **Monorepo** 架构，所有子工程在同一仓库中协同开发：
 
 ```sh
-FastAPI-Admin-Starter/
+FastapiAdmin/
 ├─ backend/               # 后端工程 (FastAPI + Python)
 ├─ frontend/              # 前端工程
 │   ├── web/              # Web 前端 (Vue3 + Element Plus)
