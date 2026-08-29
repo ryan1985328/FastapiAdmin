@@ -3,7 +3,7 @@ import type { UniappNormalResponse } from '../types'
 import AdapterUniapp from '@alova/adapter-uniapp'
 import { createAlova } from 'alova'
 import VueHook from 'alova/vue'
-import AuthAPI from '@/api/module_system/auth'
+import AppAuthAPI from '@/api/module_app/auth'
 import { useUserStore } from '@/store/userStore'
 import { toLoginPage } from '@/utils/toLoginPage'
 import { ContentTypeEnum, HttpStatus, ResultEnum, ShowMessage } from '../tools/enum'
@@ -78,7 +78,7 @@ async function handleUnauthorized(method: Method, rawData: any): Promise<unknown
       const refreshToken = userStore.getRefreshToken()
       if (!refreshToken)
         throw new Error('[认证失效]：请重新登录')
-      const res = await AuthAPI.refreshToken({ refresh_token: refreshToken })
+      const res = await AppAuthAPI.refreshToken({ refresh_token: refreshToken })
       if (!res?.access_token)
         throw new Error('[认证失效]：登录已过期')
       userStore.setAccessToken(res.access_token)

@@ -3,8 +3,7 @@ import type { FormSchema } from '@wot-ui/ui/components/wd-form/types'
 import { onLoad } from '@dcloudio/uni-app'
 import { reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import AuthAPI from '@/api/module_system/auth'
-import UserAPI from '@/api/module_system/user'
+import AppAuthAPI from '@/api/module_app/auth'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { REMEMBER_ME_KEY } from '@/constants'
 import { useConfigStore } from '@/store/configStore'
@@ -80,20 +79,10 @@ function handleAgreementOpen() {
   // #endif
 }
 
-/**
- * 注册成功后尝试自动登录：
- * - 系统未启用滑块验证码 → 直接登录进入首页
- * - 验证码启用 / 自动登录失败 → 记住用户名回登录页，由用户完成滑块后登录
- */
+/** 注册成功后直接使用独立 App 认证登录。 */
 async function autoLoginAfterRegister(username: string, password: string) {
   try {
-    const captcha = await AuthAPI.getCaptcha()
-    if (captcha?.enable) {
-      Storage.set(REMEMBER_ME_KEY, { username, remember: true })
-      uni.reLaunch({ url: '/pages/login/index' })
-      return
-    }
-    await userStore.login({ username, password, remember: true, login_type: '移动端' })
+    await userStore.login({ username, password, remember: true })
     uni.reLaunch({ url: '/pages/index/index' })
   }
   catch {
@@ -117,7 +106,7 @@ async function handleSubmit() {
   const name = registerForm.name.trim()
   submitting.value = true
   try {
-    await UserAPI.registerUser({ username, name, password: registerForm.password })
+    await AppAuthAPI.register({ username, nickname: name, password: registerForm.password })
     toast.success(t('register.success'))
     await autoLoginAfterRegister(username, registerForm.password)
   }

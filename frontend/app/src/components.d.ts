@@ -31,7 +31,6 @@ declare module 'vue' {
     WdConfigProvider: typeof import('@wot-ui/ui/components/wd-config-provider/wd-config-provider.vue')['WdConfigProvider']
     WdCountTo: typeof import('@wot-ui/ui/components/wd-count-to/wd-count-to.vue')['WdCountTo']
     WdDialog: typeof import('@wot-ui/ui/components/wd-dialog/wd-dialog.vue')['WdDialog']
-    WdDivider: typeof import('@wot-ui/ui/components/wd-divider/wd-divider.vue')['WdDivider']
     WdEmpty: typeof import('@wot-ui/ui/components/wd-empty/wd-empty.vue')['WdEmpty']
     WdFab: typeof import('@wot-ui/ui/components/wd-fab/wd-fab.vue')['WdFab']
     WdForm: typeof import('@wot-ui/ui/components/wd-form/wd-form.vue')['WdForm']
@@ -51,7 +50,6 @@ declare module 'vue' {
     WdRow: typeof import('@wot-ui/ui/components/wd-row/wd-row.vue')['WdRow']
     WdSearch: typeof import('@wot-ui/ui/components/wd-search/wd-search.vue')['WdSearch']
     WdSkeleton: typeof import('@wot-ui/ui/components/wd-skeleton/wd-skeleton.vue')['WdSkeleton']
-    WdSlideVerify: typeof import('@wot-ui/ui/components/wd-slide-verify/wd-slide-verify.vue')['WdSlideVerify']
     WdSwiper: typeof import('@wot-ui/ui/components/wd-swiper/wd-swiper.vue')['WdSwiper']
     WdSwitch: typeof import('@wot-ui/ui/components/wd-switch/wd-switch.vue')['WdSwitch']
     WdTabbar: typeof import('@wot-ui/ui/components/wd-tabbar/wd-tabbar.vue')['WdTabbar']
@@ -60,7 +58,6 @@ declare module 'vue' {
     WdText: typeof import('@wot-ui/ui/components/wd-text/wd-text.vue')['WdText']
     WdTextarea: typeof import('@wot-ui/ui/components/wd-textarea/wd-textarea.vue')['WdTextarea']
     WdToast: typeof import('@wot-ui/ui/components/wd-toast/wd-toast.vue')['WdToast']
-    WdUpload: typeof import('@wot-ui/ui/components/wd-upload/wd-upload.vue')['WdUpload']
     WdWatermark: typeof import('@wot-ui/ui/components/wd-watermark/wd-watermark.vue')['WdWatermark']
   }
 }

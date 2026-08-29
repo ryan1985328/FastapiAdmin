@@ -16,7 +16,7 @@ export function useWatermark() {
   const stored = Storage.get<boolean | { value: boolean }>(WATERMARK_KEY)
   const localSwitch = ref(typeof stored === 'object' && stored ? Boolean(stored.value) : (stored ?? true))
 
-  const content = computed(() => userStore.userInfo?.username || userStore.userInfo?.name || '')
+  const content = computed(() => userStore.userInfo?.username || userStore.userInfo?.nickname || '')
   const enabled = computed(() => localSwitch.value && !!content.value)
   // 水印文字使用当前主题色，主题色切换后经 wd-watermark 的 props deep watch 自动重绘
   const color = computed(() => themeStore.currentThemeColor.primary)

@@ -1,15 +1,14 @@
-import type { LoginFormData, LoginResult } from '@/api/module_system/auth'
-import type { UserInfo } from '@/api/module_system/user'
+import type { AppLoginForm, AppLoginResult } from '@/api/module_app/auth'
+import type { AppUserInfo } from '@/api/module_app/user'
 import { defineStore } from 'pinia'
-import AuthAPI from '@/api/module_system/auth'
-import UserAPI from '@/api/module_system/user'
+import AppAuthAPI from '@/api/module_app/auth'
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/constants'
 import { Storage } from '@/utils/storage'
 
 export const useUserStore = defineStore('appUserInfo', {
   state: () => ({
     // userInfo 由 persist 插件自动持久化（存储 key 即 store id：appUserInfo），无需手动读写 Storage
-    userInfo: null as UserInfo | null,
+    userInfo: null as AppUserInfo | null,
     isLoggingIn: false,
   }),
 
@@ -47,13 +46,13 @@ export const useUserStore = defineStore('appUserInfo', {
     },
 
     // 获取用户信息（直接读取响应式 state）
-    getUserInfo(): UserInfo | null {
+    getUserInfo(): AppUserInfo | null {
       return this.userInfo
     },
 
     // 设置用户信息（合并更新 state，由 persist 插件自动持久化）
-    setUserInfo(userInfo: Partial<UserInfo>): void {
-      this.userInfo = { ...(this.userInfo ?? {}), ...userInfo } as UserInfo
+    setUserInfo(userInfo: Partial<AppUserInfo>): void {
+      this.userInfo = { ...(this.userInfo ?? {}), ...userInfo } as AppUserInfo
     },
 
     // 清除用户信息（置空 state，由 persist 插件自动同步存储）
@@ -72,7 +71,7 @@ export const useUserStore = defineStore('appUserInfo', {
       return !!(this.getAccessToken() && this.userInfo)
     },
 
-    async handleLogin(loginFn: () => Promise<LoginResult>, loginType: string): Promise<LoginResult> {
+    async handleLogin(loginFn: () => Promise<AppLoginResult>, loginType: string): Promise<AppLoginResult> {
       if (this.isLoggingIn)
         throw new Error('登录中，请稍后')
 
@@ -97,24 +96,22 @@ export const useUserStore = defineStore('appUserInfo', {
     },
 
     // 账号密码登录
-    async login(data: LoginFormData): Promise<LoginResult> {
-      return this.handleLogin(() => AuthAPI.login(data), '账号密码')
-    },
-
-    // 微信小程序登录（code → 后端换 token）
-    async wxLogin(data: { code: string, nickname?: string, avatar?: string }): Promise<LoginResult> {
-      return this.handleLogin(() => AuthAPI.wxLogin(data), '微信')
-    },
-
-    // 微信手机号快速登录（2023+ 新方案：仅传 code）
-    async wxPhoneLogin(data: { code: string }): Promise<LoginResult> {
-      return this.handleLogin(() => AuthAPI.wxPhoneLogin(data), '微信手机号')
+    async login(data: AppLoginForm): Promise<AppLoginResult> {
+      return this.handleLogin(() => AppAuthAPI.login(data), '账号密码')
     },
 
     // 获取用户信息
-    async getInfo(): Promise<UserInfo | null> {
+    // 微信登录保留 composable 兼容入口；App 用户 OAuth/微信身份本阶段不接入。
+    async wxLogin(_data: { code: string, nickname?: string, avatar?: string }): Promise<never> {
+      throw new Error('App 用户微信登录尚未接入')
+    },
+
+    async wxPhoneLogin(_data: { code: string }): Promise<never> {
+      throw new Error('App 用户手机号登录尚未接入')
+    },
+    async getInfo(): Promise<AppUserInfo | null> {
       try {
-        const userInfoData = await UserAPI.getCurrentUserInfo()
+        const userInfoData = await AppAuthAPI.getCurrentUser()
         this.setUserInfo(userInfoData)
         return userInfoData
       }
@@ -127,7 +124,7 @@ export const useUserStore = defineStore('appUserInfo', {
     // 登出
     async logout(): Promise<void> {
       try {
-        await AuthAPI.logout(this.getAccessToken() || '') // 调用后台注销接口（body 为 JWT 字符串）
+        await AppAuthAPI.logout()
       }
       catch (error) {
         console.error('登出失败', error)

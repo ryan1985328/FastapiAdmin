@@ -1,11 +1,9 @@
 <script lang="ts" setup>
 import type { FormSchema } from '@wot-ui/ui/components/wd-form/types'
-import type { SlideVerifyInstance } from '@wot-ui/ui/components/wd-slide-verify/types'
-import type { CaptchaInfo, LoginFormData, OAuthProvider } from '@/api/module_system/auth'
+import type { AppLoginForm } from '@/api/module_app/auth'
 import { onLoad } from '@dcloudio/uni-app'
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import AuthAPI from '@/api/module_system/auth'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { REMEMBER_ME_KEY } from '@/constants'
 import { useConfigStore } from '@/store/configStore'
@@ -17,21 +15,19 @@ useI18nNavTitle('login.navTitle')
 
 const { t } = useI18n()
 const loginFormRef = ref()
-const sliderCaptchaRef = ref<SlideVerifyInstance>()
 const loading = ref(false)
 const userStore = useUserStore()
 const configStore = useConfigStore()
 const redirect = ref('/pages/index/index')
 
-/** 规范化 BASE_URL（保证以 / 结尾），用于拼接静态资源路径：H5 下避免 base '/app' 拼出 /appstatic/xxx */
+/** 规范化 BASE_URL（保证以 / 结尾），用于拼接静态资源路径 */
 const BASE_PATH = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
 
-/** 品牌区参数（来自后端系统参数，带默认值兜底；web 端消费方式：configData?.[key]?.config_value） */
+/** 品牌区参数来自现有系统参数，继续复用 App 壳配置 */
 const brandLogo = computed(() => configStore.configData?.logo_url?.config_value?.trim() || `${BASE_PATH}static/logo.png`)
-const brandTitle = computed(() => configStore.configData?.sys_name?.config_value?.trim() || 'FastapiAdmin')
+const brandTitle = computed(() => configStore.configData?.sys_name?.config_value?.trim() || 'FastAPI Admin Starter')
 const brandSubtitle = computed(() => configStore.configData?.login_title?.config_value?.trim() || t('login.brandSubtitle'))
 
-/** 表单验证 schema — 用户名/密码字段级错误提示（wot-ui 函数式校验） */
 const loginSchema: FormSchema = {
   validate: (model) => {
     const errors: Array<{ path: Array<string | number>, message: string }> = []
@@ -39,51 +35,21 @@ const loginSchema: FormSchema = {
     const password = String(model.password ?? '')
     if (!username)
       errors.push({ path: ['username'], message: t('common.form.usernameRequired') })
-    else if (username.length < 3 || username.length > 20)
+    else if (username.length < 3 || username.length > 64)
       errors.push({ path: ['username'], message: t('login.usernameLength') })
     if (!password)
       errors.push({ path: ['password'], message: t('common.form.passwordRequired') })
-    else if (password.length < 6 || password.length > 20)
+    else if (password.length < 6 || password.length > 128)
       errors.push({ path: ['password'], message: t('login.passwordLength') })
     return errors
   },
 }
 
-const loginFormData = reactive<LoginFormData>({
+const loginFormData = reactive<AppLoginForm>({
   username: '',
   password: '',
-  captcha: '',
-  captcha_key: '',
   remember: true,
-  login_type: '移动端',
 })
-
-const captchaState = reactive<CaptchaInfo>({ enable: false, key: '', img_base: '' })
-
-/**
- * wd-slide-verify 在小程序端 onMounted 时容器可能尚未完成布局，
- * getRect 测量到 0 宽高 → maxPosition=0 → 滑块无法拖动。
- * 渲染完成后延迟重试 init()，直至组件实例就绪并重新测量。
- */
-watch(() => captchaState.enable, async (enabled) => {
-  if (!enabled)
-    return
-  await nextTick()
-  retrySliderInit()
-})
-
-function retrySliderInit(retry = 0) {
-  const verify = sliderCaptchaRef.value
-  if (!verify) {
-    if (retry < 5)
-      setTimeout(() => retrySliderInit(retry + 1), 120)
-    return
-  }
-  verify.init()
-}
-
-/** 滑块验证是否已通过（后端返回 verified=true 后置位） */
-const sliderPassed = ref(false)
 
 /** 从本地存储恢复记住的用户名（仅用户名，不存储密码） */
 function restoreRememberedUser() {
@@ -94,150 +60,40 @@ function restoreRememberedUser() {
   }
 }
 
-async function getLoginCaptcha() {
-  try {
-    const result = await AuthAPI.getCaptcha()
-    if (result && typeof result === 'object') {
-      captchaState.enable = Boolean(result.enable)
-      captchaState.key = result.key || ''
-      captchaState.img_base = result.img_base || ''
-      if (captchaState.enable) {
-        loginFormData.captcha_key = captchaState.key
-        // 重置滑块到初始状态
-        resetSliderCaptcha()
-      }
-    }
-    else {
-      captchaState.enable = false
-    }
-  }
-  catch (e) {
-    console.error('验证码获取失败', e)
-    captchaState.enable = false
-  }
-}
-
-/**
- * wd-slide-verify 拖动到终点触发 success — 调用后端 slider_complete 接口标记验证完成
- * 后端仅标记 captcha_key 状态为 verified，不校验 x 坐标
- */
-async function handleSliderSuccess() {
-  if (!captchaState.key) {
-    uni.showToast({ title: t('login.captchaExpired'), icon: 'none' })
-    sliderCaptchaRef.value?.reset()
-    return
-  }
-
-  try {
-    const result = await AuthAPI.completeSliderCaptcha({
-      captcha_key: captchaState.key,
-      x: 100, // 占位值，后端未使用
-    })
-    if (result?.verified) {
-      sliderPassed.value = true
-      loginFormData.captcha = 'verified' // 占位值，后端只校验 captcha_key 状态
-    }
-    else {
-      uni.showToast({ title: t('login.sliderFailed'), icon: 'none' })
-      sliderCaptchaRef.value?.reset()
-    }
-  }
-  catch (e) {
-    console.error('滑块验证失败', e)
-    uni.showToast({ title: t('login.sliderFailed'), icon: 'none' })
-    sliderCaptchaRef.value?.reset()
-  }
-}
-
-/** 重置滑块验证状态并清空占位验证值（验证码刷新 / 拖动未到终点触发 fail 时） */
-function resetSliderCaptcha() {
-  sliderPassed.value = false
-  loginFormData.captcha = ''
-  sliderCaptchaRef.value?.reset()
-}
-
 onLoad((options) => {
   const from = options?.redirect ? decodeURIComponent(options.redirect) : ''
-  // 安全验证：仅允许本地页面路径，防止开放重定向攻击
-  if (from && from !== '/pages/login/index' && from.startsWith('/pages/')) {
+  if (from && from !== '/pages/login/index' && from.startsWith('/pages/'))
     redirect.value = from
-  }
   restoreRememberedUser()
-  getLoginCaptcha()
-  // 拉取系统参数（品牌区 logo/标题/副标题），幂等 + 本地持久化缓存
   configStore.getConfig()
 })
 
-/** 登录提交 — 防抖 + 字段验证 + 滑块校验 + 错误提示 + 记住密码 */
 async function handleSubmit() {
   if (loading.value)
     return
 
-  // 滑块验证前置校验
-  if (captchaState.enable && !sliderPassed.value) {
-    uni.showToast({ title: t('login.sliderRequired'), icon: 'none' })
-    return
-  }
-
   loading.value = true
   try {
     const { valid } = await loginFormRef.value.validate()
-    if (!valid) {
-      loading.value = false
+    if (!valid)
       return
-    }
     await userStore.login(loginFormData)
-    // 登录成功后处理记住密码：仅存储用户名，不存储密码
-    if (loginFormData.remember) {
+    if (loginFormData.remember)
       Storage.set(REMEMBER_ME_KEY, { username: loginFormData.username, remember: true })
-    }
-    else {
+    else
       Storage.remove(REMEMBER_ME_KEY)
-    }
     uni.reLaunch({ url: redirect.value })
   }
   catch {
     uni.showToast({ title: t('login.loginFailed'), icon: 'none', duration: 2500 })
-    // 登录失败后自动刷新验证码并重置滑块
-    if (captchaState.enable)
-      getLoginCaptcha()
   }
   finally {
     loading.value = false
   }
 }
 
-/** 跳转注册页 */
 function goRegister() {
   uni.navigateTo({ url: '/pages/login/register/index' })
-}
-
-/** 跳转忘记密码页 */
-function goForget() {
-  uni.navigateTo({ url: '/pages/login/forget/index' })
-}
-
-/** 第三方 OAuth 登录 */
-async function handleOAuth(provider: OAuthProvider) {
-  try {
-    const result = await AuthAPI.getOAuthLoginUrl(provider)
-    if (result?.url) {
-      // #ifdef H5
-      window.location.href = result.url
-      // #endif
-      // #ifdef MP-WEIXIN
-      uni.setClipboardData({
-        data: result.url,
-        success: () => {
-          uni.showToast({ title: t('login.oauthCopyTip'), icon: 'none' })
-        },
-      })
-      // #endif
-    }
-  }
-  catch {
-    uni.showToast({ title: t('login.oauthFailed'), icon: 'none' })
-  }
 }
 </script>
 
@@ -286,23 +142,11 @@ async function handleOAuth(provider: OAuthProvider) {
           />
         </wd-form-item>
 
-        <!-- Slider Captcha — wd-slide-verify 滑块拖动验证（条件显示） -->
-        <wd-form-item v-if="captchaState.enable" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
-          <wd-slide-verify
-            ref="sliderCaptchaRef"
-            :text="t('login.sliderText')"
-            :success-text="t('login.sliderSuccessText')"
-            @success="handleSliderSuccess"
-            @fail="resetSliderCaptcha"
-          />
-        </wd-form-item>
-
-        <!-- 记住密码 + 忘记密码 -->
+        <!-- 记住用户名（不保存密码） -->
         <view class="login-options">
           <wd-checkbox v-model="loginFormData.remember" size="18px">
             {{ t('login.remember') }}
           </wd-checkbox>
-          <wd-text class="forgot-link" :text="t('login.forgot')" type="primary" @click="goForget" />
         </view>
 
         <!-- Submit -->
@@ -316,44 +160,6 @@ async function handleOAuth(provider: OAuthProvider) {
           {{ loading ? t('login.submitting') : t('login.submit') }}
         </wd-button>
       </wd-form>
-    </view>
-
-    <!-- OAuth Login -->
-    <view class="oauth-section">
-      <wd-divider>{{ t('login.thirdParty') }}</wd-divider>
-      <wd-grid :column="4" clickable :gutter="10">
-        <!-- WeChat -->
-        <wd-grid-item @click="handleOAuth('wechat')">
-          <view class="oauth-btn__icon" style="background: #07C160">
-            <image class="oauth-btn__iconify" src="/static/icons/wechat.svg" />
-          </view>
-          <wd-text class="oauth-btn__label" :text="t('login.wechat')" />
-        </wd-grid-item>
-
-        <!-- QQ -->
-        <wd-grid-item @click="handleOAuth('qq')">
-          <view class="oauth-btn__icon" style="background: #12B7F5">
-            <image class="oauth-btn__iconify" src="/static/icons/qq.svg" />
-          </view>
-          <wd-text class="oauth-btn__label" :text="t('login.qq')" />
-        </wd-grid-item>
-
-        <!-- Gitee -->
-        <wd-grid-item @click="handleOAuth('gitee')">
-          <view class="oauth-btn__icon" style="background: #C71D23">
-            <image class="oauth-btn__iconify" src="/static/icons/gitee.svg" />
-          </view>
-          <wd-text class="oauth-btn__label" :text="t('login.gitee')" />
-        </wd-grid-item>
-
-        <!-- GitHub -->
-        <wd-grid-item @click="handleOAuth('github')">
-          <view class="oauth-btn__icon" style="background: #24292F">
-            <image class="oauth-btn__iconify" src="/static/icons/github.svg" />
-          </view>
-          <wd-text class="oauth-btn__label" :text="t('login.github')" />
-        </wd-grid-item>
-      </wd-grid>
     </view>
 
     <!-- Footer -->

@@ -31,7 +31,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 useShare(() => ({
-  title: t('index.shareTitle', { greeting: t(`index.${getGreeting()}`), name: userStore.userInfo?.name || t('common.admin') }),
+  title: t('index.shareTitle', { greeting: t(`index.${getGreeting()}`), name: userStore.userInfo?.nickname || t('common.admin') }),
   path: '/pages/index/index',
 }))
 
@@ -110,7 +110,7 @@ const banners = computed<BannerItem[]>(() => [
     key: 'greet',
     tag: t('index.today'),
     cls: 'banner-slide--greet',
-    title: `${t(`index.${getGreeting()}`)}，${userStore.userInfo?.name || t('common.admin')}`,
+    title: `${t(`index.${getGreeting()}`)}，${userStore.userInfo?.nickname || t('common.admin')}`,
     subtitle: getDateString(),
     desc: t('index.welcomeBack'),
     cta: t('index.dataTitle'),

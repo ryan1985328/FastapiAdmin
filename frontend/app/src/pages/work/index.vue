@@ -61,10 +61,10 @@ const filteredGroups = computed(() => {
       />
       <view class="min-w-0 flex-1">
         <view class="text-4 text-white font-bold">
-          {{ userInfo?.name || t('work.nameFallback') }}
+          {{ userInfo?.nickname || t('work.nameFallback') }}
         </view>
         <view class="mt-1 truncate text-3" style="color: rgba(255, 255, 255, 0.75);">
-          {{ userInfo?.roles?.map(r => r.name).join(', ') || t('work.roleFallback') }}
+          {{ userInfo?.username || t('work.roleFallback') }}
         </view>
       </view>
     </view>
