@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.response import ResponseSchema, SuccessResponse
 from app.core.base_schema import AuthSchema, BatchSetAvailable, PageResultSchema, PaginationQueryParam
-from app.core.dependencies import AuthPermission, db_getter, get_current_user
+from app.core.dependencies import AuthPermission, db_getter
 from app.core.router_class import OperationLogRoute
 
 from .schema import NoticeCreateSchema, NoticeOutSchema, NoticeQueryParam, NoticeUpdateSchema
@@ -84,8 +84,8 @@ async def batch_set_available_notice_controller(
 
 @NoticeRouter.get("/available", summary="获取全局启用公告", response_model=ResponseSchema[list[NoticeOutSchema]])
 async def get_notice_list_available_controller(
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
-    result_dict = await NoticeService(auth, db).available_page()
+    # 公共 App 只读取已启用公告；后台列表与写操作仍走 Admin Auth/RBAC。
+    result_dict = await NoticeService(AuthSchema(), db).available_page()
     return SuccessResponse(data=result_dict.items, msg="查询已启用公告列表成功")

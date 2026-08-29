@@ -1,112 +1,142 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { useShare } from '@/composables/useShare'
-import { useUserStore } from '@/store/userStore'
 
 const { t } = useI18n()
+const router = useRouter()
 
 useShare({
-  title: t('work.shareTitle'),
+  title: t('discover.shareTitle'),
   path: '/pages/work/index',
 })
 
 definePage({
-  name: 'work',
+  name: 'discover',
   layout: 'tabbar',
-  style: { navigationBarTitleText: '工作台' },
+  style: { navigationBarTitleText: '发现' },
 })
-useI18nNavTitle('work.navTitle')
+useI18nNavTitle('discover.navTitle')
 
-const router = useRouter()
-const userStore = useUserStore()
-const userInfo = computed(() => userStore.userInfo)
-function navigateTo(name: string) {
-  router.push({ name })
-}
-
-const groups = [
+const publicEntries = [
   {
-    titleKey: 'work.businessCenter',
-    color: 'var(--wot-orange-6)',
-    bg: 'wot-bg-orange-1',
-    items: [
-      { icon: 'notification', titleKey: 'common.nav.notices', name: 'work-notices' },
-    ],
+    icon: 'notification',
+    titleKey: 'common.nav.notices',
+    descriptionKey: 'discover.noticesDescription',
+    name: 'notices',
+    color: 'var(--wot-green-6)',
+    soft: 'wot-bg-green-1',
+  },
+  {
+    icon: 'info',
+    titleKey: 'common.aboutUs',
+    descriptionKey: 'discover.aboutDescription',
+    name: 'about',
+    color: 'var(--wot-purple-6)',
+    soft: 'wot-bg-purple-1',
   },
 ]
 
-/** 搜索关键词，本地过滤模块分组 */
-const keyword = ref('')
-const filteredGroups = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  if (!kw)
-    return groups
-  return groups
-    .map(group => ({ ...group, items: group.items.filter(item => t(item.titleKey).toLowerCase().includes(kw)) }))
-    .filter(group => group.items.length > 0)
-})
+function navigateTo(name: string) {
+  router.push({ name })
+}
 </script>
 
 <template>
   <view class="tabbar-wraper py-3">
-    <!-- 用户信息卡（品牌渐变 + 极光装饰圆环） -->
-    <view class="user-info-card mx-3 mb-4 flex items-center gap-4 rounded-3 px-5 py-6">
-      <wd-avatar
-        size="64px"
-        round
-        :src="userInfo?.avatar || ''"
-        icon="user"
-      />
+    <view class="discover-hero mx-3 mb-4 flex items-center gap-4 rounded-3 px-5 py-6">
+      <view class="discover-hero__icon flex shrink-0 items-center justify-center rounded-2xl">
+        <wd-icon name="apps" size="28px" color="#FFFFFF" />
+      </view>
       <view class="min-w-0 flex-1">
-        <view class="text-4 text-white font-bold">
-          {{ userInfo?.nickname || t('work.nameFallback') }}
+        <view class="text-5 text-white font-bold">
+          {{ t('discover.heroTitle') }}
         </view>
-        <view class="mt-1 truncate text-3" style="color: rgba(255, 255, 255, 0.75);">
-          {{ userInfo?.username || t('work.roleFallback') }}
+        <view class="mt-1 text-3" style="color: rgba(255, 255, 255, 0.78);">
+          {{ t('discover.heroDescription') }}
         </view>
       </view>
     </view>
 
-    <!-- 模块搜索 -->
-    <view class="mx-3 mb-4">
-      <wd-search v-model="keyword" :placeholder="t('work.searchPlaceholder')" variant="light" hide-cancel />
+    <view class="mb-2 mt-1 flex items-center gap-2 px-3">
+      <view class="wot-bg-primary-6 h-3.5 w-1 rounded-full" />
+      <wd-text class="wot-text-text-main text-3.5" :text="t('discover.publicSection')" bold />
     </view>
-
-    <!-- 模块分组 -->
-    <view v-for="(group, gi) in filteredGroups" :key="gi" class="mb-4">
-      <view class="mb-2 mt-1 flex items-center gap-2 px-3">
-        <view class="h-3.5 w-1 rounded-full" :style="{ backgroundColor: group.color }" />
-        <wd-text class="wot-text-text-main text-3.5" :text="t(group.titleKey)" bold />
-        <wd-text class="wot-text-text-auxiliary text-2.5" :text="group.items.length" />
-      </view>
-      <wd-cell-group border custom-class="mx-3 rounded-2! overflow-hidden">
-        <wd-cell
-          v-for="item in group.items"
-          :key="item.name"
-          center
-          is-link
-          @click="navigateTo(item.name)"
-        >
-          <template #title>
-            <view class="flex items-center gap-2.5">
-              <view
-                class="h-8 w-8 flex shrink-0 items-center justify-center rounded-lg"
-                :class="group.bg"
-              >
-                <wd-icon :name="item.icon" size="16px" :color="group.color" />
-              </view>
-              <text>
-                {{ t(item.titleKey) }}
-              </text>
+    <wd-cell-group border custom-class="mx-3 rounded-2! overflow-hidden">
+      <wd-cell
+        v-for="item in publicEntries"
+        :key="item.name"
+        center
+        is-link
+        @click="navigateTo(item.name)"
+      >
+        <template #title>
+          <view class="flex items-center gap-2.5">
+            <view class="h-9 w-9 flex shrink-0 items-center justify-center rounded-xl" :class="item.soft">
+              <wd-icon :name="item.icon" size="18px" :color="item.color" />
             </view>
-          </template>
-        </wd-cell>
-      </wd-cell-group>
-    </view>
+            <view class="min-w-0">
+              <view class="wot-text-text-main text-3.5">
+                {{ t(item.titleKey) }}
+              </view>
+              <view class="wot-text-text-secondary mt-0.5 truncate text-2.5">
+                {{ t(item.descriptionKey) }}
+              </view>
+            </view>
+          </view>
+        </template>
+      </wd-cell>
+    </wd-cell-group>
 
-    <!-- 搜索无结果 -->
-    <wd-empty v-if="filteredGroups.length === 0" :tip="t('work.emptyTip')" />
+    <view class="extension-slot wot-bg-filled-oppo mx-3 mt-4 rounded-2 px-5 py-8 text-center">
+      <view class="extension-slot__icon mx-auto mb-3 flex items-center justify-center rounded-full">
+        <wd-icon name="add" size="24px" color="var(--wot-primary-6)" />
+      </view>
+      <wd-text class="wot-text-text-main block text-4 font-medium" :text="t('discover.placeholderTitle')" />
+      <wd-text class="wot-text-text-secondary mt-2 block text-3 leading-relaxed" :text="t('discover.placeholderDescription')" />
+    </view>
   </view>
 </template>
+
+<style lang="scss" scoped>
+.discover-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--wot-primary-6), var(--wot-primary-4));
+  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.16);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -70rpx;
+    top: -90rpx;
+    width: 240rpx;
+    height: 240rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &__icon {
+    position: relative;
+    z-index: 1;
+    width: 88rpx;
+    height: 88rpx;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  > view:last-child {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.extension-slot {
+  border: 2rpx dashed var(--wot-border-main);
+
+  &__icon {
+    width: 72rpx;
+    height: 72rpx;
+    background: var(--wot-primary-1);
+  }
+}
+</style>

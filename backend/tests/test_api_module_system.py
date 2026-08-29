@@ -393,6 +393,11 @@ class TestNotice:
     def test_notice_available(self, test_client: TestClient, auth_headers: dict) -> None:
         assert_route(test_client, "GET", "/system/notice/available", auth=auth_headers)
 
+    def test_notice_available_is_public(self, test_client: TestClient) -> None:
+        response = test_client.get("/system/notice/available")
+        assert response.status_code == 200, response.text
+        assert response.json().get("success") is True
+
     def test_notice_status_batch(self, test_client: TestClient, auth_headers: dict) -> None:
         assert_route(
             test_client,

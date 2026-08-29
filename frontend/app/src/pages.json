@@ -2,7 +2,7 @@
   "globalStyle": {
     "navigationBarBackgroundColor": "@navBgColor",
     "navigationBarTextStyle": "@navTxtStyle",
-    "navigationBarTitleText": "FastapiAdmin",
+    "navigationBarTitleText": "FastAPI Admin Starter",
     "backgroundColor": "@bgColor",
     "backgroundTextStyle": "@bgTxtStyle",
     "backgroundColorTop": "@bgColorTop",
@@ -13,7 +13,7 @@
     "animationDuration": 300
   },
   "pages": [
-    // #ifdef APP
+    // #ifdef APP || H5
     {
       "path": "pages/index/index",
       "type": "home",
@@ -24,14 +24,14 @@
       }
     },
     // #endif
-    // #ifdef H5 || MP-WEIXIN
+    // #ifdef MP-WEIXIN
     {
       "path": "pages/index/index",
       "type": "home",
       "name": "home",
       "layout": "tabbar",
       "style": {
-        "navigationBarTitleText": "工作台概览"
+        "navigationBarTitleText": "首页"
       }
     },
     // #endif
@@ -66,10 +66,10 @@
     {
       "path": "pages/work/index",
       "type": "page",
-      "name": "work",
+      "name": "discover",
       "layout": "tabbar",
       "style": {
-        "navigationBarTitleText": "工作台"
+        "navigationBarTitleText": "发现"
       }
     },
     {
@@ -124,7 +124,7 @@
         {
           "path": "module_system/notices/index",
           "type": "page",
-          "name": "work-notices",
+          "name": "notices",
           "style": {
             "navigationBarTitleText": "通知公告",
             "enablePullDownRefresh": true

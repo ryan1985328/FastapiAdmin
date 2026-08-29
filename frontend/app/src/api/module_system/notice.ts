@@ -27,7 +27,9 @@ export const NoticeAPI = {
     return http.Patch(`${SYSTEM_BASE}/notice/status/batch`, data)
   },
   getAvailable(): Promise<NoticeItem[]> {
-    return http.Get(`${SYSTEM_BASE}/notice/available`)
+    return http.Get(`${SYSTEM_BASE}/notice/available`, {
+      meta: { ignoreAuth: true, authRole: 'visitor' },
+    })
   },
 }
 

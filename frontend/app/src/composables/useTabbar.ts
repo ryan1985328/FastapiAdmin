@@ -8,7 +8,7 @@ export interface TabbarItem {
 
 const tabbarItems = ref<TabbarItem[]>([
   { name: 'home', active: true, titleKey: 'common.tab.home', icon: 'home' },
-  { name: 'work', active: false, titleKey: 'common.tab.work', icon: 'apps' },
+  { name: 'discover', active: false, titleKey: 'common.tab.discover', icon: 'apps' },
   { name: 'mine', active: false, titleKey: 'common.tab.mine', icon: 'user' },
 ])
 

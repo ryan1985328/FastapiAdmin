@@ -50,13 +50,13 @@ onLoad(loadUserProfile)
           :src="userProfile?.avatar || ''"
           :text="(userProfile?.nickname || userProfile?.username || '?').charAt(0)"
         />
-        <wd-text class="wot-text-text-main text-4" :text="userProfile?.nickname || userProfile?.username || '-'" bold />
+        <wd-text class="wot-text-text-main text-4" :text="userProfile?.nickname || userProfile?.username || t('profile.notSet')" bold />
       </view>
 
       <view class="mx-3 mb-3">
         <wd-cell-group border custom-class="rounded-2! overflow-hidden">
           <wd-cell :title="t('profile.nickname')" :value="userProfile?.nickname || t('profile.notSet')" />
-          <wd-cell :title="t('profile.username')" :value="userProfile?.username || '-'" />
+          <wd-cell :title="t('profile.username')" :value="userProfile?.username || t('profile.notSet')" />
           <wd-cell :title="t('profile.mobile')" :value="userProfile?.mobile || t('profile.notBound')" />
           <wd-cell :title="t('common.field.status')" :value="statusText" />
         </wd-cell-group>

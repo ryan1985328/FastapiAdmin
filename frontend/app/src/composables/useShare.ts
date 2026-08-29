@@ -23,7 +23,7 @@ const DEFAULT_SHARE_PATH = '/pages/index/index'
  * @example
  * ```ts
  * // 静态分享
- * useShare({ title: '工作台', path: '/pages/work/index' })
+ * useShare({ title: '发现', path: '/pages/work/index' })
  *
  * // 动态分享（标题随数据变化）
  * const shareTitle = computed(() => `${userInfo.value?.name || '管理员'} 邀请你使用`)

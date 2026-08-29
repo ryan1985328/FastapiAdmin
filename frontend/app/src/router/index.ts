@@ -24,13 +24,15 @@ const router = createRouter({
   routes: generateRoutes(),
 })
 
-// 鉴权守卫：未登录访问受保护页面 → 重定向到登录页（启动无 token 时也会被拦截）
+// App 采用公共访问优先：只有明确标记为用户私有的页面才要求登录。
 // 注意：wot-ui router 重定向会沿用原导航类型（如 pushTab），
 // 因此必须通过 navType 显式指定跳转方式，否则会对非 tabBar 页执行 switchTab 而报错。
+const protectedRouteNames = new Set(['profile'])
+
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   const isAuthPage = to.name === 'login' || to.name === 'register' || to.name === 'forget'
-  if (!isAuthPage && !userStore.isLoggedIn()) {
+  if (protectedRouteNames.has(String(to.name)) && !userStore.isLoggedIn()) {
     next({
       path: '/pages/login/index',
       navType: 'replace',

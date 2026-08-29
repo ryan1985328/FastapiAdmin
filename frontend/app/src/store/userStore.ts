@@ -131,9 +131,9 @@ export const useUserStore = defineStore('appUserInfo', {
       }
       finally {
         this.clearAll() // 清除本地的 token 与用户信息
-        // 跳转到登录页面
+        // App 是公共访问优先，退出后回到首页而不是强制停留在登录页
         uni.reLaunch({
-          url: '/pages/login/index',
+          url: '/pages/index/index',
         })
       }
     },
