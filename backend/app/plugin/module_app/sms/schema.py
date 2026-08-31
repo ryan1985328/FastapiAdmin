@@ -15,6 +15,7 @@ class SmsSendCodeSchema(BaseModel):
 class SmsSendCodeOutSchema(BaseModel):
     expires_in: int = Field(..., description="验证码有效期（秒）")
     resend_after: int = Field(..., description="再次发送等待时间（秒）")
+    debug_code: str | None = Field(default=None, description="仅开发/测试固定验证码")
 
 
 __all__ = ["SmsScene", "SmsSendCodeOutSchema", "SmsSendCodeSchema"]

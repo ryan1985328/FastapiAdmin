@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { FormSchema } from '@wot-ui/ui/components/wd-form/types'
+import type { AppRegisterForm } from '@/api/module_app/auth'
 import { onLoad } from '@dcloudio/uni-app'
-import { reactive, ref } from 'vue'
+import { onBeforeUnmount, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppAuthAPI from '@/api/module_app/auth'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
@@ -19,35 +20,39 @@ const userStore = useUserStore()
 const configStore = useConfigStore()
 
 const submitting = ref(false)
+const codeSending = ref(false)
+const countdown = ref(0)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
 const agreeRead = ref(false)
 const registerFormRef = ref()
 const registerForm = reactive({
-  username: '',
-  name: '',
+  mobile: '',
+  code: '',
   password: '',
   confirmPassword: '',
+  nickname: '',
+  referral_code: '',
 })
 
-/** 与后端 UserRegisterSchema 一致：字母开头，3-32 位，仅允许字母、数字、_ . - */
-const USERNAME_REG = /^[a-z][\w.-]{2,31}$/i
+const MOBILE_REG = /^\+?[1-9]\d{6,14}$/
 
 /** 表单验证 schema — 字段级错误提示（与登录页 wd-form 一致） */
 const registerSchema: FormSchema = {
   validate: (model) => {
     const errors: Array<{ path: Array<string | number>, message: string }> = []
-    const username = String(model.username ?? '').trim()
-    const name = String(model.name ?? '').trim()
+    const mobile = String(model.mobile ?? '').replace(/[\s-]+/g, '')
+    const code = String(model.code ?? '')
     const password = String(model.password ?? '')
     const confirmPassword = String(model.confirmPassword ?? '')
-    if (!username)
-      errors.push({ path: ['username'], message: t('common.form.usernameRequired') })
-    else if (!USERNAME_REG.test(username))
-      errors.push({ path: ['username'], message: t('common.form.usernameFormat') })
-    if (!name)
-      errors.push({ path: ['name'], message: t('common.form.nicknameRequired') })
+    if (!mobile)
+      errors.push({ path: ['mobile'], message: t('register.mobileRequired') })
+    else if (!MOBILE_REG.test(mobile))
+      errors.push({ path: ['mobile'], message: t('register.mobileInvalid') })
+    if (!/^\d{6}$/.test(code))
+      errors.push({ path: ['code'], message: t('register.codeRequired') })
     if (!password)
       errors.push({ path: ['password'], message: t('common.form.passwordRequired') })
-    else if (password.length < 6)
+    else if (password.length < 6 || password.length > 128)
       errors.push({ path: ['password'], message: t('common.form.passwordLength') })
     if (!confirmPassword)
       errors.push({ path: ['confirmPassword'], message: t('common.form.confirmRequired') })
@@ -55,6 +60,46 @@ const registerSchema: FormSchema = {
       errors.push({ path: ['confirmPassword'], message: t('common.form.mismatch') })
     return errors
   },
+}
+
+function stopCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+function startCountdown(seconds: number) {
+  stopCountdown()
+  countdown.value = seconds
+  countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0)
+      stopCountdown()
+  }, 1000)
+}
+
+async function sendRegisterCode() {
+  const mobile = registerForm.mobile.replace(/[\s-]+/g, '')
+  if (!MOBILE_REG.test(mobile)) {
+    toast.warning(t('register.mobileInvalid'))
+    return
+  }
+  if (codeSending.value || countdown.value > 0)
+    return
+
+  codeSending.value = true
+  try {
+    const result = await AppAuthAPI.sendCode({ mobile, scene: 'register_code' })
+    startCountdown(result.resend_after || 60)
+    toast.success(t('register.codeSent'))
+  }
+  catch {
+    // http 层已统一展示后端错误
+  }
+  finally {
+    codeSending.value = false
+  }
 }
 
 /** 打开用户协议：H5 新窗口，其他端复制链接（与设置页链接行为一致） */
@@ -80,13 +125,13 @@ function handleAgreementOpen() {
 }
 
 /** 注册成功后直接使用独立 App 认证登录。 */
-async function autoLoginAfterRegister(username: string, password: string) {
+async function autoLoginAfterRegister(mobile: string, password: string) {
   try {
-    await userStore.login({ username, password, remember: true })
+    await userStore.loginByPassword({ mobile, password, remember: true })
     uni.reLaunch({ url: '/pages/index/index' })
   }
   catch {
-    Storage.set(REMEMBER_ME_KEY, { username, remember: true })
+    Storage.set(REMEMBER_ME_KEY, { mobile, remember: true })
     uni.reLaunch({ url: '/pages/login/index' })
   }
 }
@@ -102,13 +147,21 @@ async function handleSubmit() {
   if (!valid)
     return
 
-  const username = registerForm.username.trim()
-  const name = registerForm.name.trim()
+  const mobile = registerForm.mobile.replace(/[\s-]+/g, '')
   submitting.value = true
   try {
-    await AppAuthAPI.register({ username, nickname: name, password: registerForm.password })
+    const body: AppRegisterForm = {
+      mobile,
+      code: registerForm.code,
+      password: registerForm.password,
+    }
+    if (registerForm.nickname.trim())
+      body.nickname = registerForm.nickname.trim()
+    if (registerForm.referral_code.trim())
+      body.referral_code = registerForm.referral_code.trim()
+    await AppAuthAPI.register(body)
     toast.success(t('register.success'))
-    await autoLoginAfterRegister(username, registerForm.password)
+    await autoLoginAfterRegister(mobile, registerForm.password)
   }
   catch {
     // http 层已统一错误提示（如用户名已存在）
@@ -126,6 +179,8 @@ onLoad(() => {
 function goLogin() {
   uni.reLaunch({ url: '/pages/login/index' })
 }
+
+onBeforeUnmount(stopCountdown)
 </script>
 
 <template>
@@ -137,19 +192,44 @@ function goLogin() {
 
       <view class="register-form">
         <wd-form ref="registerFormRef" :model="registerForm" :schema="registerSchema">
-          <wd-form-item prop="username" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+          <wd-form-item prop="mobile" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
             <wd-input
-              v-model="registerForm.username"
-              :placeholder="t('common.form.usernamePlaceholder')"
+              v-model="registerForm.mobile"
+              :placeholder="t('common.form.mobilePlaceholder')"
               clearable
+              type="tel"
               :compact="false"
-              prefix-icon="user"
+              prefix-icon="phone"
             />
           </wd-form-item>
-          <wd-form-item prop="name" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+          <view class="register-code-row">
+            <view class="register-code-input">
+              <wd-form-item prop="code" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+                <wd-input
+                  v-model="registerForm.code"
+                  :placeholder="t('common.form.codePlaceholder')"
+                  clearable
+                  type="number"
+                  :compact="false"
+                  prefix-icon="lock"
+                />
+              </wd-form-item>
+            </view>
+            <wd-button
+              class="register-code-button"
+              size="small"
+              plain
+              :loading="codeSending"
+              :disabled="codeSending || countdown > 0"
+              @click="sendRegisterCode"
+            >
+              {{ countdown > 0 ? t('register.countdown', { seconds: countdown }) : t('register.getCode') }}
+            </wd-button>
+          </view>
+          <wd-form-item prop="nickname" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
             <wd-input
-              v-model="registerForm.name"
-              :placeholder="t('common.form.nicknamePlaceholder')"
+              v-model="registerForm.nickname"
+              :placeholder="t('common.form.nicknameOptionalPlaceholder')"
               clearable
               :compact="false"
               prefix-icon="user"
@@ -173,6 +253,15 @@ function goLogin() {
               clearable
               :compact="false"
               prefix-icon="lock"
+            />
+          </wd-form-item>
+          <wd-form-item prop="referral_code" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+            <wd-input
+              v-model="registerForm.referral_code"
+              :placeholder="t('register.referralCodeOptional')"
+              clearable
+              :compact="false"
+              prefix-icon="share"
             />
           </wd-form-item>
         </wd-form>
@@ -276,6 +365,22 @@ function goLogin() {
     padding-left: 0;
     padding-right: 0;
   }
+}
+
+.register-code-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.register-code-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.register-code-button {
+  flex-shrink: 0;
+  height: 80rpx;
 }
 
 /* cell 容器回归透明：亮色下消除输入框外围的白色方形区域，暗色下消除纯黑块，

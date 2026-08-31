@@ -19,7 +19,7 @@ class AppUserModel(ModelMixin):
     password: Mapped[str] = mapped_column(String(255), nullable=False, comment="密码哈希")
     nickname: Mapped[str] = mapped_column(String(128), nullable=False, comment="昵称")
     avatar: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="头像URL地址")
-    mobile: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="手机号")
+    mobile: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=True, comment="唯一手机号")
     status: Mapped[int] = mapped_column(
         Integer,
         default=AppUserStatus.ACTIVE,

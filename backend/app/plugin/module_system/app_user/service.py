@@ -1,6 +1,6 @@
-from datetime import UTC, datetime
 from typing import Any
 
+from redis.asyncio.client import Redis
 from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -9,6 +9,7 @@ from app.core.base_schema import AuthSchema, BatchSetAvailable, PageResultSchema
 from app.core.exceptions import CustomException
 from app.plugin.module_app.user.constants import AppUserKycStatus, AppUserStatus, aggregate_kyc_status
 from app.plugin.module_app.user.model import AppUserModel
+from app.plugin.module_app.user.referral_service import AppUserReferralService
 from app.plugin.module_app.user.schema import (
     AppUserBindReferrerSchema,
     AppUserOutSchema,
@@ -16,6 +17,7 @@ from app.plugin.module_app.user.schema import (
 )
 from app.plugin.module_app.user.summary import get_app_user_out, serialize_app_user
 from app.plugin.module_system.kyc.model import AppUserKycModel
+from app.plugin.module_system.sms.constants import normalize_mobile
 from app.utils.common_util import search_to_dict
 from app.utils.password_util import PwdUtil
 
@@ -43,9 +45,10 @@ class AppUserService:
         "updated_time",
     }
 
-    def __init__(self, auth: AuthSchema, db: AsyncSession) -> None:
+    def __init__(self, auth: AuthSchema, db: AsyncSession, redis: Redis | None = None) -> None:
         self.auth = auth
         self.db = db
+        self.redis = redis
 
     @staticmethod
     def _latest_kyc_subquery():
@@ -193,9 +196,10 @@ class AppUserService:
             raise CustomException(msg="更新失败，该数据不存在")
 
         update_data = data.model_dump(exclude_unset=True)
-        mobile = update_data.get("mobile")
-        if mobile:
-            existing = await crud.get(mobile=mobile)
+        if "mobile" in update_data:
+            mobile = normalize_mobile(update_data["mobile"])
+            update_data["mobile"] = mobile
+            existing = await crud.get(mobile=mobile, include_deleted=True)
             if existing and existing.id != id:
                 raise CustomException(msg="更新失败，手机号重复")
 
@@ -260,57 +264,22 @@ class AppUserService:
 
         password_hash = PwdUtil.hash_password(password=data.password)
         await crud.update(id=id, data={"password": password_hash})
+        if self.redis is not None:
+            # Keep Admin password resets consistent with the public reset flow
+            # without introducing a second session invalidation mechanism.
+            from app.plugin.module_app.auth.service import AppAuthService
+
+            await AppAuthService.invalidate_user_sessions(redis=self.redis, user_id=user.id)
         refreshed = await crud.get(id=id)
         return await get_app_user_out(self.db, refreshed or user)
 
     async def bind_referrer(self, id: int, data: AppUserBindReferrerSchema) -> AppUserOutSchema:
-        result = await self.db.execute(
-            select(AppUserModel)
-            .where(AppUserModel.id == id, AppUserModel.is_deleted.is_(False))
-            .with_for_update()
+        user = await AppUserReferralService.bind_by_code(
+            self.db,
+            user_id=id,
+            referral_code=data.referral_code,
         )
-        user = result.scalars().first()
-        if not user:
-            raise CustomException(msg="绑定推荐人失败，该用户不存在")
-        if user.referrer_id is not None:
-            raise CustomException(msg="该用户已绑定推荐人，不允许重复绑定", status_code=409)
-
-        referrer_result = await self.db.execute(
-            select(AppUserModel)
-            .where(
-                AppUserModel.referral_code == data.referral_code,
-                AppUserModel.is_deleted.is_(False),
-            )
-        )
-        referrer = referrer_result.scalars().first()
-        if not referrer:
-            raise CustomException(msg="推荐码不存在或推荐人已删除")
-        if referrer.id == id:
-            raise CustomException(msg="不能绑定自己为推荐人", status_code=409)
-
-        await self._ensure_no_referral_cycle(user_id=id, referrer_id=referrer.id)
-        user.referrer_id = referrer.id
-        user.referrer_bound_at = datetime.now(UTC)
-        await self.db.flush()
-        await self.db.refresh(user)
         return await get_app_user_out(self.db, user)
-
-    async def _ensure_no_referral_cycle(self, *, user_id: int, referrer_id: int) -> None:
-        """Walk the direct-referrer chain and reject self/repeated ancestors."""
-
-        visited: set[int] = set()
-        current_id: int | None = referrer_id
-        while current_id is not None:
-            if current_id == user_id:
-                raise CustomException(msg="绑定推荐人会形成循环关系", status_code=409)
-            if current_id in visited:
-                raise CustomException(msg="推荐关系链已存在循环，无法继续绑定", status_code=409)
-            visited.add(current_id)
-
-            result = await self.db.execute(
-                select(AppUserModel.referrer_id).where(AppUserModel.id == current_id)
-            )
-            current_id = result.scalar_one_or_none()
 
 
 __all__ = ["AppUserService"]

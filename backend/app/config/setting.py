@@ -113,6 +113,8 @@ class Settings(BaseSettings):
     # ================================================= #
     CAPTCHA_ENABLE: bool = True  # 是否启用验证码
     CAPTCHA_EXPIRE_SECONDS: int = 60 * 1  # 验证码过期时间(秒) 1分钟
+    APP_SMS_FIXED_CODE_ENABLED: bool = False  # 仅非生产环境允许使用固定短信验证码
+    APP_SMS_FIXED_CODE: str = "888888"  # 开发/测试固定短信验证码
 
     # ================================================= #
     # ***************** 第三方 OAuth 登录（可选）********* #
@@ -181,6 +183,9 @@ class Settings(BaseSettings):
         "/api/v1/system/auth/captcha/slider/complete",
         "/api/v1/app/auth/register",
         "/api/v1/app/auth/login",
+        "/api/v1/app/auth/login/password",
+        "/api/v1/app/auth/login/sms",
+        "/api/v1/app/auth/reset-password",
         "/api/v1/app/auth/refresh",
         "/api/v1/app/sms/send-code",
         "/api/v1/app/notices*",

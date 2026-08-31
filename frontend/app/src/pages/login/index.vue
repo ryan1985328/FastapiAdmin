@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { FormSchema } from '@wot-ui/ui/components/wd-form/types'
-import type { AppLoginForm } from '@/api/module_app/auth'
+import type { AppMobilePasswordLoginForm } from '@/api/module_app/auth'
 import { onLoad } from '@dcloudio/uni-app'
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppAuthAPI from '@/api/module_app/auth'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { REMEMBER_ME_KEY } from '@/constants'
 import { useConfigStore } from '@/store/configStore'
@@ -19,6 +20,10 @@ const loading = ref(false)
 const userStore = useUserStore()
 const configStore = useConfigStore()
 const redirect = ref('/pages/index/index')
+const loginMode = ref<'password' | 'sms'>('password')
+const codeSending = ref(false)
+const countdown = ref(0)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 /** 规范化 BASE_URL（保证以 / 结尾），用于拼接静态资源路径 */
 const BASE_PATH = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
@@ -31,32 +36,76 @@ const brandSubtitle = computed(() => configStore.configData?.login_title?.config
 const loginSchema: FormSchema = {
   validate: (model) => {
     const errors: Array<{ path: Array<string | number>, message: string }> = []
-    const username = String(model.username ?? '')
+    const mobile = String(model.mobile ?? '').replace(/[\s-]+/g, '')
     const password = String(model.password ?? '')
-    if (!username)
-      errors.push({ path: ['username'], message: t('common.form.usernameRequired') })
-    else if (username.length < 3 || username.length > 64)
-      errors.push({ path: ['username'], message: t('login.usernameLength') })
-    if (!password)
+    const code = String(model.code ?? '')
+    if (!mobile)
+      errors.push({ path: ['mobile'], message: t('login.mobileRequired') })
+    else if (!/^\+?[1-9]\d{6,14}$/.test(mobile))
+      errors.push({ path: ['mobile'], message: t('login.mobileInvalid') })
+    if (loginMode.value === 'password' && !password)
       errors.push({ path: ['password'], message: t('common.form.passwordRequired') })
-    else if (password.length < 6 || password.length > 128)
+    else if (loginMode.value === 'password' && (password.length < 6 || password.length > 128))
       errors.push({ path: ['password'], message: t('login.passwordLength') })
+    if (loginMode.value === 'sms' && !/^\d{6}$/.test(code))
+      errors.push({ path: ['code'], message: t('login.codeRequired') })
     return errors
   },
 }
 
-const loginFormData = reactive<AppLoginForm>({
-  username: '',
+const loginFormData = reactive<AppMobilePasswordLoginForm & { code: string }>({
+  mobile: '',
   password: '',
+  code: '',
   remember: true,
 })
 
-/** 从本地存储恢复记住的用户名（仅用户名，不存储密码） */
+/** 从本地存储恢复记住的手机号（不存储密码或验证码） */
 function restoreRememberedUser() {
-  const remembered = Storage.get<{ username: string, remember: boolean }>(REMEMBER_ME_KEY)
+  const remembered = Storage.get<{ mobile?: string, username?: string, remember: boolean }>(REMEMBER_ME_KEY)
   if (remembered) {
-    loginFormData.username = remembered.username || ''
+    loginFormData.mobile = remembered.mobile || ''
     loginFormData.remember = remembered.remember ?? true
+  }
+}
+
+function stopCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+function startCountdown(seconds: number) {
+  stopCountdown()
+  countdown.value = seconds
+  countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0)
+      stopCountdown()
+  }, 1000)
+}
+
+async function sendLoginCode() {
+  const mobile = loginFormData.mobile.replace(/[\s-]+/g, '')
+  if (!/^\+?[1-9]\d{6,14}$/.test(mobile)) {
+    uni.showToast({ title: t('login.mobileInvalid'), icon: 'none' })
+    return
+  }
+  if (codeSending.value || countdown.value > 0)
+    return
+
+  codeSending.value = true
+  try {
+    const result = await AppAuthAPI.sendCode({ mobile, scene: 'login_code' })
+    startCountdown(result.resend_after || 60)
+    uni.showToast({ title: t('login.codeSent'), icon: 'success' })
+  }
+  catch {
+    // http 层已统一展示后端错误
+  }
+  finally {
+    codeSending.value = false
   }
 }
 
@@ -77,9 +126,13 @@ async function handleSubmit() {
     const { valid } = await loginFormRef.value.validate()
     if (!valid)
       return
-    await userStore.login(loginFormData)
+    loginFormData.mobile = loginFormData.mobile.replace(/[\s-]+/g, '')
+    if (loginMode.value === 'password')
+      await userStore.loginByPassword(loginFormData)
+    else
+      await userStore.loginBySms({ mobile: loginFormData.mobile, code: loginFormData.code })
     if (loginFormData.remember)
-      Storage.set(REMEMBER_ME_KEY, { username: loginFormData.username, remember: true })
+      Storage.set(REMEMBER_ME_KEY, { mobile: loginFormData.mobile, remember: true })
     else
       Storage.remove(REMEMBER_ME_KEY)
     uni.reLaunch({ url: redirect.value })
@@ -92,9 +145,15 @@ async function handleSubmit() {
   }
 }
 
+function goForgot() {
+  uni.navigateTo({ url: '/pages/login/forget/index' })
+}
+
 function goRegister() {
   uni.navigateTo({ url: '/pages/login/register/index' })
 }
+
+onBeforeUnmount(stopCountdown)
 </script>
 
 <template>
@@ -114,39 +173,84 @@ function goRegister() {
         {{ t('login.cardTitle') }}
       </text>
 
+      <view class="login-modes">
+        <wd-text
+          class="login-mode"
+          :class="{ 'login-mode--active': loginMode === 'password' }"
+          :text="t('login.passwordMode')"
+          @click="loginMode = 'password'"
+        />
+        <wd-text
+          class="login-mode"
+          :class="{ 'login-mode--active': loginMode === 'sms' }"
+          :text="t('login.smsMode')"
+          @click="loginMode = 'sms'"
+        />
+      </view>
+
       <wd-form ref="loginFormRef" :model="loginFormData" :schema="loginSchema">
-        <!-- Username — wot 原生 wd-input，前缀图标走 prefix-icon 属性 -->
-        <wd-form-item prop="username" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+        <wd-form-item prop="mobile" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
           <wd-input
-            v-model="loginFormData.username"
-            :placeholder="t('common.form.usernamePlaceholder')"
+            v-model="loginFormData.mobile"
+            :placeholder="t('common.form.mobilePlaceholder')"
             clearable
             confirm-type="next"
+            type="tel"
             :compact="false"
-            prefix-icon="user"
-            @confirm="handleSubmit"
+            prefix-icon="phone"
           />
         </wd-form-item>
 
-        <!-- Password — show-password 自动启用密码可见性切换 -->
-        <wd-form-item prop="password" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
-          <wd-input
-            v-model="loginFormData.password"
-            :placeholder="t('common.form.passwordPlaceholder')"
-            clearable
-            show-password
-            confirm-type="go"
-            :compact="false"
-            prefix-icon="lock"
-            @confirm="handleSubmit"
-          />
-        </wd-form-item>
+        <template v-if="loginMode === 'password'">
+          <wd-form-item prop="password" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+            <wd-input
+              v-model="loginFormData.password"
+              :placeholder="t('common.form.passwordPlaceholder')"
+              clearable
+              show-password
+              confirm-type="go"
+              :compact="false"
+              prefix-icon="lock"
+              @confirm="handleSubmit"
+            />
+          </wd-form-item>
+        </template>
 
-        <!-- 记住用户名（不保存密码） -->
+        <template v-else>
+          <view class="code-row">
+            <view class="code-input">
+              <wd-form-item prop="code" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+                <wd-input
+                  v-model="loginFormData.code"
+                  :placeholder="t('common.form.codePlaceholder')"
+                  clearable
+                  type="number"
+                  confirm-type="go"
+                  :compact="false"
+                  prefix-icon="lock"
+                  @confirm="handleSubmit"
+                />
+              </wd-form-item>
+            </view>
+            <wd-button
+              class="code-button"
+              size="small"
+              plain
+              :loading="codeSending"
+              :disabled="codeSending || countdown > 0"
+              @click="sendLoginCode"
+            >
+              {{ countdown > 0 ? t('login.countdown', { seconds: countdown }) : t('login.getCode') }}
+            </wd-button>
+          </view>
+        </template>
+
+        <!-- 记住手机号（不保存密码/验证码） -->
         <view class="login-options">
           <wd-checkbox v-model="loginFormData.remember" size="18px">
             {{ t('login.remember') }}
           </wd-checkbox>
+          <wd-text class="forgot-link" :text="t('login.forgot')" type="primary" @click="goForgot" />
         </view>
 
         <!-- Submit -->
@@ -275,6 +379,24 @@ function goRegister() {
   }
 }
 
+.login-modes {
+  display: flex;
+  gap: 36rpx;
+  margin-bottom: 18rpx;
+}
+
+.login-mode {
+  padding-bottom: 8rpx;
+  font-size: var(--font-md, 28rpx);
+  @apply wot-text-text-auxiliary;
+
+  &--active {
+    font-weight: 600;
+    @apply wot-text-primary;
+    border-bottom: 4rpx solid var(--wot-primary-6, #1C64FD);
+  }
+}
+
 /* 输入框微调 — 圆角加大 + 主题色边框 + 轻阴影，从"方方正正"变"圆润悬浮" */
 :deep(.wd-input) {
   border-radius: 24rpx;
@@ -345,6 +467,23 @@ function goRegister() {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16rpx;
+}
+
+.code-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.code-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.code-button {
+  flex-shrink: 0;
+  height: 80rpx;
+  margin-top: 0;
 }
 
 .forgot-link {

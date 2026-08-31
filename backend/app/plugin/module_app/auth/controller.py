@@ -10,7 +10,16 @@ from app.core.base_schema import JWTOutSchema
 from app.core.dependencies import db_getter, redis_getter
 
 from ..user.model import AppUserModel
-from ..user.schema import AppLoginOutSchema, AppLoginSchema, AppRefreshTokenSchema, AppUserCreateSchema, AppUserOutSchema
+from ..user.schema import (
+    AppLoginOutSchema,
+    AppLoginSchema,
+    AppMobilePasswordLoginSchema,
+    AppMobileSmsLoginSchema,
+    AppRefreshTokenSchema,
+    AppResetPasswordSchema,
+    AppUserCreateSchema,
+    AppUserOutSchema,
+)
 from ..user.service import AppUserService
 from .dependencies import AppOAuth2Schema, get_current_app_user
 from .service import AppAuthService
@@ -21,9 +30,10 @@ AppAuthRouter = APIRouter(prefix="/auth", tags=["App用户认证"])
 @AppAuthRouter.post("/register", summary="App用户注册", response_model=ResponseSchema[AppUserOutSchema])
 async def register_app_user_controller(
     db: Annotated[AsyncSession, Depends(db_getter)],
+    redis: Annotated[Redis, Depends(redis_getter)],
     data: Annotated[AppUserCreateSchema, Body(description="App用户注册参数")],
 ) -> JSONResponse:
-    result = await AppUserService(db).register(data)
+    result = await AppUserService(db, redis).register(data)
     return SuccessResponse(data=result, msg="注册成功")
 
 
@@ -35,6 +45,36 @@ async def login_app_user_controller(
 ) -> JSONResponse:
     result = await AppAuthService.login(db=db, redis=redis, data=data)
     return SuccessResponse(data=result, msg="登录成功")
+
+
+@AppAuthRouter.post("/login/password", summary="手机号密码登录", response_model=ResponseSchema[AppLoginOutSchema])
+async def login_app_user_by_password_controller(
+    db: Annotated[AsyncSession, Depends(db_getter)],
+    redis: Annotated[Redis, Depends(redis_getter)],
+    data: Annotated[AppMobilePasswordLoginSchema, Body(description="手机号密码登录参数")],
+) -> JSONResponse:
+    result = await AppAuthService.login_by_password(db=db, redis=redis, data=data)
+    return SuccessResponse(data=result, msg="登录成功")
+
+
+@AppAuthRouter.post("/login/sms", summary="手机号验证码登录", response_model=ResponseSchema[AppLoginOutSchema])
+async def login_app_user_by_sms_controller(
+    db: Annotated[AsyncSession, Depends(db_getter)],
+    redis: Annotated[Redis, Depends(redis_getter)],
+    data: Annotated[AppMobileSmsLoginSchema, Body(description="手机号验证码登录参数")],
+) -> JSONResponse:
+    result = await AppAuthService.login_by_sms(db=db, redis=redis, data=data)
+    return SuccessResponse(data=result, msg="登录成功")
+
+
+@AppAuthRouter.post("/reset-password", summary="短信重置App用户密码", response_model=ResponseSchema[None])
+async def reset_app_user_password_controller(
+    db: Annotated[AsyncSession, Depends(db_getter)],
+    redis: Annotated[Redis, Depends(redis_getter)],
+    data: Annotated[AppResetPasswordSchema, Body(description="短信重置密码参数")],
+) -> JSONResponse:
+    await AppAuthService.reset_password(db=db, redis=redis, data=data)
+    return SuccessResponse(msg="密码重置成功，请重新登录")
 
 
 @AppAuthRouter.post("/refresh", summary="刷新App用户令牌", response_model=ResponseSchema[JWTOutSchema])

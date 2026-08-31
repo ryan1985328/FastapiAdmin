@@ -1,8 +1,7 @@
 """Public App boundary for requesting verification SMS codes.
 
-Registration, login and password-reset flows intentionally remain unchanged in
-this phase.  They can call ``SmsService.verify_code`` from their own service in
-a later phase.
+The App registration, login and password-reset services consume the same
+``SmsService.verify_code`` lifecycle exposed by this endpoint.
 """
 
 from typing import Annotated

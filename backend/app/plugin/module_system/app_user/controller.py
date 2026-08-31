@@ -3,11 +3,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Path, Query, Security
 from fastapi.responses import JSONResponse
+from redis.asyncio.client import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.response import ResponseSchema, SuccessResponse
 from app.core.base_schema import AuthSchema, BatchSetAvailable, PageResultSchema, PaginationQueryParam
-from app.core.dependencies import AuthPermission, db_getter
+from app.core.dependencies import AuthPermission, db_getter, redis_getter
 from app.core.router_class import OperationLogRoute
 
 from .schema import (
@@ -87,8 +88,9 @@ async def reset_password_controller(
     id: Annotated[int, Path(description="用户端用户ID", ge=1)],
     data: Annotated[AppUserResetPasswordSchema, Body(description="重置用户端用户密码")],
     db: Annotated[AsyncSession, Depends(db_getter)],
+    redis: Annotated[Redis, Depends(redis_getter)],
 ) -> JSONResponse:
-    result_dict = await AppUserService(auth, db).reset_password(id=id, data=data)
+    result_dict = await AppUserService(auth, db, redis).reset_password(id=id, data=data)
     return SuccessResponse(data=result_dict, msg="重置用户端用户密码成功")
 
 

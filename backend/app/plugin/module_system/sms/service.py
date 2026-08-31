@@ -21,6 +21,7 @@ from .constants import (
     SMS_HOURLY_LIMIT,
     SMS_MAX_VERIFY_FAILURES,
     SMS_RESEND_INTERVAL,
+    get_fixed_sms_code,
     mobile_hash,
     normalize_mobile,
     secret_digest,
@@ -263,9 +264,19 @@ class SmsService:
             await self.redis.delete(self.cooldown_key(scene, mobile))
             raise CustomException(msg="验证码状态保存失败", status_code=503) from exc
 
-    async def send_code(self, *, mobile: str, scene: str) -> dict[str, int]:
+    async def send_code(self, *, mobile: str, scene: str) -> dict[str, int | str]:
         normalized_mobile = normalize_mobile(mobile)
         normalized_scene = validate_scene(scene)
+        fixed_code = get_fixed_sms_code()
+        if fixed_code is not None:
+            await self._reserve(normalized_scene, normalized_mobile)
+            await self._store_code(normalized_scene, normalized_mobile, fixed_code)
+            return {
+                "expires_in": SMS_CODE_TTL,
+                "resend_after": SMS_RESEND_INTERVAL,
+                "debug_code": fixed_code,
+            }
+
         channel = await self._resolve_channel()
         template = await self._resolve_template(normalized_scene, channel.provider)
         code = f"{secrets.randbelow(1_000_000):06d}"

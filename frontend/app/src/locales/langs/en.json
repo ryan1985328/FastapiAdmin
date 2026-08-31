@@ -33,6 +33,8 @@
       "usernamePlaceholder": "Enter username",
       "usernameRequired": "Please enter a username",
       "usernameFormat": "Username must start with a letter, 3-32 characters, only letters, digits, _ . -",
+      "mobilePlaceholder": "Enter mobile number",
+      "codePlaceholder": "Enter verification code",
       "passwordPlaceholder": "Enter password",
       "passwordRequired": "Please enter a password",
       "passwordLength": "Password must be at least 6 characters",
@@ -44,6 +46,7 @@
       "confirmNewRequired": "Please confirm the new password",
       "mismatch": "The two passwords do not match",
       "nicknamePlaceholder": "Please enter a nickname",
+      "nicknameOptionalPlaceholder": "Nickname (optional)",
       "nicknameRequired": "Please enter a nickname"
     },
     "shareDefaultTitle": "FastAPI Admin Starter",
@@ -81,7 +84,15 @@
   "login": {
     "navTitle": "Login",
     "cardTitle": "Account Login",
-    "remember": "Remember me",
+    "remember": "Remember mobile",
+    "passwordMode": "Password",
+    "smsMode": "SMS code",
+    "getCode": "Get code",
+    "countdown": "Retry in {seconds}s",
+    "codeSent": "Verification code sent",
+    "mobileRequired": "Please enter a mobile number",
+    "mobileInvalid": "Please enter a valid mobile number",
+    "codeRequired": "Enter the 6-digit verification code",
     "forgot": "Forgot password?",
     "submit": "Sign In",
     "submitting": "Signing in...",
@@ -123,7 +134,14 @@
     "agree": "I have read and agree to the",
     "userAgreement": "User Agreement",
     "agreeRequired": "Please read and agree to the user agreement first",
-    "success": "Registration successful"
+    "success": "Registration successful",
+    "getCode": "Get code",
+    "countdown": "Retry in {seconds}s",
+    "codeSent": "Verification code sent",
+    "mobileRequired": "Please enter a mobile number",
+    "mobileInvalid": "Please enter a valid mobile number",
+    "codeRequired": "Enter the 6-digit verification code",
+    "referralCodeOptional": "Referral code (optional)"
   },
   "forget": {
     "navTitle": "Forgot Password",
@@ -131,7 +149,13 @@
     "submit": "Reset Password",
     "submitting": "Submitting...",
     "toLogin": "Back to Login",
-    "success": "Password reset, please log in again"
+    "success": "Password reset, please log in again",
+    "getCode": "Get code",
+    "countdown": "Retry in {seconds}s",
+    "codeSent": "Verification code sent",
+    "mobileRequired": "Please enter a mobile number",
+    "mobileInvalid": "Please enter a valid mobile number",
+    "codeRequired": "Enter the 6-digit verification code"
   },
   "setting": {
     "navTitle": "Settings",

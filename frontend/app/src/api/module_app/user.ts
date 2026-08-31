@@ -20,6 +20,19 @@ export interface AppUserInfo {
   avatar?: string | null
   mobile?: string | null
   status: number
+  referral_code?: string
+  referrer_id?: number | null
+  referrer_bound_at?: string | null
+  referrer?: {
+    id: number
+    username: string
+    nickname: string
+    mobile?: string | null
+    referral_code: string
+  } | null
+  has_referrer?: boolean
+  kyc_status?: 'unverified' | 'pending' | 'verified' | 'rejected'
+  kyc_reviewed_at?: string | null
   created_time?: string
   updated_time?: string
 }

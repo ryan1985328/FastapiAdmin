@@ -1,10 +1,16 @@
-import { http } from '@/http'
 import type { AppUserInfo } from './user'
+import { http } from '@/http'
 
 const AUTH_BASE_URL = '/app/auth'
 
 /** Independent C-end account authentication API. */
 const AppAuthAPI = {
+  sendCode(body: AppSmsSendCodeForm): Promise<AppSmsSendCodeResult> {
+    return http.Post('/app/sms/send-code', body, {
+      meta: { ignoreAuth: true, authRole: 'visitor' },
+    })
+  },
+
   register(body: AppRegisterForm): Promise<AppUserInfo> {
     return http.Post(`${AUTH_BASE_URL}/register`, body, {
       meta: { ignoreAuth: true, authRole: 'visitor' },
@@ -14,6 +20,24 @@ const AppAuthAPI = {
   login(body: AppLoginForm): Promise<AppLoginResult> {
     return http.Post(`${AUTH_BASE_URL}/login`, body, {
       meta: { ignoreAuth: true, authRole: 'login' },
+    })
+  },
+
+  loginByPassword(body: AppMobilePasswordLoginForm): Promise<AppLoginResult> {
+    return http.Post(`${AUTH_BASE_URL}/login/password`, body, {
+      meta: { ignoreAuth: true, authRole: 'login' },
+    })
+  },
+
+  loginBySms(body: AppMobileSmsLoginForm): Promise<AppLoginResult> {
+    return http.Post(`${AUTH_BASE_URL}/login/sms`, body, {
+      meta: { ignoreAuth: true, authRole: 'login' },
+    })
+  },
+
+  resetPassword(body: AppResetPasswordForm): Promise<void> {
+    return http.Post(`${AUTH_BASE_URL}/reset-password`, body, {
+      meta: { ignoreAuth: true, authRole: 'visitor' },
     })
   },
 
@@ -35,17 +59,46 @@ const AppAuthAPI = {
 export default AppAuthAPI
 
 export interface AppRegisterForm {
-  username: string
+  mobile: string
+  code: string
   password: string
   nickname?: string
-  avatar?: string
-  mobile?: string
+  referral_code?: string
 }
 
 export interface AppLoginForm {
   username: string
   password: string
   remember?: boolean
+}
+
+export interface AppMobilePasswordLoginForm {
+  mobile: string
+  password: string
+  remember?: boolean
+}
+
+export interface AppMobileSmsLoginForm {
+  mobile: string
+  code: string
+  remember?: boolean
+}
+
+export interface AppSmsSendCodeForm {
+  mobile: string
+  scene: 'register_code' | 'login_code' | 'reset_password_code'
+}
+
+export interface AppSmsSendCodeResult {
+  expires_in: number
+  resend_after: number
+  debug_code?: string | null
+}
+
+export interface AppResetPasswordForm {
+  mobile: string
+  code: string
+  new_password: string
 }
 
 export interface AppRefreshTokenBody {

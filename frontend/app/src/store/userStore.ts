@@ -1,4 +1,4 @@
-import type { AppLoginForm, AppLoginResult } from '@/api/module_app/auth'
+import type { AppLoginForm, AppLoginResult, AppMobilePasswordLoginForm, AppMobileSmsLoginForm } from '@/api/module_app/auth'
 import type { AppUserInfo } from '@/api/module_app/user'
 import { defineStore } from 'pinia'
 import AppAuthAPI from '@/api/module_app/auth'
@@ -98,6 +98,16 @@ export const useUserStore = defineStore('appUserInfo', {
     // 账号密码登录
     async login(data: AppLoginForm): Promise<AppLoginResult> {
       return this.handleLogin(() => AppAuthAPI.login(data), '账号密码')
+    },
+
+    // 手机号密码登录
+    async loginByPassword(data: AppMobilePasswordLoginForm): Promise<AppLoginResult> {
+      return this.handleLogin(() => AppAuthAPI.loginByPassword(data), '手机号密码')
+    },
+
+    // 手机号验证码登录
+    async loginBySms(data: AppMobileSmsLoginForm): Promise<AppLoginResult> {
+      return this.handleLogin(() => AppAuthAPI.loginBySms(data), '手机号验证码')
     },
 
     // 获取用户信息

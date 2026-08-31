@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { FormSchema } from '@wot-ui/ui/components/wd-form/types'
-import { reactive, ref } from 'vue'
+import { onBeforeUnmount, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UserAPI from '@/api/module_system/user'
+import AppAuthAPI from '@/api/module_app/auth'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { REMEMBER_ME_KEY } from '@/constants'
 import { Storage } from '@/utils/storage'
@@ -14,27 +14,33 @@ const { t } = useI18n()
 const toast = useToast()
 
 const submitting = ref(false)
+const codeSending = ref(false)
+const countdown = ref(0)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
 const forgetFormRef = ref()
 const forgetForm = reactive({
-  username: '',
+  mobile: '',
+  code: '',
   new_password: '',
   confirmPassword: '',
 })
 
-/** 与后端 UserForgetPasswordSchema 一致：字母开头，3-32 位，仅允许字母、数字、_ . - */
-const USERNAME_REG = /^[a-z][\w.-]{2,31}$/i
+const MOBILE_REG = /^\+?[1-9]\d{6,14}$/
 
 /** 表单验证 schema — 字段级错误提示（与登录页 wd-form 一致） */
 const forgetSchema: FormSchema = {
   validate: (model) => {
     const errors: Array<{ path: Array<string | number>, message: string }> = []
-    const username = String(model.username ?? '').trim()
+    const mobile = String(model.mobile ?? '').replace(/[\s-]+/g, '')
+    const code = String(model.code ?? '')
     const password = String(model.new_password ?? '')
     const confirmPassword = String(model.confirmPassword ?? '')
-    if (!username)
-      errors.push({ path: ['username'], message: t('common.form.usernameRequired') })
-    else if (!USERNAME_REG.test(username))
-      errors.push({ path: ['username'], message: t('common.form.usernameFormat') })
+    if (!mobile)
+      errors.push({ path: ['mobile'], message: t('forget.mobileRequired') })
+    else if (!MOBILE_REG.test(mobile))
+      errors.push({ path: ['mobile'], message: t('forget.mobileInvalid') })
+    if (!/^\d{6}$/.test(code))
+      errors.push({ path: ['code'], message: t('forget.codeRequired') })
     if (!password)
       errors.push({ path: ['new_password'], message: t('common.form.newPasswordRequired') })
     else if (password.length < 6)
@@ -47,7 +53,47 @@ const forgetSchema: FormSchema = {
   },
 }
 
-/** 重置密码成功后记住用户名，回登录页由用户用新密码登录 */
+function stopCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+function startCountdown(seconds: number) {
+  stopCountdown()
+  countdown.value = seconds
+  countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0)
+      stopCountdown()
+  }, 1000)
+}
+
+async function sendResetCode() {
+  const mobile = forgetForm.mobile.replace(/[\s-]+/g, '')
+  if (!MOBILE_REG.test(mobile)) {
+    toast.warning(t('forget.mobileInvalid'))
+    return
+  }
+  if (codeSending.value || countdown.value > 0)
+    return
+
+  codeSending.value = true
+  try {
+    const result = await AppAuthAPI.sendCode({ mobile, scene: 'reset_password_code' })
+    startCountdown(result.resend_after || 60)
+    toast.success(t('forget.codeSent'))
+  }
+  catch {
+    // http 层已统一展示后端错误
+  }
+  finally {
+    codeSending.value = false
+  }
+}
+
+/** 重置密码成功后记住手机号，回登录页由用户用新密码登录 */
 async function handleSubmit() {
   if (submitting.value)
     return
@@ -55,11 +101,11 @@ async function handleSubmit() {
   if (!valid)
     return
 
-  const username = forgetForm.username.trim()
+  const mobile = forgetForm.mobile.replace(/[\s-]+/g, '')
   submitting.value = true
   try {
-    await UserAPI.forgetPassword({ username, new_password: forgetForm.new_password })
-    Storage.set(REMEMBER_ME_KEY, { username, remember: true })
+    await AppAuthAPI.resetPassword({ mobile, code: forgetForm.code, new_password: forgetForm.new_password })
+    Storage.set(REMEMBER_ME_KEY, { mobile, remember: true })
     toast.success(t('forget.success'))
     uni.reLaunch({ url: '/pages/login/index' })
   }
@@ -74,6 +120,8 @@ async function handleSubmit() {
 function goLogin() {
   uni.reLaunch({ url: '/pages/login/index' })
 }
+
+onBeforeUnmount(stopCountdown)
 </script>
 
 <template>
@@ -85,15 +133,40 @@ function goLogin() {
 
       <view class="forget-form">
         <wd-form ref="forgetFormRef" :model="forgetForm" :schema="forgetSchema">
-          <wd-form-item prop="username" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+          <wd-form-item prop="mobile" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
             <wd-input
-              v-model="forgetForm.username"
-              :placeholder="t('common.form.usernamePlaceholder')"
+              v-model="forgetForm.mobile"
+              :placeholder="t('common.form.mobilePlaceholder')"
               clearable
+              type="tel"
               :compact="false"
-              prefix-icon="user"
+              prefix-icon="phone"
             />
           </wd-form-item>
+          <view class="forget-code-row">
+            <view class="forget-code-input">
+              <wd-form-item prop="code" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
+                <wd-input
+                  v-model="forgetForm.code"
+                  :placeholder="t('common.form.codePlaceholder')"
+                  clearable
+                  type="number"
+                  :compact="false"
+                  prefix-icon="lock"
+                />
+              </wd-form-item>
+            </view>
+            <wd-button
+              class="forget-code-button"
+              size="small"
+              plain
+              :loading="codeSending"
+              :disabled="codeSending || countdown > 0"
+              @click="sendResetCode"
+            >
+              {{ countdown > 0 ? t('forget.countdown', { seconds: countdown }) : t('forget.getCode') }}
+            </wd-button>
+          </view>
           <wd-form-item prop="new_password" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
             <wd-input
               v-model="forgetForm.new_password"
@@ -205,6 +278,22 @@ function goLogin() {
     padding-left: 0;
     padding-right: 0;
   }
+}
+
+.forget-code-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.forget-code-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.forget-code-button {
+  flex-shrink: 0;
+  height: 80rpx;
 }
 
 /* cell 容器回归透明：亮色下消除输入框外围的白色方形区域，暗色下消除纯黑块，

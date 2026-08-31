@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import re
 
+from app.common.enums import EnvironmentEnum
 from app.config.setting import settings
 from app.core.exceptions import CustomException
 
@@ -13,6 +14,25 @@ SMS_CODE_TTL = 300
 SMS_RESEND_INTERVAL = 60
 SMS_HOURLY_LIMIT = 5
 SMS_MAX_VERIFY_FAILURES = 5
+_FIXED_CODE_ENVIRONMENTS = {EnvironmentEnum.DEV.value, "test"}
+
+
+def get_fixed_sms_code() -> str | None:
+    """Return the configured fixed code only outside production.
+
+    The environment guard is deliberately evaluated at use time so tests can
+    exercise both branches without creating a second SMS implementation.
+    """
+
+    environment = getattr(settings.ENVIRONMENT, "value", settings.ENVIRONMENT)
+    if str(environment).lower() not in _FIXED_CODE_ENVIRONMENTS:
+        return None
+    if not settings.APP_SMS_FIXED_CODE_ENABLED:
+        return None
+    code = str(settings.APP_SMS_FIXED_CODE).strip()
+    if not re.fullmatch(r"\d{6}", code):
+        raise CustomException(msg="固定短信验证码配置无效", status_code=500)
+    return code
 
 
 def normalize_mobile(value: str) -> str:

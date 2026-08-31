@@ -6,20 +6,28 @@ from app.core.base_schema import BaseSchema, JWTOutSchema
 from app.core.validator import DateTimeStr
 
 from .constants import AppUserKycStatus, AppUserStatus
+from .referral import normalize_referral_code
 
 
 class AppUserCreateSchema(BaseModel):
-    """Public registration payload."""
+    """Public registration payload, with legacy username compatibility."""
 
-    username: str = Field(..., min_length=3, max_length=64, pattern=r"^[A-Za-z][A-Za-z0-9_.-]*$", description="登录账号")
+    username: str | None = Field(default=None, min_length=3, max_length=64, pattern=r"^[A-Za-z][A-Za-z0-9_.-]*$", description="兼容登录账号")
     password: str = Field(..., min_length=6, max_length=128, description="登录密码")
     nickname: str | None = Field(default=None, max_length=128, description="昵称")
     avatar: str | None = Field(default=None, max_length=512, description="头像URL地址")
     mobile: str | None = Field(default=None, max_length=32, description="手机号")
+    code: str | None = Field(default=None, min_length=6, max_length=6, pattern=r"^\d{6}$", description="注册短信验证码")
+    referral_code: str | None = Field(default=None, min_length=4, max_length=32, description="推荐码")
+
+    @field_validator("referral_code")
+    @classmethod
+    def normalize_registration_referral_code(cls, value: str | None) -> str | None:
+        return normalize_referral_code(value) if value is not None else None
 
 
 class AppLoginSchema(BaseModel):
-    """App account/password login payload."""
+    """Legacy App username/password login payload."""
 
     username: str = Field(..., min_length=1, max_length=64, description="登录账号")
     password: str = Field(..., min_length=1, max_length=128, description="登录密码")
@@ -29,6 +37,28 @@ class AppRefreshTokenSchema(BaseModel):
     """Refresh token payload."""
 
     refresh_token: str = Field(..., min_length=1, description="刷新令牌")
+
+
+class AppMobilePasswordLoginSchema(BaseModel):
+    """Primary App mobile/password login payload."""
+
+    mobile: str = Field(..., min_length=7, max_length=20, description="手机号")
+    password: str = Field(..., min_length=1, max_length=128, description="登录密码")
+
+
+class AppMobileSmsLoginSchema(BaseModel):
+    """App mobile/SMS login payload."""
+
+    mobile: str = Field(..., min_length=7, max_length=20, description="手机号")
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$", description="短信验证码")
+
+
+class AppResetPasswordSchema(BaseModel):
+    """Unauthenticated mobile/SMS password reset payload."""
+
+    mobile: str = Field(..., min_length=7, max_length=20, description="手机号")
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$", description="短信验证码")
+    new_password: str = Field(..., min_length=6, max_length=128, description="新密码")
 
 
 class AppUserOutSchema(BaseSchema):
@@ -76,10 +106,7 @@ class AppUserBindReferrerSchema(BaseModel):
     @field_validator("referral_code")
     @classmethod
     def normalize_referral_code(cls, value: str) -> str:
-        value = value.strip().upper()
-        if not value or not value.isalnum():
-            raise ValueError("推荐码格式无效")
-        return value
+        return normalize_referral_code(value)
 
 
 class AppLoginOutSchema(JWTOutSchema):
@@ -91,7 +118,10 @@ class AppLoginOutSchema(JWTOutSchema):
 __all__ = [
     "AppLoginOutSchema",
     "AppLoginSchema",
+    "AppMobilePasswordLoginSchema",
+    "AppMobileSmsLoginSchema",
     "AppRefreshTokenSchema",
+    "AppResetPasswordSchema",
     "AppUserBindReferrerSchema",
     "AppUserCreateSchema",
     "AppUserOutSchema",

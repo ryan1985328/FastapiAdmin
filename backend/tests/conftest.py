@@ -66,9 +66,58 @@ async def _redis_delete(*names: bytes) -> int:
 
 
 def _redis_keys(pattern: bytes | None = None) -> list[bytes]:
-    if pattern == b"*" or pattern is None:
+    pattern_text = pattern.decode() if isinstance(pattern, bytes) else pattern
+    if pattern_text in ("*", None):
         return list(_mock_redis_store.keys())
-    return [k for k in _mock_redis_store if pattern == b"*" or k.startswith(pattern.replace(b"*", b""))]
+    prefix = pattern_text.split("*", 1)[0]
+    return [k for k in _mock_redis_store if str(k).startswith(prefix)]
+
+
+async def _redis_scan_iter(match: str | None = None, count: int = 100):
+    """Minimal async SCAN iterator for the shared in-memory Redis double."""
+
+    del count
+    for key in _redis_keys(match):
+        yield key
+
+
+async def _redis_eval(script: str, numkeys: int, *args):
+    """Execute only the SMS reserve/verify semantics used by API tests."""
+
+    if numkeys == 2:
+        cooldown_key, count_key = (str(value) for value in args[:2])
+        if cooldown_key in _mock_redis_store:
+            return -1
+        count = int(_mock_redis_store.get(count_key, 0) or 0)
+        hourly_limit = int(args[2])
+        if count >= hourly_limit:
+            return -2
+        _mock_redis_store[cooldown_key] = "1"
+        _mock_redis_store[count_key] = str(count + 1)
+        return count + 1
+
+    if numkeys == 1:
+        code_key = str(args[0])
+        raw = _mock_redis_store.get(code_key)
+        if raw is None:
+            return 0
+        value = raw.decode() if isinstance(raw, bytes) else str(raw)
+        expected, separator, attempts_text = value.partition(":")
+        if not separator:
+            _mock_redis_store.pop(code_key, None)
+            return 0
+        supplied = str(args[1])
+        if expected == supplied:
+            _mock_redis_store.pop(code_key, None)
+            return 1
+        attempts = int(attempts_text or 0) + 1
+        if attempts >= int(args[2]):
+            _mock_redis_store.pop(code_key, None)
+            return -2
+        _mock_redis_store[code_key] = f"{expected}:{attempts}"
+        return -1
+
+    raise AssertionError(f"unexpected Redis script key count: {numkeys}")
 
 
 def _redis_exists(*names: bytes) -> int:
@@ -137,6 +186,8 @@ _mock_redis.get = AsyncMock(side_effect=_redis_get)
 _mock_redis.set = AsyncMock(side_effect=_redis_set)
 _mock_redis.delete = AsyncMock(side_effect=_redis_delete)
 _mock_redis.keys = AsyncMock(side_effect=_redis_keys)
+_mock_redis.scan_iter = _redis_scan_iter
+_mock_redis.eval = AsyncMock(side_effect=_redis_eval)
 _mock_redis.exists = AsyncMock(side_effect=_redis_exists)
 _mock_redis.ttl = AsyncMock(side_effect=_redis_ttl)
 _mock_redis.expire = AsyncMock(side_effect=_redis_expire)
@@ -210,10 +261,17 @@ def test_client(_api_client: TestClient) -> TestClient:
 @pytest.fixture(scope="session")
 def auth_headers(_api_client: TestClient) -> dict[str, str]:
     """Session 级 admin 认证头，登录一次，所有测试复用。"""
-    resp = _api_client.post(
-        "/system/auth/login",
-        data={"username": "admin", "password": "admin123"},
-    )
+    # The login implementation writes its audit row through a separate
+    # SQLite session while the request transaction is still open. Keep the
+    # shared admin fixture focused on authentication rather than lock timing.
+    with (
+        patch("app.api.v1.module_system.auth.service._write_login_log", new=AsyncMock(return_value=None)),
+        patch("app.core.router_class._write_operation_log_async", new=AsyncMock(return_value=None)),
+    ):
+        resp = _api_client.post(
+            "/system/auth/login",
+            data={"username": "admin", "password": "admin123"},
+        )
     assert resp.status_code == 200, f"admin 登录失败: {resp.text}"
     token = resp.json()["data"]["access_token"]
     return {"Authorization": f"Bearer {token}"}
