@@ -176,6 +176,7 @@ class Jinja2TemplateUtil:
 
         _cols = gen_table.columns or []
         table_column_names = frozenset(c.column_name for c in _cols if getattr(c, "column_name", None))
+        has_user_mixin = {"created_id", "updated_id", "deleted_id"}.issubset(table_column_names)
         has_dict_column = any(getattr(c, "dict_type", None) for c in _cols)
         has_image_column = any(getattr(c, "html_type", None) == "imageUpload" for c in _cols)
 
@@ -212,6 +213,7 @@ class Jinja2TemplateUtil:
             "api_route_prefix": api_route_prefix,
             "columns": gen_table.columns or [],
             "table_column_names": table_column_names,
+            "has_user_mixin": has_user_mixin,
             "table": gen_table,
             "dicts": cls.get_dicts(gen_table),
             "db_type": settings.DATABASE_TYPE,

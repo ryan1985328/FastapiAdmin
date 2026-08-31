@@ -9,20 +9,18 @@ from pydantic import BaseModel, ConfigDict, Field
 {{ import_stmt }}
 {% endfor %}
 from app.core.base_schema import BaseSchema, UserBySchema, BaseQueryParam, UserByQueryParam
-{% set has_date_validator = false %}
-{% set has_time_validator = false %}
-{% set has_datetime_validator = false %}
+{% set validator_flags = namespace(has_date=false, has_time=false, has_datetime=false) %}
 {% for column in columns %}
 {% if column.python_type == 'date' %}
-{% set has_date_validator = true %}
+{% set validator_flags.has_date = true %}
 {% elif column.python_type == 'time' %}
-{% set has_time_validator = true %}
+{% set validator_flags.has_time = true %}
 {% elif column.python_type == 'datetime' %}
-{% set has_datetime_validator = true %}
+{% set validator_flags.has_datetime = true %}
 {% endif %}
 {% endfor %}
-{% if has_date_validator or has_time_validator or has_datetime_validator %}
-from app.core.validator import {% if has_date_validator %}DateStr{% endif %}{% if has_time_validator %}{% if has_date_validator %}, {% endif %}TimeStr{% endif %}{% if has_datetime_validator %}{% if has_date_validator or has_time_validator %}, {% endif %}DateTimeStr{% endif %}
+{% if validator_flags.has_date or validator_flags.has_time or validator_flags.has_datetime %}
+from app.core.validator import {% if validator_flags.has_date %}DateStr{% endif %}{% if validator_flags.has_time %}{% if validator_flags.has_date %}, {% endif %}TimeStr{% endif %}{% if validator_flags.has_datetime %}{% if validator_flags.has_date or validator_flags.has_time %}, {% endif %}DateTimeStr{% endif %}
 {% endif %}
 
 class {{ class_name }}CreateSchema(BaseModel):
