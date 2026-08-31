@@ -6,11 +6,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_system.log.model import LoginLogModel
-from app.api.v1.module_system.user.model import UserModel
 from app.common.enums import RedisInitKeyConfig
 from app.core.logger import logger
 from app.core.redis_crud import RedisCURD
 from app.core.security import decode_access_token
+from app.plugin.module_app.user.model import AppUserModel
 
 from .schema import DashboardStatsSchema, LoginTrendItem, OnlineQueryParam, RecentLoginItem
 
@@ -93,12 +93,13 @@ class OnlineService:
 
         online_count = len(await OnlineService.get_online_list(redis))
 
-        users_sql = select(func.count()).select_from(UserModel).where(UserModel.is_deleted.is_(False))
+        # Dashboard business-user metric is sourced from the reusable App User foundation.
+        users_sql = select(func.count()).select_from(AppUserModel).where(AppUserModel.is_deleted.is_(False))
         user_count = (await db.execute(users_sql)).scalar() or 0
 
         users_week_sql = (
-            select(func.count()).select_from(UserModel)
-            .where(UserModel.is_deleted.is_(False), UserModel.created_time >= week_start)
+            select(func.count()).select_from(AppUserModel)
+            .where(AppUserModel.is_deleted.is_(False), AppUserModel.created_time >= week_start)
         )
         user_week_count = (await db.execute(users_week_sql)).scalar() or 0
 
@@ -175,14 +176,14 @@ class OnlineService:
         # 查询 7 天内每天新增用户数
         new_user_sql = (
             select(
-                func.date(UserModel.created_time).label("day"),
+                func.date(AppUserModel.created_time).label("day"),
                 func.count().label("new_users"),
             )
             .where(
-                UserModel.is_deleted.is_(False),
-                UserModel.created_time >= week_start,
+                AppUserModel.is_deleted.is_(False),
+                AppUserModel.created_time >= week_start,
             )
-            .group_by(func.date(UserModel.created_time))
+            .group_by(func.date(AppUserModel.created_time))
         )
         new_rows = (await db.execute(new_user_sql)).all()
         new_map = {str(r.day): r.new_users for r in new_rows}

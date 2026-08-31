@@ -1,5 +1,5 @@
 <template>
-  <ElRow :gutter="16">
+  <ElRow v-if="dataList.length" :gutter="16">
     <ElCol v-for="item in dataList" :key="item.des" :sm="12" :md="8" :lg="8" class="mb-5">
       <div class="fa-card relative flex flex-col justify-center h-30 px-5">
         <div class="flex items-center justify-between">
@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, markRaw, type Component } from "vue";
+import { ref, onMounted, onUnmounted, markRaw, type Component } from "vue";
 import { Connection } from "@element-plus/icons-vue";
 import { checkPerm } from "@/utils/checkPerm";
 import DashboardAPI from "@/api/module_monitor/dashboard";
@@ -82,49 +82,11 @@ interface CardDataItem {
   animatedCount?: number;
 }
 
-const now = new Date();
 const pad = (n: number) => String(n).padStart(2, "0");
-const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+const STATS_REFRESH_INTERVAL_MS = 30_000;
 
-const dataList = ref<CardDataItem[]>([
-  {
-    des: "在线用户",
-    icon: "ri:group-line",
-    iconBg: "bg-danger/10",
-    iconColor: "text-danger",
-    animateIcon: true,
-    num: 0,
-    rich: true,
-    tag: "实时",
-    tagType: "danger",
-    status: "已连接",
-    statusColor: "text-success",
-    statusIcon: markRaw(Connection),
-    updateTime: timeStr,
-  },
-  {
-    des: "注册用户",
-    icon: "ri:bar-chart-grouped-line",
-    iconBg: "bg-success/10",
-    iconColor: "text-success",
-    num: 0,
-    rich: true,
-    animatedCount: 0,
-    totalLabel: "总用户",
-    totalValue: 0,
-  },
-  {
-    des: "今日登录",
-    icon: "ri:eye-line",
-    iconBg: "bg-primary/10",
-    iconColor: "text-primary",
-    num: 0,
-    rich: true,
-    animatedCount: 0,
-    totalLabel: "唯一用户",
-    totalValue: 0,
-  },
-]);
+const dataList = ref<CardDataItem[]>([]);
+let statsTimer: number | undefined;
 
 async function loadStats() {
   // 无权限则跳过 API 调用，避免 403 错误
@@ -138,26 +100,59 @@ async function loadStats() {
     const now2 = new Date();
     const ts = `${now2.getFullYear()}-${pad(now2.getMonth() + 1)}-${pad(now2.getDate())} ${pad(now2.getHours())}:${pad(now2.getMinutes())}:${pad(now2.getSeconds())}`;
 
-    // 在线用户（第1个卡片）
-    dataList.value[0]!.num = stats.online_users;
-    dataList.value[0]!.updateTime = ts;
-
-    // 注册用户（第2个卡片）
-    dataList.value[1]!.num = stats.total_users;
-    dataList.value[1]!.totalValue = `本周 +${stats.week_user_created}`;
-    dataList.value[1]!.animatedCount = stats.total_users;
-
-    // 今日登录（第3个卡片）
-    dataList.value[2]!.num = stats.today_login_count;
-    dataList.value[2]!.totalValue = stats.today_unique_users;
-    dataList.value[2]!.animatedCount = stats.today_login_count;
+    dataList.value = [
+      {
+        des: "在线用户",
+        icon: "ri:group-line",
+        iconBg: "bg-danger/10",
+        iconColor: "text-danger",
+        animateIcon: true,
+        num: stats.online_users,
+        tag: "实时",
+        tagType: "danger",
+        status: "已连接",
+        statusColor: "text-success",
+        statusIcon: markRaw(Connection),
+        updateTime: ts,
+      },
+      {
+        des: "业务用户",
+        icon: "ri:user-3-line",
+        iconBg: "bg-success/10",
+        iconColor: "text-success",
+        num: stats.total_users,
+        animatedCount: stats.total_users,
+        totalLabel: "总业务用户",
+        totalValue: `本周 +${stats.week_user_created}`,
+      },
+      {
+        des: "今日登录",
+        icon: "ri:eye-line",
+        iconBg: "bg-primary/10",
+        iconColor: "text-primary",
+        num: stats.today_login_count,
+        animatedCount: stats.today_login_count,
+        totalLabel: "唯一用户",
+        totalValue: stats.today_unique_users,
+      },
+    ];
   } catch {
-    // 接口错误不影响页面渲染
+    // 接口错误时不显示未经确认的统计值。
+    dataList.value = [];
   }
 }
 
 onMounted(() => {
-  loadStats();
+  void loadStats();
+  statsTimer = window.setInterval(() => {
+    void loadStats();
+  }, STATS_REFRESH_INTERVAL_MS);
+});
+
+onUnmounted(() => {
+  if (statsTimer !== undefined) {
+    window.clearInterval(statsTimer);
+  }
 });
 </script>
 

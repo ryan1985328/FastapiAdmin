@@ -62,7 +62,7 @@
   background-color: transparent;
 }
 
-/* 顶栏与页脚之间的区域：纵向居中承载登录卡 */
+/* 顶栏下方的区域：纵向居中承载登录卡 */
 .login-auth-split--center .login-page-panel__scroll.login-page-panel__scroll--centered {
   display: flex;
   flex-direction: column;
@@ -115,34 +115,6 @@ html.dark .login-auth-split--center .auth-right-wrap {
   box-shadow:
     0 1px 8px rgb(0 0 0 / 18%),
     0 0 16px color-mix(in srgb, var(--el-color-primary) 10%, transparent);
-}
-
-/* 居中模式下页脚弱化，减少「分区后台」感 */
-.login-page-footer--floating-layout {
-  border-top-color: color-mix(in srgb, var(--el-border-color-lighter) 55%, transparent);
-}
-
-html.dark .login-page-footer--floating-layout {
-  border-top-color: rgb(255 255 255 / 8%);
-}
-
-/* 居中模式 footer 单行展示 */
-.login-auth-split--center .login-page-footer--floating-layout {
-  .login-footer-text {
-    white-space: nowrap;
-  }
-
-  .login-footer-row {
-    display: inline;
-  }
-
-  .login-footer-row + .login-footer-row {
-    margin-top: 0;
-  }
-
-  .login-footer-sep-center {
-    display: inline;
-  }
 }
 
 @media only screen and (width <= 1180px) {
@@ -241,11 +213,6 @@ html.dark .login-page-footer--floating-layout {
   }
 }
 
-// 登录页下拉选择框桌面端高度
-.el-select.custom-height .el-select__wrapper {
-  height: 40px;
-}
-
 .login-page-panel {
   .btn {
     border-radius: 8px;
@@ -266,18 +233,6 @@ html.dark .login-page-panel {
   margin-bottom: 1.1rem;
 }
 
-.el-select__wrapper {
-  min-height: 42px;
-}
-
-// 桌面端按钮保持原始高度；H5 由 ConfigProvider size="small" 接管
-@media (width >= 768px) {
-  .login-secondary-actions .login-secondary-btn {
-    height: 42px;
-    border-radius: 8px;
-  }
-}
-
 html.dark {
   .login-page-form .el-input__wrapper {
     background-color: rgb(255 255 255 / 6%) !important;
@@ -292,210 +247,7 @@ html.dark {
     color: rgb(255 255 255 / 35%);
   }
 
-  .login-page-form .el-select .el-select__wrapper {
-    background-color: rgb(255 255 255 / 6%) !important;
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 10%) inset !important;
-  }
-
-  .login-page-form .el-select__placeholder {
-    color: rgb(255 255 255 / 40%);
-  }
-
-  .login-page-form .el-select__selected-item {
-    color: rgb(255 255 255 / 92%);
-  }
-
   .login-remember .el-checkbox__label {
     color: rgb(255 255 255 / 65%);
   }
-
-  .login-secondary-btn {
-    color: rgb(255 255 255 / 85%) !important;
-    background: transparent !important;
-    border-color: rgb(255 255 255 / 22%) !important;
-    border-radius: 8px;
-
-    &:hover {
-      color: var(--el-color-primary) !important;
-      background: var(--el-color-primary-light-9) !important;
-      border-color: var(--el-color-primary) !important;
-    }
-  }
-
-  @media (width >= 768px) {
-    .login-secondary-actions .login-secondary-btn {
-      height: 42px;
-    }
-  }
-}
-
-.login-page-footer {
-  margin-top: 0;
-  text-align: center;
-  border-top: 1px solid var(--el-border-color-lighter);
-
-  .login-footer-text {
-    line-height: 1.65;
-    color: var(--el-text-color-secondary) !important;
-  }
-
-  .login-footer-row {
-    white-space: nowrap;
-  }
-
-  .login-footer-row + .login-footer-row {
-    margin-top: 0.25rem;
-  }
-
-  .login-footer-sep-center {
-    display: none;
-  }
-
-  .login-page-footer__link {
-    color: var(--el-text-color-regular);
-    text-decoration: none;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: var(--el-color-primary);
-    }
-  }
-
-  .login-page-footer__sep {
-    margin: 0 0.35rem;
-    color: var(--el-border-color);
-  }
-
-  .login-page-footer__record {
-    display: inline-block;
-    color: var(--el-text-color-placeholder);
-  }
-}
-
-html.dark .login-page-footer {
-  border-top-color: rgb(255 255 255 / 8%);
-
-  .login-footer-text {
-    color: rgb(255 255 255 / 42%) !important;
-  }
-
-  .login-page-footer__link {
-    color: rgb(255 255 255 / 48%);
-
-    &:hover {
-      color: var(--el-color-primary);
-    }
-  }
-
-  .login-page-footer__sep {
-    color: rgb(255 255 255 / 25%);
-  }
-
-  .login-page-footer__record {
-    color: rgb(255 255 255 / 35%);
-  }
-}
-
-.login-mobile-otp-cell {
-  box-sizing: border-box;
-  flex: 1;
-  min-width: 0;
-  max-width: 48px;
-  height: 40px;
-  padding: 0;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--el-text-color-primary);
-  text-align: center;
-  appearance: none;
-  outline: none;
-  background: var(--el-fill-color-blank);
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-
-  &:focus {
-    border-color: var(--el-color-primary);
-    box-shadow: 0 0 0 1px var(--el-color-primary) inset;
-  }
-}
-
-.login-mobile-sms-btn {
-  border-radius: 8px;
-}
-
-.login-mobile-actions {
-  .el-button + .el-button {
-    margin-left: 0 !important;
-  }
-
-  .el-button {
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-  }
-}
-
-.login-qr-card {
-  box-sizing: border-box;
-}
-
-html.dark {
-  .login-mobile-otp-cell {
-    background: rgb(255 255 255 / 6%);
-    border-color: rgb(255 255 255 / 14%);
-
-    &:focus {
-      border-color: var(--el-color-primary);
-    }
-  }
-}
-
-// ── 第三方登录区 ──
-.login-third-on-dark {
-  margin-top: 1rem;
-
-  .divider-container {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-
-  .divider-line {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--el-border-color-lighter), transparent);
-  }
-
-  .divider-text {
-    padding: 0 12px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-    white-space: nowrap;
-  }
-}
-
-html.dark .login-third-on-dark {
-  .divider-line {
-    background: linear-gradient(to right, transparent, rgb(255 255 255 / 15%), transparent);
-  }
-
-  .divider-text {
-    color: rgb(255 255 255 / 38%);
-  }
-}
-
-.oauth-social-btn:hover {
-  background-color: var(--el-fill-color-light);
-}
-
-.oauth-social-btn:focus-visible {
-  box-shadow: 0 0 0 2px var(--el-color-primary-light-7);
-}
-
-html.dark .oauth-social-btn:hover {
-  background-color: rgb(255 255 255 / 10%);
 }

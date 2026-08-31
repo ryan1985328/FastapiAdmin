@@ -1,4 +1,4 @@
-<!-- 账号密码登录表单（含快捷账号、验证码、滑块） -->
+<!-- Admin 账号密码登录表单（含现有验证码滑块与记住密码） -->
 <template>
   <div>
     <ElForm
@@ -10,24 +10,6 @@
       :validate-on-rule-change="false"
       @keyup.enter="$emit('submit')"
     >
-      <ElFormItem>
-        <ElSelect
-          :model-value="demoAccountKey"
-          class="custom-height w-full"
-          :placeholder="$t('login.quickSelectAccount')"
-          @update:model-value="$emit('setupAccount', $event as AccountKey)"
-        >
-          <ElOption
-            v-for="account in accounts"
-            :key="account.key"
-            :label="account.label"
-            :value="account.key"
-          >
-            <span>{{ account.label }}</span>
-          </ElOption>
-        </ElSelect>
-      </ElFormItem>
-
       <ElFormItem prop="username">
         <ElInput
           class="custom-height"
@@ -89,14 +71,6 @@
           <ElCheckbox v-model="loginForm.remember" class="login-remember">
             {{ $t("login.rememberPwd") }}
           </ElCheckbox>
-          <ElLink
-            type="primary"
-            underline="never"
-            class="inline-flex items-center text-sm leading-[inherit]!"
-            @click="$emit('forget')"
-          >
-            {{ $t("login.forgetPwd") }}
-          </ElLink>
         </div>
 
         <div>
@@ -110,33 +84,15 @@
             {{ $t("login.btnText") }}
           </ElButton>
         </div>
-
-        <div class="login-secondary-actions grid grid-cols-2 gap-2">
-          <ElButton class="login-secondary-btn" plain @click="$emit('openMobile')">
-            {{ $t("login.mobileLogin") }}
-          </ElButton>
-          <ElButton class="login-secondary-btn" plain @click="$emit('openQr')">
-            {{ $t("login.qrLogin") }}
-          </ElButton>
-        </div>
       </div>
     </ElForm>
-
-    <FaLoginThirdPartySection @oauth="$emit('oauth', $event)" />
-
-    <FaLoginAuthLinkRow
-      :hint="$t('login.noAccount')"
-      :link-text="$t('login.register')"
-      @link="$emit('register')"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { Lock, User } from "@element-plus/icons-vue";
-import type { CaptchaInfo, LoginFormData } from "@/api/module_system/auth";
+import type { LoginFormData } from "@/api/module_system/auth";
 import type { FormRules } from "element-plus";
-import type { Account, AccountKey } from "@views/module_system/auth/login/types";
 
 const loginForm = defineModel<LoginFormData>("loginForm", { required: true });
 
@@ -144,10 +100,6 @@ defineOptions({ name: "FaLoginAccountForm" });
 
 interface Props {
   rules: FormRules;
-  captchaState: CaptchaInfo;
-  codeLoading: boolean;
-  demoAccountKey: AccountKey;
-  accounts: Account[];
   formKey: number | string;
   isDark: boolean;
   dragVerifyTextColor: string;
@@ -161,13 +113,6 @@ const isClickPass = defineModel<boolean>("isClickPass", { required: true });
 
 interface Emits {
   submit: [];
-  setupAccount: [key: AccountKey];
-  getCaptcha: [];
-  openMobile: [];
-  openQr: [];
-  forget: [];
-  register: [];
-  oauth: [provider: "wechat" | "qq" | "github" | "gitee"];
 }
 
 const emit = defineEmits<Emits>();

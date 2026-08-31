@@ -35,11 +35,11 @@ class LoginTrendItem(BaseModel):
 
 
 class DashboardStatsSchema(BaseModel):
-    """仪表盘统计数据"""
+    """仪表盘统计数据（用户指标来自 ``app_user``）"""
     online_users: int = 0
-    total_users: int = 0
+    total_users: int = 0  # 保留字段名以兼容现有前端，语义为业务用户总数
     today_login_count: int = 0
     today_unique_users: int = 0
-    week_user_created: int = 0
+    week_user_created: int = 0  # 近 7 天新增业务用户数
     login_trend: list[LoginTrendItem] = []
     recent_logins: list[RecentLoginItem] = []

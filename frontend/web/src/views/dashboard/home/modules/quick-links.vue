@@ -1,5 +1,8 @@
 <template>
-  <div class="fa-card p-5 pb-3 h-55 max-sm:h-55 flex flex-col relative overflow-hidden">
+  <div
+    v-if="quickLinks.length"
+    class="fa-card p-5 pb-3 h-55 max-sm:h-55 flex flex-col relative overflow-hidden"
+  >
     <div class="fa-card-header">
       <div class="title">
         <h4>
@@ -42,12 +45,6 @@
         </div>
       </div>
     </ElScrollbar>
-    <ElEmpty
-      v-else
-      class="absolute inset-0 flex items-center justify-center"
-      description="暂无链接"
-      :image-size="60"
-    />
   </div>
 </template>
 

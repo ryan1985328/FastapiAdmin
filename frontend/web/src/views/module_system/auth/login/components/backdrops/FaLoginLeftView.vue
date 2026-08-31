@@ -1,17 +1,10 @@
-<!-- 登录、注册、忘记密码左侧背景 -->
+<!-- Admin 登录页左侧插画背景 -->
 <template>
   <div class="login-left-view">
     <div v-if="!hideTopBranding" class="logo">
       <FaLogo class="icon" size="46" :src="webLogoSrc" />
       <div class="logo-title-wrap">
-        <div class="logo-title-inline">
-          <h1 class="title">{{ siteTitle }}</h1>
-          <ElTooltip :content="displayVersion" placement="bottom">
-            <div class="logo-version-badge">
-              <span class="logo-version-pill">{{ displayVersion }}</span>
-            </div>
-          </ElTooltip>
-        </div>
+        <h1 class="title">{{ siteTitle }}</h1>
       </div>
     </div>
 
@@ -20,10 +13,8 @@
     </div>
 
     <div class="text-wrap">
-      <h1>{{ configStore.configData?.login_title?.config_value || $t("login.leftView.title") }}</h1>
-      <p>
-        {{ configStore.configData?.login_subtitle?.config_value || $t("login.leftView.subTitle") }}
-      </p>
+      <h1>{{ AppConfig.systemInfo.name }}</h1>
+      <p>管理后台</p>
     </div>
 
     <!-- 几何装饰元素 -->
@@ -101,7 +92,7 @@ defineOptions({ name: "FaLoginLeftView" });
 
 interface Props {
   hideContent?: boolean;
-  /** 顶栏已展示 Logo/标题/版本时隐藏左侧重复顶栏 */
+  /** 顶栏已展示 Logo/标题时隐藏左侧重复顶栏 */
   hideTopBranding?: boolean;
 }
 
@@ -117,16 +108,7 @@ const webLogoSrc = computed(
   () => configStore.configData.logo_url?.config_value?.trim() || undefined
 );
 
-const siteTitle = computed(
-  () => configStore.configData.sys_name?.config_value?.trim() || AppConfig.systemInfo.name
-);
-
-const DEFAULT_APP_VERSION = "3.0.0";
-const displayVersion = computed(() => {
-  const raw = configStore.configData.version?.config_value?.trim();
-  const ver = raw || DEFAULT_APP_VERSION;
-  return ver.startsWith("v") || ver.startsWith("V") ? ver : `v${ver}`;
-});
+const siteTitle = computed(() => AppConfig.systemInfo.name);
 </script>
 
 <style lang="scss" scoped>
@@ -163,16 +145,6 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
       margin-left: 10px;
     }
 
-    /** 标题与版本：垂直居中对齐（上下在同一水平中线），长标题可自然换行 */
-    .logo-title-inline {
-      display: flex;
-      flex-flow: row wrap;
-      gap: 0.45rem;
-      align-items: center;
-      min-width: 0;
-      max-width: 100%;
-    }
-
     .title {
       flex: 0 1 auto;
       min-width: 0;
@@ -183,28 +155,6 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
       line-height: 1.35;
       color: var(--el-text-color-primary);
       letter-spacing: -0.02em;
-    }
-
-    .logo-version-badge {
-      flex-shrink: 0;
-    }
-
-    .logo-version-pill {
-      display: inline-block;
-      padding: 0.28rem 0.6rem;
-      font-size: 11px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      line-height: 1.15;
-      color: var(--el-color-primary);
-      letter-spacing: 0.02em;
-      background: color-mix(in srgb, var(--el-color-primary) 11%, transparent);
-      border: 1px solid color-mix(in srgb, var(--el-color-primary) 28%, transparent);
-      border-radius: 999px;
-      box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
-      transition:
-        border-color 0.2s ease,
-        background 0.2s ease;
     }
   }
 
