@@ -1,0 +1,1 @@
+"""Public App notice module."""

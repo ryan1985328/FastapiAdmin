@@ -238,6 +238,7 @@
     "emptyWithFilter": "No matching notices",
     "empty": "No notices",
     "noContent": "No detailed content",
+    "noMore": "No more notices",
     "createTitle": "New Notice",
     "editTitle": "Edit Notice",
     "detailFailed": "Failed to load detail",

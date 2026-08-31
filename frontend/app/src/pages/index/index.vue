@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { SwiperItem } from '@wot-ui/ui/components/wd-swiper/types'
-import type { NoticeItem } from '@/api/module_system/notice'
+import type { AppNoticeListItem } from '@/api/module_app/notice'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NoticeAPI } from '@/api/module_system/notice'
+import { AppNoticeAPI } from '@/api/module_app/notice'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { useShare } from '@/composables/useShare'
 import { useTabbarActive } from '@/composables/useTabbarActive'
@@ -25,7 +25,7 @@ useI18nNavTitle('index.navTitle')
 
 const displayName = computed(() => (userStore.isLoggedIn() ? userStore.userInfo?.nickname : '') || t('index.guestName'))
 const loading = ref(false)
-const recentNotices = ref<NoticeItem[]>([])
+const recentNotices = ref<AppNoticeListItem[]>([])
 const scrollTop = ref(0)
 
 useShare(() => ({
@@ -98,8 +98,8 @@ function navigateTo(name: string) {
 async function loadNotices() {
   loading.value = true
   try {
-    const result = await NoticeAPI.getAvailable()
-    recentNotices.value = Array.isArray(result) ? result.slice(0, 3) : []
+    const result = await AppNoticeAPI.list({ page_no: 1, page_size: 3 })
+    recentNotices.value = Array.isArray(result?.items) ? result.items.slice(0, 3) : []
   }
   catch {
     // 公告是可选内容，网络异常不应阻止匿名用户进入首页。

@@ -238,6 +238,7 @@
     "emptyWithFilter": "未找到匹配公告",
     "empty": "暂无公告",
     "noContent": "暂无详细内容",
+    "noMore": "没有更多公告",
     "createTitle": "新增公告",
     "editTitle": "编辑公告",
     "detailFailed": "获取详情失败",
