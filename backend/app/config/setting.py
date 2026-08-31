@@ -182,6 +182,7 @@ class Settings(BaseSettings):
         "/api/v1/app/auth/register",
         "/api/v1/app/auth/login",
         "/api/v1/app/auth/refresh",
+        "/api/v1/app/sms/send-code",
         "/api/v1/app/notices*",
         "/api/v1/system/auth/logout",
         "/api/v1/system/param/info",
