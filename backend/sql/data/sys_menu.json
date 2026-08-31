@@ -1540,7 +1540,7 @@
                                 "title": "状态变更",
                                 "params": null,
                                 "affix": false,
-                                "description": "启用或停用用户端用户"
+                                "description": "启用、禁用、冻结或解冻用户端用户"
                             },
                             {
                                 "name": "重置密码",
@@ -1559,6 +1559,24 @@
                                 "params": null,
                                 "affix": false,
                                 "description": "重置用户端用户密码"
+                            },
+                            {
+                                "name": "绑定推荐人",
+                                "type": 3,
+                                "icon": null,
+                                "order": 6,
+                                "permission": "module_system:app_user:bind_referrer",
+                                "route_name": null,
+                                "route_path": null,
+                                "status": 0,
+                                "keep_alive": true,
+                                "hidden": false,
+                                "always_show": false,
+                                "title": "绑定推荐人",
+                                "params": null,
+                                "affix": false,
+                                "redirect": null,
+                                "description": "为未绑定用户绑定直接推荐人"
                             }
                         ],
                         "link": null,

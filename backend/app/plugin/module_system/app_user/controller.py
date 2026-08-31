@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 from typing import Annotated
 
@@ -11,7 +10,14 @@ from app.core.base_schema import AuthSchema, BatchSetAvailable, PageResultSchema
 from app.core.dependencies import AuthPermission, db_getter
 from app.core.router_class import OperationLogRoute
 
-from .schema import AppUserOutSchema, AppUserQueryParam, AppUserResetPasswordSchema, AppUserUpdateSchema
+from .schema import (
+    AppUserBindReferrerSchema,
+    AppUserOutSchema,
+    AppUserQueryParam,
+    AppUserResetPasswordSchema,
+    AppUserStatusActionSchema,
+    AppUserUpdateSchema,
+)
 from .service import AppUserService
 
 AppUserRouter = APIRouter(route_class=OperationLogRoute, prefix="/app_user", tags=["用户端用户模块"])
@@ -64,6 +70,17 @@ async def batch_set_available_obj_controller(
     return SuccessResponse(msg="批量修改用户端用户状态成功")
 
 
+@AppUserRouter.patch("/status/{id}", summary="修改用户端用户状态", response_model=ResponseSchema[AppUserOutSchema])
+async def change_status_controller(
+    auth: Annotated[AuthSchema, Security(AuthPermission(["module_system:app_user:patch"]))],
+    id: Annotated[int, Path(description="用户端用户ID", ge=1)],
+    data: Annotated[AppUserStatusActionSchema, Body(description="状态动作")],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> JSONResponse:
+    result_dict = await AppUserService(auth, db).change_status(id=id, data=data)
+    return SuccessResponse(data=result_dict, msg="修改用户端用户状态成功")
+
+
 @AppUserRouter.put("/password/reset/{id}", summary="重置用户端用户密码", response_model=ResponseSchema[AppUserOutSchema])
 async def reset_password_controller(
     auth: Annotated[AuthSchema, Security(AuthPermission(["module_system:app_user:reset_password"]))],
@@ -73,6 +90,17 @@ async def reset_password_controller(
 ) -> JSONResponse:
     result_dict = await AppUserService(auth, db).reset_password(id=id, data=data)
     return SuccessResponse(data=result_dict, msg="重置用户端用户密码成功")
+
+
+@AppUserRouter.post("/referrer/bind/{id}", summary="绑定用户端用户推荐人", response_model=ResponseSchema[AppUserOutSchema])
+async def bind_referrer_controller(
+    auth: Annotated[AuthSchema, Security(AuthPermission(["module_system:app_user:bind_referrer"]))],
+    id: Annotated[int, Path(description="用户端用户ID", ge=1)],
+    data: Annotated[AppUserBindReferrerSchema, Body(description="推荐人绑定参数")],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> JSONResponse:
+    result_dict = await AppUserService(auth, db).bind_referrer(id=id, data=data)
+    return SuccessResponse(data=result_dict, msg="绑定推荐人成功")
 
 
 __all__ = ["AppUserRouter"]

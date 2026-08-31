@@ -1,6 +1,11 @@
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.base_schema import BaseSchema, JWTOutSchema
+from app.core.validator import DateTimeStr
+
+from .constants import AppUserKycStatus, AppUserStatus
 
 
 class AppUserCreateSchema(BaseModel):
@@ -27,7 +32,7 @@ class AppRefreshTokenSchema(BaseModel):
 
 
 class AppUserOutSchema(BaseSchema):
-    """Safe App user representation; never exposes the password hash."""
+    """Business User summary; never exposes the password hash."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,7 +40,46 @@ class AppUserOutSchema(BaseSchema):
     nickname: str = Field(..., description="昵称")
     avatar: str | None = Field(default=None, description="头像URL地址")
     mobile: str | None = Field(default=None, description="手机号")
-    status: int = Field(default=0, description="状态(0启用 1停用)")
+    status: AppUserStatus = Field(default=AppUserStatus.ACTIVE, description="状态(0正常 1禁用 2冻结)")
+    referral_code: str = Field(..., description="稳定唯一推荐码")
+    referrer_id: int | None = Field(default=None, description="直接推荐人ID")
+    referrer_bound_at: DateTimeStr | None = Field(default=None, description="推荐关系绑定时间")
+    referrer: "AppUserReferrerSummarySchema | None" = Field(default=None, description="推荐人摘要")
+    has_referrer: bool = Field(default=False, description="是否已绑定推荐人")
+    kyc_status: AppUserKycStatus = Field(default=AppUserKycStatus.UNVERIFIED, description="实名聚合状态")
+    kyc_reviewed_at: DateTimeStr | None = Field(default=None, description="实名审核时间")
+
+
+class AppUserReferrerSummarySchema(BaseModel):
+    """Small referrer projection used in App/Admin user summaries."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(..., description="推荐人ID")
+    username: str = Field(..., description="推荐人用户名")
+    nickname: str = Field(..., description="推荐人昵称")
+    mobile: str | None = Field(default=None, description="推荐人手机号")
+    referral_code: str = Field(..., description="推荐人推荐码")
+
+
+class AppUserStatusActionSchema(BaseModel):
+    """One explicit, legal Business User status action."""
+
+    action: Literal["enable", "disable", "freeze", "unfreeze"] = Field(..., description="状态动作")
+
+
+class AppUserBindReferrerSchema(BaseModel):
+    """Bind a previously unbound user to a referrer by referral code."""
+
+    referral_code: str = Field(..., min_length=4, max_length=32, description="推荐人推荐码")
+
+    @field_validator("referral_code")
+    @classmethod
+    def normalize_referral_code(cls, value: str) -> str:
+        value = value.strip().upper()
+        if not value or not value.isalnum():
+            raise ValueError("推荐码格式无效")
+        return value
 
 
 class AppLoginOutSchema(JWTOutSchema):
@@ -48,6 +92,9 @@ __all__ = [
     "AppLoginOutSchema",
     "AppLoginSchema",
     "AppRefreshTokenSchema",
+    "AppUserBindReferrerSchema",
     "AppUserCreateSchema",
     "AppUserOutSchema",
+    "AppUserReferrerSummarySchema",
+    "AppUserStatusActionSchema",
 ]

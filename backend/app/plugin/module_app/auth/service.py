@@ -12,8 +12,9 @@ from app.core.redis_crud import RedisCURD
 from app.core.security import create_access_token, decode_access_token
 from app.utils.password_util import PwdUtil
 
+from ..user.constants import AppUserStatus
 from ..user.model import AppUserModel
-from ..user.schema import AppLoginOutSchema, AppLoginSchema, AppRefreshTokenSchema, AppUserOutSchema
+from ..user.schema import AppLoginOutSchema, AppLoginSchema, AppRefreshTokenSchema
 from ..user.service import AppUserService
 from .dependencies import (
     _access_token_key,
@@ -31,13 +32,13 @@ class AppAuthService:
         user = await AppUserService(db).get_by_username(data.username)
         if not user or not PwdUtil.verify_password(data.password, user.password):
             raise CustomException(msg="账号或密码错误", status_code=401, code=10401)
-        if user.status == 1:
+        if user.status == AppUserStatus.DISABLED:
             raise CustomException(msg="用户已被停用", status_code=401, code=10401)
 
         token = await cls.issue_tokens(redis=redis, user=user)
         return AppLoginOutSchema(
             **token.model_dump(),
-            user_info=AppUserOutSchema.model_validate(user),
+            user_info=await AppUserService(db).to_out(user),
         )
 
     @classmethod
@@ -106,7 +107,7 @@ class AppAuthService:
         user = await AppUserService(db).get_by_id(user_id)
         if not user:
             raise CustomException(msg="刷新token失败，用户不存在", status_code=401, code=10401)
-        if user.status == 1:
+        if user.status == AppUserStatus.DISABLED:
             raise CustomException(msg="用户已被停用", status_code=401, code=10401)
         return await cls.issue_tokens(redis=redis, user=user, session_id=session_id)
 

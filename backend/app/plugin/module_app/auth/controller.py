@@ -50,8 +50,10 @@ async def refresh_app_user_token_controller(
 @AppAuthRouter.get("/me", summary="获取当前App用户", response_model=ResponseSchema[AppUserOutSchema])
 async def get_current_app_user_controller(
     user: Annotated[AppUserModel, Depends(get_current_app_user)],
+    db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
-    return SuccessResponse(data=AppUserOutSchema.model_validate(user), msg="获取当前用户信息成功")
+    result = await AppUserService(db).to_out(user)
+    return SuccessResponse(data=result, msg="获取当前用户信息成功")
 
 
 @AppAuthRouter.post("/logout", summary="App用户退出登录", response_model=ResponseSchema[None])

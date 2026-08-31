@@ -11,6 +11,7 @@ from app.core.exceptions import CustomException
 from app.core.redis_crud import RedisCURD
 from app.core.security import CustomOAuth2PasswordBearer, decode_access_token
 
+from ..user.constants import AppUserStatus
 from ..user.crud import AppUserCRUD
 from ..user.model import AppUserModel
 
@@ -80,7 +81,7 @@ async def get_current_app_user(
     user = await AppUserCRUD(db).get_by_id(user_id)
     if not user:
         raise CustomException(msg="用户不存在", code=RET.NOT_FOUND.code, status_code=401)
-    if user.status == 1:
+    if user.status == AppUserStatus.DISABLED:
         raise CustomException(msg="用户已被停用", code=RET.UNAUTHORIZED.code, status_code=401)
     return user
 

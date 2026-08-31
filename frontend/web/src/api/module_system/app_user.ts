@@ -34,6 +34,22 @@ const AppUserAPI = {
     });
   },
 
+  changeAppUserStatus(id: number, action: AppUserStatusAction) {
+    return request<ApiResponse<AppUserTable>>({
+      url: `${API_PATH}/status/${id}`,
+      method: "patch",
+      data: { action },
+    });
+  },
+
+  bindAppUserReferrer(id: number, referral_code: string) {
+    return request<ApiResponse<AppUserTable>>({
+      url: `${API_PATH}/referrer/bind/${id}`,
+      method: "post",
+      data: { referral_code },
+    });
+  },
+
   resetAppUserPassword(id: number, body: ResetPasswordForm) {
     return request<ApiResponse<AppUserTable>>({
       url: `${API_PATH}/password/reset/${id}`,
@@ -46,18 +62,42 @@ const AppUserAPI = {
 export default AppUserAPI;
 
 export interface AppUserPageQuery extends PageQuery {
+  id?: number;
   username?: string;
   nickname?: string;
   mobile?: string;
-  status?: number;
+  status?: AppUserStatus;
+  referral_code?: string;
+  referrer?: string;
+  kyc_status?: AppUserKycStatus;
+}
+
+export type AppUserStatus = 0 | 1 | 2;
+export type AppUserKycStatus = "unverified" | "pending" | "verified" | "rejected";
+export type AppUserStatusAction = "enable" | "disable" | "freeze" | "unfreeze";
+
+export interface AppUserReferrerSummary {
+  id: number;
+  username: string;
+  nickname: string;
+  mobile?: string;
+  referral_code: string;
 }
 
 export interface AppUserTable extends BaseType {
+  id?: number;
   username?: string;
   nickname?: string;
   avatar?: string;
   mobile?: string;
-  status?: number;
+  status?: AppUserStatus;
+  referral_code?: string;
+  referrer_id?: number;
+  referrer_bound_at?: string;
+  referrer?: AppUserReferrerSummary;
+  has_referrer?: boolean;
+  kyc_status?: AppUserKycStatus;
+  kyc_reviewed_at?: string;
   created_time?: string;
   updated_time?: string;
 }

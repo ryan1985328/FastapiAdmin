@@ -19,5 +19,8 @@ class AppUserCRUD(CRUDBase[AppUserModel, AppUserCreateSchema, AppUserCreateSchem
     async def get_by_id(self, user_id: int) -> AppUserModel | None:
         return await self.get(id=user_id)
 
+    async def get_by_referral_code(self, referral_code: str, *, include_deleted: bool = False) -> AppUserModel | None:
+        return await self.get(referral_code=referral_code, include_deleted=include_deleted)
+
 
 __all__ = ["AppUserCRUD"]

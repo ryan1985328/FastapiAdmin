@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
