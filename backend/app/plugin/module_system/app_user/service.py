@@ -1,7 +1,7 @@
 from typing import Any
 
 from redis.asyncio.client import Redis
-from sqlalchemy import exists, func, or_, select
+from sqlalchemy import String, cast, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -88,7 +88,18 @@ class AppUserService:
             if value is None:
                 continue
 
-            if key == "id":
+            if key == "keyword":
+                term = f"%{value}%"
+                conditions.append(
+                    or_(
+                        cast(AppUserModel.id, String).like(term),
+                        AppUserModel.username.like(term),
+                        AppUserModel.mobile.like(term),
+                        AppUserModel.nickname.like(term),
+                        AppUserModel.referral_code.like(term),
+                    )
+                )
+            elif key == "id":
                 conditions.append(AppUserModel.id == value)
             elif key in {"username", "nickname", "mobile", "referral_code"}:
                 conditions.append(getattr(AppUserModel, key).like(f"%{value}%"))
@@ -104,6 +115,8 @@ class AppUserService:
                         referrer.referral_code.like(term),
                     )
                 )
+            elif key == "has_referrer":
+                conditions.append(AppUserModel.referrer_id.is_not(None) if value else AppUserModel.referrer_id.is_(None))
             elif key == "kyc_status":
                 try:
                     kyc_status = AppUserKycStatus(value)

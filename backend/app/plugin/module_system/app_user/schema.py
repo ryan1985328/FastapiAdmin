@@ -30,6 +30,11 @@ class AppUserResetPasswordSchema(BaseModel):
 class AppUserQueryParam(BaseQueryParam):
     """App user list filters."""
 
+    keyword: str | None = Field(
+        None,
+        description="用户关键词（ID/登录账号/手机号/昵称/推荐码）",
+        json_schema_extra={"q": "like"},
+    )
     username: str | None = Field(None, description="登录账号", json_schema_extra={"q": "like"})
     nickname: str | None = Field(None, description="昵称", json_schema_extra={"q": "like"})
     mobile: str | None = Field(None, description="手机号", json_schema_extra={"q": "like"})
@@ -37,6 +42,7 @@ class AppUserQueryParam(BaseQueryParam):
     status: AppUserStatus | None = Field(None, description="状态(0正常 1禁用 2冻结)", json_schema_extra={"q": "eq"})
     referral_code: str | None = Field(None, description="推荐码", json_schema_extra={"q": "like"})
     referrer: str | None = Field(None, description="推荐人用户名/手机号/昵称/推荐码", json_schema_extra={"q": "like"})
+    has_referrer: bool | None = Field(None, description="是否已绑定推荐人", json_schema_extra={"q": "eq"})
     kyc_status: AppUserKycStatus | None = Field(None, description="实名状态", json_schema_extra={"q": "eq"})
 
 

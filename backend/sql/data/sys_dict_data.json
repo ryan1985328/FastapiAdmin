@@ -406,5 +406,89 @@
         "is_default": false,
         "status": 0,
         "description": "危险表格回显样式"
+    },
+    {
+        "dict_sort": 1,
+        "dict_label": "正常",
+        "dict_value": "0",
+        "dict_type": "app_user_status",
+        "dict_type_id": 11,
+        "css_class": "",
+        "list_class": "success",
+        "is_default": true,
+        "status": 0,
+        "description": "ACTIVE"
+    },
+    {
+        "dict_sort": 2,
+        "dict_label": "禁用",
+        "dict_value": "1",
+        "dict_type": "app_user_status",
+        "dict_type_id": 11,
+        "css_class": "",
+        "list_class": "danger",
+        "is_default": false,
+        "status": 0,
+        "description": "DISABLED"
+    },
+    {
+        "dict_sort": 3,
+        "dict_label": "冻结",
+        "dict_value": "2",
+        "dict_type": "app_user_status",
+        "dict_type_id": 11,
+        "css_class": "",
+        "list_class": "warning",
+        "is_default": false,
+        "status": 0,
+        "description": "FROZEN"
+    },
+    {
+        "dict_sort": 1,
+        "dict_label": "未实名",
+        "dict_value": "unverified",
+        "dict_type": "app_user_kyc_status",
+        "dict_type_id": 12,
+        "css_class": "",
+        "list_class": "info",
+        "is_default": true,
+        "status": 0,
+        "description": "无有效实名记录"
+    },
+    {
+        "dict_sort": 2,
+        "dict_label": "待审核",
+        "dict_value": "pending",
+        "dict_type": "app_user_kyc_status",
+        "dict_type_id": 12,
+        "css_class": "",
+        "list_class": "warning",
+        "is_default": false,
+        "status": 0,
+        "description": "实名资料待审核"
+    },
+    {
+        "dict_sort": 3,
+        "dict_label": "已实名",
+        "dict_value": "verified",
+        "dict_type": "app_user_kyc_status",
+        "dict_type_id": 12,
+        "css_class": "",
+        "list_class": "success",
+        "is_default": false,
+        "status": 0,
+        "description": "实名资料已通过"
+    },
+    {
+        "dict_sort": 4,
+        "dict_label": "已驳回",
+        "dict_value": "rejected",
+        "dict_type": "app_user_kyc_status",
+        "dict_type_id": 12,
+        "css_class": "",
+        "list_class": "danger",
+        "is_default": false,
+        "status": 0,
+        "description": "实名资料审核未通过"
     }
 ]

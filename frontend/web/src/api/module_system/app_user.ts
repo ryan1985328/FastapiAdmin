@@ -62,6 +62,7 @@ const AppUserAPI = {
 export default AppUserAPI;
 
 export interface AppUserPageQuery extends PageQuery {
+  keyword?: string;
   id?: number;
   username?: string;
   nickname?: string;
@@ -69,7 +70,9 @@ export interface AppUserPageQuery extends PageQuery {
   status?: AppUserStatus;
   referral_code?: string;
   referrer?: string;
+  has_referrer?: boolean;
   kyc_status?: AppUserKycStatus;
+  created_time?: string[];
 }
 
 export type AppUserStatus = 0 | 1 | 2;

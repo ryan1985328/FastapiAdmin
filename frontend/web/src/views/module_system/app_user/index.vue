@@ -7,7 +7,8 @@
       :items="businessSearchItems"
       :rules="searchBarRules"
       :is-expand="false"
-      :show-expand="false"
+      :show-expand="true"
+      :default-expanded="false"
       :show-reset="true"
       :show-search="true"
       @search="handleSearch"
@@ -58,17 +59,18 @@
         <FaDescriptions :column="2" :data="detailFormData" :items="detailItems" max-height="70vh">
           <template #referrer>
             <span v-if="detailFormData.referrer">
-              {{ detailFormData.referrer.username
-              }}<span v-if="detailFormData.referrer.mobile"
-                >（{{ detailFormData.referrer.mobile }}）</span
-              >
+              {{ formatUserSummary(detailFormData.referrer) }}
             </span>
-            <span v-else class="text-g-400">未绑定</span>
+            <span v-else class="text-g-400">—</span>
+          </template>
+          <template #status="{ value }">
+            <FaStatusTag v-bind="dictTagProps(USER_STATUS_DICT, value)" />
           </template>
           <template #kyc_status="{ value }">
-            <ElTag :type="kycStatusType(value as AppUserKycStatus)">
-              {{ kycStatusLabel(value as AppUserKycStatus) }}
-            </ElTag>
+            <FaStatusTag v-bind="dictTagProps(KYC_STATUS_DICT, value)" />
+          </template>
+          <template #has_referrer="{ value }">
+            <FaStatusTag :type="value ? 'success' : 'info'" :label="value ? '已绑定' : '未绑定'" />
           </template>
         </FaDescriptions>
         <div v-if="!detailFormData.has_referrer && canBindReferrer" class="mt-4 flex justify-end">
@@ -106,10 +108,13 @@ import type { FormItem } from "@/components/forms/fa-form/index.vue";
 import type { ColumnOption } from "@/types/component";
 import FaDescriptions from "@/components/display/fa-descriptions/index.vue";
 import type { DescriptionsItem } from "@/components/display/fa-descriptions/index.vue";
+import FaStatusTag from "@/components/display/fa-status-tag/index.vue";
 import FaForm from "@/components/forms/fa-form/index.vue";
 import FaTableHeader from "@/components/tables/fa-table-header/index.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { checkPerm } from "@/utils/checkPerm";
+import { h, onMounted } from "vue";
+import { useDictStore } from "@stores";
 import AppUserAPI, {
   type AppUserKycStatus,
   type AppUserForm,
@@ -123,18 +128,72 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const STATUS_OPTIONS = [
-  { label: "正常", value: 0 },
-  { label: "禁用", value: 1 },
-  { label: "冻结", value: 2 },
-] as const;
+const USER_STATUS_DICT = "app_user_status";
+const KYC_STATUS_DICT = "app_user_kyc_status";
+const REFERRER_BOUND_DICT = "sys_yes_no";
+const DICT_TAG_TYPES = ["primary", "success", "warning", "danger", "info"] as const;
+type DictTagType = (typeof DICT_TAG_TYPES)[number];
 
-const KYC_STATUS_OPTIONS = [
-  { label: "未实名", value: "unverified" },
-  { label: "待审核", value: "pending" },
-  { label: "已实名", value: "verified" },
-  { label: "已驳回", value: "rejected" },
-] as const;
+const dictStore = useDictStore();
+
+function getDictTagType(value?: string): DictTagType {
+  return DICT_TAG_TYPES.includes(value as DictTagType) ? (value as DictTagType) : "info";
+}
+
+function dictTagProps(dictType: string, value: unknown) {
+  const lookupValue = typeof value === "boolean" ? (value ? "1" : "0") : String(value ?? "");
+  const entry = dictStore.dictData[dictType]?.find((item) => item.dict_value === lookupValue);
+  return {
+    type: getDictTagType(entry?.list_class),
+    label: entry?.dict_label ?? "—",
+  };
+}
+
+const userStatusOptions = computed(() =>
+  dictStore.getDictArray(USER_STATUS_DICT).map((item) => ({
+    label: item.dict_label,
+    value: Number(item.dict_value) as AppUserStatus,
+  }))
+);
+
+const kycStatusOptions = computed(() =>
+  dictStore.getDictArray(KYC_STATUS_DICT).map((item) => ({
+    label: item.dict_label,
+    value: item.dict_value as AppUserKycStatus,
+  }))
+);
+
+const referrerBoundOptions = computed(() =>
+  dictStore.getDictArray(REFERRER_BOUND_DICT).map((item) => ({
+    label: item.dict_label === "是" ? "已绑定" : "未绑定",
+    value: item.dict_value === "1",
+  }))
+);
+
+function formatUserSummary(
+  user?: {
+    username?: string;
+    nickname?: string;
+    mobile?: string | null;
+  } | null
+): string {
+  if (!user) return "—";
+  const username = user.username?.trim();
+  const nickname = user.nickname?.trim();
+  const identity =
+    nickname && username && nickname !== username
+      ? `${nickname}（${username}）`
+      : nickname || username || "—";
+  return user.mobile ? `${identity} · ${user.mobile}` : identity;
+}
+
+function renderDictTag(dictType: string, value: unknown) {
+  return h(FaStatusTag, dictTagProps(dictType, value));
+}
+
+onMounted(() => {
+  void dictStore.getDict([USER_STATUS_DICT, KYC_STATUS_DICT, REFERRER_BOUND_DICT]);
+});
 
 const createInitialFormData = (): AppUserForm => ({
   nickname: undefined,
@@ -143,25 +202,21 @@ const createInitialFormData = (): AppUserForm => ({
 });
 
 type AppUserSearchFormParams = {
-  id?: number;
-  username?: string;
-  nickname?: string;
-  mobile?: string;
+  keyword?: string;
   status?: AppUserStatus;
-  referral_code?: string;
   referrer?: string;
+  has_referrer?: boolean;
   kyc_status?: AppUserKycStatus;
+  created_time?: string[];
 };
 
 const searchForm = ref<AppUserSearchFormParams>({
-  id: undefined,
-  username: undefined,
-  nickname: undefined,
-  mobile: undefined,
+  keyword: undefined,
   status: undefined,
-  referral_code: undefined,
   referrer: undefined,
+  has_referrer: undefined,
   kyc_status: undefined,
+  created_time: undefined,
 });
 
 const showSearchBar = ref(true);
@@ -170,60 +225,20 @@ const searchBarRules: Record<string, unknown> = {};
 
 const businessSearchItems = computed(() => [
   {
-    label: "用户 ID",
-    key: "id",
+    label: "关键词",
+    key: "keyword",
     type: "input",
-    placeholder: "请输入用户 ID",
+    placeholder: "ID / 登录账号 / 手机号 / 昵称 / 推荐码",
     clearable: true,
-    span: 6,
+    span: 8,
   },
   {
-    label: "登录账号",
-    key: "username",
-    type: "input",
-    placeholder: "请输入登录账号",
-    clearable: true,
-    span: 6,
-  },
-  {
-    label: "昵称",
-    key: "nickname",
-    type: "input",
-    placeholder: "请输入昵称",
-    clearable: true,
-    span: 6,
-  },
-  {
-    label: "手机号",
-    key: "mobile",
-    type: "input",
-    placeholder: "请输入手机号",
-    clearable: true,
-    span: 6,
-  },
-  {
-    label: "推荐码",
-    key: "referral_code",
-    type: "input",
-    placeholder: "请输入推荐码",
-    clearable: true,
-    span: 6,
-  },
-  {
-    label: "推荐人",
-    key: "referrer",
-    type: "input",
-    placeholder: "用户名/手机号/昵称/推荐码",
-    clearable: true,
-    span: 6,
-  },
-  {
-    label: "状态",
+    label: "用户状态",
     key: "status",
     type: "select",
     props: {
       placeholder: "请选择状态",
-      options: STATUS_OPTIONS,
+      options: userStatusOptions.value,
       clearable: true,
     },
     span: 6,
@@ -234,10 +249,42 @@ const businessSearchItems = computed(() => [
     type: "select",
     props: {
       placeholder: "请选择实名状态",
-      options: KYC_STATUS_OPTIONS,
+      options: kycStatusOptions.value,
       clearable: true,
     },
     span: 6,
+  },
+  {
+    label: "推荐绑定",
+    key: "has_referrer",
+    type: "select",
+    props: {
+      placeholder: "请选择绑定状态",
+      options: referrerBoundOptions.value,
+      clearable: true,
+    },
+    span: 6,
+  },
+  {
+    label: "注册时间",
+    key: "created_time",
+    type: "datetimerange",
+    props: {
+      type: "datetimerange",
+      clearable: true,
+      startPlaceholder: "注册开始",
+      endPlaceholder: "注册结束",
+    },
+    span: 12,
+  },
+  {
+    label: "推荐人",
+    key: "referrer",
+    type: "input",
+    placeholder: "用户名 / 手机号 / 昵称 / 推荐码",
+    clearable: true,
+    span: 8,
+    expandOnly: true,
   },
 ]);
 
@@ -266,53 +313,51 @@ const {
       page_size: 10,
     },
     columnsFactory: (): ColumnOption<AppUserTable>[] => [
-      { type: "globalIndex", width: 56, label: "序号" },
       { type: "selection", width: 48, fixed: "left" },
-      { prop: "id", label: "ID", width: 76 },
-      { prop: "username", label: "登录账号", minWidth: 120, showOverflowTooltip: true },
-      { prop: "mobile", label: "手机号", minWidth: 120, showOverflowTooltip: true },
-      { prop: "nickname", label: "昵称", minWidth: 120, showOverflowTooltip: true },
-      { prop: "referral_code", label: "推荐码", minWidth: 120, showOverflowTooltip: true },
+      { prop: "id", label: "用户ID", width: 88 },
+      {
+        prop: "username",
+        label: "用户",
+        minWidth: 190,
+        showOverflowTooltip: true,
+        formatter: (row: AppUserTable) => formatUserSummary(row),
+      },
+      {
+        prop: "mobile",
+        label: "手机号",
+        minWidth: 130,
+        showOverflowTooltip: true,
+        formatter: (row: AppUserTable) => row.mobile || "—",
+      },
+      {
+        prop: "referral_code",
+        label: "推荐码",
+        minWidth: 126,
+        showOverflowTooltip: true,
+        formatter: (row: AppUserTable) => row.referral_code || "—",
+      },
       {
         prop: "referrer",
         label: "推荐人",
-        minWidth: 150,
+        minWidth: 190,
         showOverflowTooltip: true,
-        formatter: (row: AppUserTable) =>
-          row.referrer
-            ? `${row.referrer.username}${row.referrer.mobile ? `（${row.referrer.mobile}）` : ""}`
-            : "—",
-      },
-      {
-        prop: "has_referrer",
-        label: "推荐绑定",
-        width: 96,
-        formatter: (row: AppUserTable) => (row.has_referrer ? "已绑定" : "未绑定"),
+        formatter: (row: AppUserTable) => formatUserSummary(row.referrer),
       },
       {
         prop: "kyc_status",
         label: "实名状态",
         width: 100,
-        status: {
-          unverified: { type: "info", text: "未实名" },
-          pending: { type: "warning", text: "待审核" },
-          verified: { type: "success", text: "已实名" },
-          rejected: { type: "danger", text: "已驳回" },
-        },
+        formatter: (row: AppUserTable) => renderDictTag(KYC_STATUS_DICT, row.kyc_status),
       },
       {
         prop: "status",
-        label: "状态",
-        width: 88,
-        status: {
-          0: { type: "success", text: "正常" },
-          1: { type: "danger", text: "禁用" },
-          2: { type: "warning", text: "冻结" },
-        },
+        label: "账号状态",
+        width: 100,
+        formatter: (row: AppUserTable) => renderDictTag(USER_STATUS_DICT, row.status),
       },
       {
         prop: "created_time",
-        label: "创建时间",
+        label: "注册时间",
         width: 168,
         sortable: true,
         showOverflowTooltip: true,
@@ -341,27 +386,11 @@ const detailItems: DescriptionsItem[] = [
   { label: "手机号", prop: "mobile" },
   { label: "昵称", prop: "nickname" },
   { label: "头像", prop: "avatar" },
-  {
-    label: "状态",
-    prop: "status",
-    tag: {
-      map: {
-        "0": { type: "success", text: "正常" },
-        "1": { type: "danger", text: "禁用" },
-        "2": { type: "warning", text: "冻结" },
-      },
-    },
-  },
-  { label: "创建时间", prop: "created_time" },
+  { label: "账号状态", prop: "status" },
+  { label: "注册时间", prop: "created_time" },
   { label: "推荐码", prop: "referral_code" },
   { label: "推荐人", prop: "referrer" },
-  {
-    label: "推荐绑定状态",
-    prop: "has_referrer",
-    tag: {
-      map: { true: { type: "success", text: "已绑定" }, false: { type: "info", text: "未绑定" } },
-    },
-  },
+  { label: "推荐绑定状态", prop: "has_referrer" },
   { label: "推荐绑定时间", prop: "referrer_bound_at" },
   { label: "实名状态", prop: "kyc_status" },
   { label: "实名审核时间", prop: "kyc_reviewed_at" },
@@ -404,28 +433,27 @@ const { submitLoading, handleOpenDialog } = crud;
 const handleSearch = async (params: AppUserSearchFormParams) => {
   await searchBarRef.value?.validate();
   replaceSearchParams({
-    id: params.id,
-    username: params.username,
-    nickname: params.nickname,
-    mobile: params.mobile,
+    keyword: params.keyword,
     status: params.status,
-    referral_code: params.referral_code,
     referrer: params.referrer,
+    has_referrer: params.has_referrer,
     kyc_status: params.kyc_status,
+    created_time:
+      Array.isArray(params.created_time) && params.created_time.length === 2
+        ? params.created_time
+        : undefined,
   } as Record<string, unknown>);
   await getData();
 };
 
 const onResetSearch = async () => {
   searchForm.value = {
-    id: undefined,
-    username: undefined,
-    nickname: undefined,
-    mobile: undefined,
+    keyword: undefined,
     status: undefined,
-    referral_code: undefined,
     referrer: undefined,
+    has_referrer: undefined,
     kyc_status: undefined,
+    created_time: undefined,
   };
   await resetSearchParams();
 };
@@ -439,24 +467,6 @@ async function handleSubmit() {
 }
 
 const canBindReferrer = computed(() => checkPerm("module_system:app_user:bind_referrer"));
-
-const KYC_STATUS_LABELS: Record<AppUserKycStatus, string> = {
-  unverified: "未实名",
-  pending: "待审核",
-  verified: "已实名",
-  rejected: "已驳回",
-};
-
-function kycStatusLabel(status: AppUserKycStatus): string {
-  return KYC_STATUS_LABELS[status] ?? "未实名";
-}
-
-function kycStatusType(status: AppUserKycStatus): "success" | "warning" | "danger" | "info" {
-  if (status === "verified") return "success";
-  if (status === "pending") return "warning";
-  if (status === "rejected") return "danger";
-  return "info";
-}
 
 async function openDetail(id: number) {
   detailFormData.value = {};
