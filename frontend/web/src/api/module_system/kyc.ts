@@ -36,6 +36,22 @@ const AppUserKycAPI = {
     });
   },
 
+  reviewAppUserKyc(id: number, body: { status: 1 | 2; review_remark?: string }) {
+    return request<ApiResponse<AppUserKycTable>>({
+      url: `${API_PATH}/review/${id}`,
+      method: "post",
+      data: body,
+    });
+  },
+
+  downloadKycImage(id: number, side: "front" | "back") {
+    return request<Blob>({
+      url: `${API_PATH}/file/${id}/${side}`,
+      method: "get",
+      responseType: "blob",
+    });
+  },
+
   deleteAppUserKyc(body: number[]) {
     return request<ApiResponse>({
       url: `${API_PATH}/delete`,

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import UploadFile
@@ -16,6 +16,7 @@ from .schema import (
     AppUserKycCreateSchema,
     AppUserKycOutSchema,
     AppUserKycQueryParam,
+    AppUserKycReviewSchema,
     AppUserKycUpdateSchema,
 )
 
@@ -68,6 +69,23 @@ class AppUserKycService:
 
 
         obj = await AppUserKycCRUD(self.auth, self.db).update(id=id, data=data)
+        return AppUserKycOutSchema.model_validate(obj)
+
+    async def review(self, id: int, data: AppUserKycReviewSchema) -> AppUserKycOutSchema:
+        obj = await AppUserKycCRUD(self.auth, self.db).get(id=id)
+        if not obj:
+            raise CustomException(msg="审核失败，该实名认证不存在")
+        if obj.status != 0:
+            raise CustomException(msg="该实名认证已审核，无需重复操作")
+        review_remark = data.review_remark.strip() if data.review_remark else None
+        if data.status == 2 and not review_remark:
+            raise CustomException(msg="驳回实名认证时必须填写审核备注")
+
+        obj.status = data.status
+        obj.review_remark = review_remark if data.status == 2 else None
+        obj.reviewed_at = datetime.now(UTC)
+        await self.db.flush()
+        await self.db.refresh(obj)
         return AppUserKycOutSchema.model_validate(obj)
 
     async def delete(self, ids: list[int]) -> None:
@@ -141,7 +159,6 @@ class AppUserKycService:
 
             required_fields = [
                 "app_user_id",
-                "real_name",
                 "id_card_no",
                 "status",
             ]

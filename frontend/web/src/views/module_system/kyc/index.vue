@@ -25,31 +25,15 @@
         @refresh="refreshData"
       >
         <template #left>
-          <FaTableHeaderLeft
-            :remove-ids="selectedIds"
-            :perm-create="['module_system:kyc:create']"
-            :perm-import="['module_system:kyc:import']"
-            :perm-export="['module_system:kyc:export']"
-            :perm-delete="['module_system:kyc:delete']"
-            :perm-patch="['module_system:kyc:patch']"
-            :delete-loading="batchDeleting"
-            :create-loading="createLoading"
-            @add="handleAdd"
-            @import="openImport"
-            @export="openExport"
-            @delete="handleBatchDelete"
-            @more="runBatchStatus"
-          />
+          <span class="text-sm text-g-500">实名认证仅支持查看与审核，不提供删除操作</span>
         </template>
       </FaTableHeader>
 
       <FaTable
-        ref="faTableRef"
         :loading="loading"
         :data="data"
         :columns="columns"
         :pagination="pagination"
-        @selection-change="onTableSelectionChange"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
       />
@@ -62,10 +46,8 @@
       dialog-class="crud-embed-dialog"
       modal-class="crud-embed-dialog"
       :form-mode="dialogVisible.type"
-      :confirm-loading="submitLoading"
       @cancel="handleCloseDialog"
       @close="handleCloseDialog"
-      @confirm="handleSubmit()"
     >
       <template v-if="dialogVisible.type === 'detail'">
         <FaDescriptions
@@ -73,64 +55,44 @@
           :data="detailFormData"
           :items="detailItems"
           max-height="70vh"
-        />
-      </template>
-      <template v-else>
-        <FaForm
-          :key="formRenderKey"
-          scrollbar
-          max-height="70vh"
-          ref="dataFormRef"
-          v-model="formData"
-          :items="dialogFormItems"
-          :rules="rules"
-          label-suffix=":"
-          :label-width="100"
-          label-position="right"
-          :span="12"
-          :gutter="16"
-          :show-reset="false"
-          :show-submit="false"
-          class="crud-dialog-art-form"
-        />
+        >
+          <template #id_card_front>
+            <ElImage
+              v-if="detailImageUrls.front"
+              :src="detailImageUrls.front"
+              :preview-src-list="[detailImageUrls.front]"
+              fit="contain"
+              style="width: 180px; height: 120px"
+            />
+            <span v-else class="text-g-400">图片不可用</span>
+          </template>
+          <template #id_card_back>
+            <ElImage
+              v-if="detailImageUrls.back"
+              :src="detailImageUrls.back"
+              :preview-src-list="[detailImageUrls.back]"
+              fit="contain"
+              style="width: 180px; height: 120px"
+            />
+            <span v-else class="text-g-400">图片不可用</span>
+          </template>
+        </FaDescriptions>
       </template>
     </FaDialog>
 
-    <FaImportDialog
-      v-model="importVisible"
-      :content-config="importContentConfig"
-      default-template-file-name="kyc_import_template.xlsx"
-      @upload="handleCrudImportUpload"
-    />
-
-    <FaExportDialog
-      v-model="exportVisible"
-      :content-config="exportContentConfig"
-      :query-params="exportQueryParams"
-      :page-data="data"
-      :selection-data="selectedRows"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { onUnmounted } from "vue";
 import type { TableOperationAction } from "@/utils/table";
-import { renderTableOperationCell, stripPaginationParams, toCrudCols } from "@utils";
-import { useCrudForm } from "@/hooks/core/useCrudForm";
-import { confirmDelete, confirmBatchDelete, confirmAction } from "@/hooks/core/useConfirm";
-import { ResultEnum } from "@/enums/api/result.enum";
-import type { IContentConfig, IObject } from "@/components/modal/types";
+import { renderTableOperationCell } from "@utils";
+import { ElMessageBox } from "element-plus";
 import type { AuditSearchFormParams } from "@/components/forms/fa-search-bar/auditSearchFormItems";
-import type { FormItem } from "@/components/forms/fa-form/index.vue";
 import type { ColumnOption } from "@/types/component";
 import FaDescriptions from "@/components/display/fa-descriptions/index.vue";
-import FaForm from "@/components/forms/fa-form/index.vue";
 import FaTableHeader from "@/components/tables/fa-table-header/index.vue";
-import AppUserKycAPI, {
-  type AppUserKycForm,
-  type AppUserKycPageQuery,
-  type AppUserKycTable,
-} from "@/api/module_system/kyc";
+import AppUserKycAPI, { type AppUserKycTable } from "@/api/module_system/kyc";
 
 defineOptions({
   name: "AppUserKyc",
@@ -138,22 +100,11 @@ defineOptions({
 });
 
 
-// 常量定义
 const STATUS_OPTIONS = [
-  { label: "启用", value: 0 },
-  { label: "停用", value: 1 },
+  { label: "待审核", value: 0 },
+  { label: "已通过", value: 1 },
+  { label: "已驳回", value: 2 },
 ] as const;
-
-const createInitialFormData = (): AppUserKycForm => ({
-  app_user_id: undefined,
-  real_name: undefined,
-  id_card_no: undefined,
-  id_card_front: undefined,
-  id_card_back: undefined,
-  status: 0,
-  review_remark: undefined,
-  reviewed_at: undefined,
-});
 
 type AppUserKycSearchFormParams = {
   app_user_id?: string;
@@ -239,30 +190,18 @@ const businessSearchItems = computed(() => [
 ]);
 
 
-const faTableRef = ref<{ elTableRef?: { clearSelection: () => void } } | null>(null);
-const { selectedRows, selectedIds, batchDeleting, onTableSelectionChange } =
-  useTableSelection<AppUserKycTable>();
-
-const createLoading = ref(false);
-
-const PK = "id" as const;
-
 const {
   columns,
   columnChecks,
   data,
   loading,
   pagination,
-  searchParams,
   getData,
   replaceSearchParams,
   resetSearchParams,
   handleSizeChange,
   handleCurrentChange,
   refreshData,
-  refreshCreate,
-  refreshUpdate,
-  refreshRemove,
 } = useTable({
   core: {
     apiFn: AppUserKycAPI.getAppUserKycList,
@@ -272,19 +211,22 @@ const {
     },
     columnsFactory: (): ColumnOption<AppUserKycTable>[] => [
       { type: "globalIndex", width: 56, label: "序号" },
-      { type: "selection", width: 48, fixed: "left" },
       { prop: "app_user_id", label: "用户端用户ID", minWidth: 120, showOverflowTooltip: true },
       { prop: "real_name", label: "真实姓名", minWidth: 120, showOverflowTooltip: true },
-      { prop: "id_card_no", label: "证件号码", minWidth: 120, showOverflowTooltip: true },
-      { prop: "id_card_front", label: "证件正面地址", minWidth: 120, showOverflowTooltip: true },
-      { prop: "id_card_back", label: "证件反面地址", minWidth: 120, showOverflowTooltip: true },
+      {
+        prop: "id_card_no",
+        label: "证件号码",
+        minWidth: 150,
+        formatter: (row: AppUserKycTable) => maskIdCard(row.id_card_no),
+      },
       {
         prop: "status",
         label: "状态",
         width: 88,
         status: {
-          0: { type: "success", text: "启用" },
-          1: { type: "info", text: "停用" },
+          0: { type: "warning", text: "待审核" },
+          1: { type: "success", text: "已通过" },
+          2: { type: "danger", text: "已驳回" },
         },
       },
       { prop: "review_remark", label: "审核备注", minWidth: 120, showOverflowTooltip: true },
@@ -303,108 +245,23 @@ const {
   },
 });
 
-const crudCols = toCrudCols(columns);
-
-const exportQueryParams = computed(() => {
-  return stripPaginationParams(searchParams as Record<string, unknown>);
-});
-
-const importContentConfig = computed<IContentConfig>(() => ({
-  permPrefix: "module_system:kyc",
-  cols: crudCols.value,
-  indexAction: async () => ({}),
-  importTemplate: () => AppUserKycAPI.downloadTemplateAppUserKyc(),
-}));
-
-const exportContentConfig = computed(() => ({
-  permPrefix: "module_system:kyc",
-  cols: crudCols.value,
-  exportsBlobAction: async (params: IObject) => {
-    const merged = {
-      ...(exportQueryParams.value as unknown as Record<string, unknown>),
-      ...params,
-    } as unknown as AppUserKycPageQuery;
-    const res = await AppUserKycAPI.exportAppUserKyc(merged);
-    return res.data as Blob;
-  },
-}));
-
-const { dialogVisible } = useCrudDialog();
-
 const detailFormData = ref<AppUserKycTable>({});
+const detailImageUrls = reactive({ front: "", back: "" });
 
 const detailItems: import("@/components/display/fa-descriptions/index.vue").DescriptionsItem[] = [
   { label: "用户端用户ID", prop: "app_user_id" },
   { label: "真实姓名", prop: "real_name" },
   { label: "证件号码", prop: "id_card_no" },
-  { label: "证件正面地址", prop: "id_card_front" },
-  { label: "证件反面地址", prop: "id_card_back" },
-  { label: "状态", prop: "status", tag: { map: { "0": { type: "success", text: "启用" }, "1": { type: "danger", text: "停用" } } } },
+  { label: "证件正面", prop: "id_card_front" },
+  { label: "证件反面", prop: "id_card_back" },
+  { label: "状态", prop: "status", tag: { map: { "0": { type: "warning", text: "待审核" }, "1": { type: "success", text: "已通过" }, "2": { type: "danger", text: "已驳回" } } } },
   { label: "审核备注", prop: "review_remark" },
   { label: "审核时间", prop: "reviewed_at" },
   { label: "创建时间", prop: "created_time" },
   { label: "更新时间", prop: "updated_time" },
 ];
 
-const formData = ref<AppUserKycForm>(createInitialFormData());
-
-const rules = reactive({
-  app_user_id: [{ required: true, message: "请填写用户端用户ID", trigger: "blur" }],
-  real_name: [{ required: true, message: "请填写真实姓名", trigger: "blur" }],
-  id_card_no: [{ required: true, message: "请填写证件号码", trigger: "blur" }],
-  id_card_front: [{ required: false, message: "请填写证件正面地址", trigger: "blur" }],
-  id_card_back: [{ required: false, message: "请填写证件反面地址", trigger: "blur" }],
-  status: [{ required: true, message: "请填写状态(0待审核 1通过 2拒绝)", trigger: "blur" }],
-  review_remark: [{ required: false, message: "请填写审核备注", trigger: "blur" }],
-  reviewed_at: [{ required: false, message: "请填写审核时间", trigger: "blur" }],
-});
-
-const dialogFormItems: FormItem[] = [
-  { key: "app_user_id", label: "用户端用户ID", type: "number", props: { placeholder: "请输入用户端用户ID" } },
-  { key: "real_name", label: "真实姓名", type: "input", props: { placeholder: "请输入真实姓名" } },
-  { key: "id_card_no", label: "证件号码", type: "input", props: { placeholder: "请输入证件号码" } },
-  { key: "id_card_front", label: "证件正面地址", type: "input", props: { type: "textarea", rows: 4, placeholder: "请输入证件正面地址" } },
-  { key: "id_card_back", label: "证件反面地址", type: "input", props: { type: "textarea", rows: 4, placeholder: "请输入证件反面地址" } },
-  {
-    key: "status",
-    label: "状态",
-    type: "radiogroup",
-    props: {
-      options: [
-        { label: "启用", value: 0 },
-        { label: "停用", value: 1 },
-      ],
-    },
-  },
-  { key: "review_remark", label: "审核备注", type: "input", props: { type: "textarea", rows: 4, placeholder: "请输入审核备注" } },
-  { key: "reviewed_at", label: "审核时间", type: "datetime", props: { placeholder: "请选择审核时间", valueFormat: "YYYY-MM-DD HH:mm:ss", style: "width: 100%" } },
-];
-
-const dataFormRef = ref<InstanceType<typeof FaForm> | null>(null);
-const formRenderKey = ref(0);
-
-const crud = useCrudForm<AppUserKycForm>({
-  formData,
-  initialFormData: createInitialFormData(),
-  dialogVisible,
-  dataFormRef,
-  formRenderKey,
-  detailApi: (id: number) => AppUserKycAPI.getAppUserKycDetail(id),
-  createApi: (data: AppUserKycForm) => AppUserKycAPI.createAppUserKyc(data),
-  updateApi: (id: number, data: AppUserKycForm) => AppUserKycAPI.updateAppUserKyc(id, data),
-  titles: { create: "新增", update: "修改", detail: "详情" },
-  detailFormData,
-  onCreateSuccess: async () => {
-    await refreshCreate();
-  },
-  onUpdateSuccess: async () => {
-    await refreshUpdate();
-  },
-});
-
-const { submitLoading } = crud;
-
-const { importVisible, exportVisible, openImport, openExport } = useImportExport();
+const { dialogVisible, openDialog, closeDialog } = useCrudDialog();
 
 const handleSearch = async (params: AppUserKycSearchFormParams) => {
   await searchBarRef.value?.validate();
@@ -456,25 +313,30 @@ function buildRowActions(row: AppUserKycTable): TableOperationAction[] {
       label: "详情",
       artType: "view",
       perm: "module_system:kyc:detail",
-      run: () => void crud.handleOpenDialog("detail", row[PK] as number),
-    },
-    {
-      key: "edit",
-      label: "编辑",
-      artType: "edit",
-      icon: "ri:edit-2-line",
-      perm: "module_system:kyc:update",
-      run: () => void crud.handleOpenDialog("update", row[PK] as number),
-    },
-    {
-      key: "delete",
-      label: "删除",
-      artType: "delete",
-      icon: "ri:delete-bin-4-line",
-      perm: "module_system:kyc:delete",
-      run: () => deleteRow(row),
+      run: () => void openDetail(row.id as number),
     },
   ];
+  if (row.status === 0) {
+    all.push(
+      {
+        key: "approve",
+        label: "审核通过",
+        artType: "edit",
+        icon: "ri:check-line",
+        perm: "module_system:kyc:update",
+        run: () => void handleReview(row, 1),
+      },
+      {
+        key: "reject",
+        label: "审核驳回",
+        artType: "edit",
+        icon: "ri:close-line",
+        iconColor: "var(--el-color-danger)",
+        perm: "module_system:kyc:update",
+        run: () => void handleReview(row, 2),
+      },
+    );
+  }
   return all;
 }
 
@@ -484,84 +346,70 @@ function formatOperationCell(row: AppUserKycTable) {
   });
 }
 
-async function handleAdd() {
-  createLoading.value = true;
+async function openDetail(id: number) {
+  clearDetailImageUrls();
+  detailFormData.value = {};
+  openDialog("detail", "实名认证详情");
   try {
-    await crud.handleOpenDialog("create");
-  } finally {
-    createLoading.value = false;
-  }
-}
-
-async function handleCloseDialog() {
-  await crud.handleCloseDialog();
-}
-
-async function handleSubmit() {
-  await crud.handleSubmit();
-}
-
-const deleteRow = async (row: AppUserKycTable) => {
-  if (!row[PK]) return;
-  try {
-    await confirmDelete(`确定删除该用户实名认证吗？此操作不可恢复！`);
-    await AppUserKycAPI.deleteAppUserKyc([row[PK] as number]);
-    faTableRef.value?.elTableRef?.clearSelection();
-    await refreshRemove();
+    const response = await AppUserKycAPI.getAppUserKycDetail(id);
+    detailFormData.value = response.data.data ?? {};
+    await Promise.all([loadDetailImage(id, "front"), loadDetailImage(id, "back")]);
   } catch {
-    // 用户取消
-  }
-};
-
-async function handleBatchDelete() {
-  const ids = selectedIds.value;
-  if (ids.length === 0) return;
-  try {
-    await confirmBatchDelete(ids.length);
-    batchDeleting.value = true;
-    await AppUserKycAPI.deleteAppUserKyc(ids);
-    faTableRef.value?.elTableRef?.clearSelection();
-    await refreshRemove();
-  } catch {
-    // 用户取消
-  } finally {
-    batchDeleting.value = false;
+    closeDialog();
   }
 }
 
-async function runBatchStatus(value: "enable" | "disable") {
-  const ids = selectedIds.value;
-  if (ids.length === 0) {
-    ElMessage.warning("请先在列表中勾选数据");
-    return;
+function handleCloseDialog() {
+  closeDialog();
+  clearDetailImageUrls();
+}
+
+function maskIdCard(value?: string) {
+  if (!value) return "—";
+  if (value.length <= 8) return `${value.slice(0, 2)}****${value.slice(-2)}`;
+  return `${value.slice(0, 4)}${"*".repeat(value.length - 8)}${value.slice(-4)}`;
+}
+
+function clearDetailImageUrls() {
+  if (detailImageUrls.front) URL.revokeObjectURL(detailImageUrls.front);
+  if (detailImageUrls.back) URL.revokeObjectURL(detailImageUrls.back);
+  detailImageUrls.front = "";
+  detailImageUrls.back = "";
+}
+
+async function loadDetailImage(id: number, side: "front" | "back") {
+  try {
+    const response = await AppUserKycAPI.downloadKycImage(id, side);
+    detailImageUrls[side] = URL.createObjectURL(response.data);
+  } catch {
+    // 详情仍可展示文字字段，图片加载失败由占位文案说明。
+  }
+}
+
+onUnmounted(clearDetailImageUrls);
+
+async function handleReview(row: AppUserKycTable, status: 1 | 2) {
+  if (!row.id || row.status !== 0) return;
+  let review_remark: string | undefined;
+  if (status === 2) {
+    try {
+      const result = await ElMessageBox.prompt("请输入驳回原因", "审核驳回", {
+        confirmButtonText: "确认驳回",
+        cancelButtonText: "取消",
+        inputType: "textarea",
+        inputPlaceholder: "请输入审核备注",
+        inputValidator: (value) => value.trim() ? true : "驳回原因不能为空",
+      });
+      review_remark = result.value.trim();
+    } catch {
+      return;
+    }
   }
   try {
-    await confirmAction(
-      `确认对选中的 ${ids.length} 条数据${value === "enable" ? "启用" : "停用"}？`,
-      "批量设置"
-    );
-    const status = value === "enable" ? 0 : 1;
-    await AppUserKycAPI.batchAppUserKyc({ ids, status });
-    // 成功 / 失败提示由 axios 拦截器统一处理
-    faTableRef.value?.elTableRef?.clearSelection();
+    await AppUserKycAPI.reviewAppUserKyc(row.id, { status, review_remark });
     await refreshData();
   } catch {
-    // 用户取消
-  }
-}
-
-async function handleCrudImportUpload(formData: FormData) {
-  try {
-    const res = await AppUserKycAPI.importAppUserKyc(formData);
-    if (res.data.code === ResultEnum.SUCCESS) {
-      ElMessage.success(res.data.msg || "导入成功");
-      importVisible.value = false;
-      await refreshData();
-    }
-    // 非 SUCCESS 分支提示由 axios 拦截器统一处理
-  } catch (error: unknown) {
-    if (import.meta.env.DEV) console.error("[Import]", error);
-    /* 接口错误已由拦截器提示 */
+    // 接口错误已由拦截器提示。
   }
 }
 

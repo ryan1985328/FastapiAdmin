@@ -1,19 +1,29 @@
-# -*- coding: utf-8 -*-
 import urllib.parse
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, File, Path, Query, UploadFile, status
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Path, Query, UploadFile, status
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.module_storage.file.service import StorageFileService
 from app.common.response import ResponseSchema, StreamResponse, SuccessResponse
 from app.core.base_schema import AuthSchema, BatchSetAvailable, PageResultSchema, PaginationQueryParam
 from app.core.dependencies import AuthPermission, db_getter
+from app.core.exceptions import CustomException
 from app.core.router_class import OperationLogRoute
 from app.utils.common_util import bytes2file_response
 
-from .schema import AppUserKycCreateSchema, AppUserKycOutSchema, AppUserKycQueryParam, AppUserKycUpdateSchema
+from .schema import AppUserKycCreateSchema, AppUserKycOutSchema, AppUserKycQueryParam, AppUserKycReviewSchema, AppUserKycUpdateSchema
 from .service import AppUserKycService
+
+
+def _cleanup_temp_file(path: str) -> None:
+    import os
+
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
 
 AppUserKycRouter = APIRouter(route_class=OperationLogRoute, prefix="/kyc", tags=["用户实名认证模块"])
 
@@ -69,6 +79,17 @@ async def update_obj_controller(
     return SuccessResponse(data=result_dict, msg="修改用户实名认证成功")
 
 
+@AppUserKycRouter.post("/review/{id}", summary="审核用户实名认证", response_model=ResponseSchema[AppUserKycOutSchema])
+async def review_obj_controller(
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_system:kyc:update"]))],
+    id: Annotated[int, Path(description="用户实名认证ID")],
+    data: Annotated[AppUserKycReviewSchema, Body(description="审核结果")],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> JSONResponse:
+    result_dict = await AppUserKycService(auth, db).review(id=id, data=data)
+    return SuccessResponse(data=result_dict, msg="实名认证审核成功")
+
+
 @AppUserKycRouter.delete("/delete", summary="删除用户实名认证", response_model=ResponseSchema[None])
 async def delete_obj_controller(
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_system:kyc:delete"]))],
@@ -78,6 +99,24 @@ async def delete_obj_controller(
     service = AppUserKycService(auth, db)
     await service.delete(ids=ids)
     return SuccessResponse(msg="删除用户实名认证成功")
+
+
+@AppUserKycRouter.get("/file/{id}/{side}", summary="查看实名认证图片", response_model=None)
+async def get_kyc_file_controller(
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_system:kyc:detail"]))],
+    id: Annotated[int, Path(description="用户实名认证ID", ge=1)],
+    side: Annotated[str, Path(pattern="^(front|back)$", description="图片面: front 或 back")],
+    background_tasks: BackgroundTasks,
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> FileResponse:
+    service = AppUserKycService(auth, db)
+    record = await service.detail(id=id)
+    path = record.id_card_front if side == "front" else record.id_card_back
+    if not path:
+        raise CustomException(msg="尚未上传该证件图片")
+    local_path, file_name = await StorageFileService(auth, db).download(source_id=None, remote_path=path)
+    background_tasks.add_task(_cleanup_temp_file, local_path)
+    return FileResponse(local_path, filename=file_name)
 
 
 @AppUserKycRouter.patch("/status/batch", summary="批量修改用户实名认证状态", response_model=ResponseSchema[None])

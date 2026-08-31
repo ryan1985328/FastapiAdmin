@@ -52,6 +52,7 @@ function handleLogout() {
 
 const settingsList = [
   { titleKey: 'common.profile', name: 'profile' },
+  { titleKey: 'mine.kyc', name: 'kyc' },
   { titleKey: 'common.aboutUs', name: 'about' },
 ]
 
