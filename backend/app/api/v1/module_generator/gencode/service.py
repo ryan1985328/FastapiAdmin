@@ -745,8 +745,6 @@ class GenTableService:
             type=_MENU_TYPE_MENU,
             parent_id=dir_menu_id,
         )
-        if existing_func_menu:
-            raise CustomException(msg=f"该模块目录下功能菜单「{gen_table_schema.function_name}」已存在，不能重复创建")
         route_seg = self._menu_route_first_segment(
             gen_table_schema.parent_menu_id,
             gen_table_schema.package_name or "",
@@ -760,29 +758,34 @@ class GenTableService:
         # 与 Jinja2TemplateUtil.get_file_name 统一：module_xxx/{module_name}
         _route_path = f"/{route_seg}/{_mn}"
         _component_path = f"{_pn}/{_mn}/index"
-        # 创建功能菜单（类型=2：菜单）
-        parent_menu = await menu_crud.create(
-            MenuCreateSchema(
-                name=gen_table_schema.function_name,
-                type=_MENU_TYPE_MENU,
-                order=9999,
-                permission=f"{permission_prefix}:query",
-                icon="menu",
-                route_name=CamelCaseUtil.snake_to_camel(_mn),
-                route_path=_route_path,
-                component_path=_component_path,
-                redirect=None,
-                hidden=False,
-                keep_alive=True,
-                always_show=False,
-                title=gen_table_schema.function_name,
-                params=None,
-                affix=False,
-                parent_id=dir_menu_id,  # 使用目录菜单ID或用户指定的parent_menu_id作为父ID
-                status=0,
-                description=f"{gen_table_schema.function_name}功能菜单",
-            ),
-        )
+        if existing_func_menu:
+            # 重复生成时复用功能菜单；后续按钮按权限逐项补齐，避免重复插入或中断生成。
+            parent_menu = existing_func_menu
+            logger.info(f"代码生成：复用功能菜单 id={parent_menu.id} name={gen_table_schema.function_name!r}")
+        else:
+            # 创建功能菜单（类型=2：菜单）
+            parent_menu = await menu_crud.create(
+                MenuCreateSchema(
+                    name=gen_table_schema.function_name,
+                    type=_MENU_TYPE_MENU,
+                    order=9999,
+                    permission=f"{permission_prefix}:query",
+                    icon="menu",
+                    route_name=CamelCaseUtil.snake_to_camel(_mn),
+                    route_path=_route_path,
+                    component_path=_component_path,
+                    redirect=None,
+                    hidden=False,
+                    keep_alive=True,
+                    always_show=False,
+                    title=gen_table_schema.function_name,
+                    params=None,
+                    affix=False,
+                    parent_id=dir_menu_id,  # 使用目录菜单ID或用户指定的parent_menu_id作为父ID
+                    status=0,
+                    description=f"{gen_table_schema.function_name}功能菜单",
+                ),
+            )
         # 创建按钮权限（类型=3：按钮/权限）
         buttons = [
             {
