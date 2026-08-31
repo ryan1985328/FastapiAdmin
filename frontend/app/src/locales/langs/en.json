@@ -194,6 +194,7 @@
     "login": "Sign in",
     "register": "Register",
     "kyc": "Identity verification",
+    "security": "Security",
     "accountFallback": "Account"
   },
   "kyc": {
@@ -224,7 +225,12 @@
   },
   "profile": {
     "navTitle": "Profile",
+    "basicInfo": "Basic Information",
+    "accountInfo": "Account Information",
+    "identity": "Identity Verification",
+    "security": "Security",
     "avatar": "Avatar",
+    "avatarSet": "Set",
     "nickname": "Nickname",
     "gender": "Gender",
     "male": "Male",
@@ -232,6 +238,17 @@
     "unknown": "Unknown",
     "username": "Username",
     "mobile": "Mobile",
+    "userId": "User ID",
+    "referralCode": "Referral code",
+    "referrerStatus": "Referral binding",
+    "bound": "Bound",
+    "referrer": "Referrer",
+    "referrerAccount": "Referrer summary",
+    "referrerBoundAt": "Bound at",
+    "kycStatusLabel": "Verification status",
+    "enterKyc": "Open identity verification",
+    "kycStatus": { "unverified": "Not verified", "pending": "Pending", "verified": "Verified", "rejected": "Rejected" },
+    "status": { "active": "Active", "disabled": "Disabled", "frozen": "Frozen", "unknown": "Unknown" },
     "email": "Email",
     "dept": "Department",
     "roles": "Roles",
@@ -243,6 +260,7 @@
     "nicknameRequired": "Please enter a nickname"
   },
   "account": {
+    "navTitle": "Security",
     "password": "Account Password",
     "passwordTip": "Changing your password regularly helps protect your account",
     "modify": "Change",
@@ -251,9 +269,12 @@
     "confirmPassword": "Confirm Password",
     "oldPlaceholder": "Enter current password",
     "submit": "Submit",
+    "submitting": "Submitting...",
     "success": "Password changed",
     "oldRequired": "Please enter current password",
-    "newLength": "New password must be at least 6 characters"
+    "newLength": "New password must be at least 6 characters",
+    "forgotPassword": "Forgot/reset password",
+    "forgotPasswordTip": "Reset your password with your mobile number and SMS code"
   },
   "notices": {
     "title": "Notices",

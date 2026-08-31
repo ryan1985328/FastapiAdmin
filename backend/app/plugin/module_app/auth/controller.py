@@ -11,6 +11,7 @@ from app.core.dependencies import db_getter, redis_getter
 
 from ..user.model import AppUserModel
 from ..user.schema import (
+    AppChangePasswordSchema,
     AppLoginOutSchema,
     AppLoginSchema,
     AppMobilePasswordLoginSchema,
@@ -75,6 +76,17 @@ async def reset_app_user_password_controller(
 ) -> JSONResponse:
     await AppAuthService.reset_password(db=db, redis=redis, data=data)
     return SuccessResponse(msg="密码重置成功，请重新登录")
+
+
+@AppAuthRouter.post("/change-password", summary="修改App用户密码", response_model=ResponseSchema[None])
+async def change_app_user_password_controller(
+    db: Annotated[AsyncSession, Depends(db_getter)],
+    redis: Annotated[Redis, Depends(redis_getter)],
+    user: Annotated[AppUserModel, Depends(get_current_app_user)],
+    data: Annotated[AppChangePasswordSchema, Body(description="修改密码参数")],
+) -> JSONResponse:
+    await AppAuthService.change_password(db=db, redis=redis, user=user, data=data)
+    return SuccessResponse(msg="密码修改成功，请重新登录")
 
 
 @AppAuthRouter.post("/refresh", summary="刷新App用户令牌", response_model=ResponseSchema[JWTOutSchema])

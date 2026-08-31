@@ -41,6 +41,10 @@ const AppAuthAPI = {
     })
   },
 
+  changePassword(body: AppChangePasswordForm): Promise<void> {
+    return http.Post(`${AUTH_BASE_URL}/change-password`, body)
+  },
+
   refreshToken(body: AppRefreshTokenBody): Promise<AppTokenResult> {
     return http.Post(`${AUTH_BASE_URL}/refresh`, body, {
       meta: { ignoreAuth: true, silent: true, authRole: 'refreshToken' },
@@ -98,6 +102,11 @@ export interface AppSmsSendCodeResult {
 export interface AppResetPasswordForm {
   mobile: string
   code: string
+  new_password: string
+}
+
+export interface AppChangePasswordForm {
+  current_password: string
   new_password: string
 }
 

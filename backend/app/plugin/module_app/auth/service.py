@@ -17,6 +17,7 @@ from app.utils.password_util import PwdUtil
 from ..user.constants import AppUserStatus
 from ..user.model import AppUserModel
 from ..user.schema import (
+    AppChangePasswordSchema,
     AppLoginOutSchema,
     AppLoginSchema,
     AppMobilePasswordLoginSchema,
@@ -101,6 +102,24 @@ class AppAuthService:
             scene="reset_password_code",
             code=data.code,
         )
+        await AppUserService(db).crud.update(
+            id=user.id,
+            data={"password": PwdUtil.hash_password(data.new_password)},
+        )
+        await cls.invalidate_user_sessions(redis=redis, user_id=user.id)
+
+    @classmethod
+    async def change_password(
+        cls,
+        db: AsyncSession,
+        redis: Redis,
+        user: AppUserModel,
+        data: AppChangePasswordSchema,
+    ) -> None:
+        """Change the authenticated user's password and revoke all sessions."""
+
+        if not PwdUtil.verify_password(data.current_password, user.password):
+            raise CustomException(msg="当前密码错误", status_code=401, code=10401)
         await AppUserService(db).crud.update(
             id=user.id,
             data={"password": PwdUtil.hash_password(data.new_password)},

@@ -120,6 +120,15 @@
             "navigationBarTitleText": "个人资料"
           }
         },
+        {
+          "path": "module_system/account/index",
+          "type": "page",
+          "name": "account",
+          "layout": "default",
+          "style": {
+            "navigationBarTitleText": "安全设置"
+          }
+        },
         // #ifdef H5
         {
           "path": "module_system/kyc/index",

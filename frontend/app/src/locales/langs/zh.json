@@ -194,6 +194,7 @@
     "login": "登录",
     "register": "注册",
     "kyc": "实名认证",
+    "security": "安全设置",
     "accountFallback": "账户"
   },
   "kyc": {
@@ -224,7 +225,12 @@
   },
   "profile": {
     "navTitle": "个人资料",
+    "basicInfo": "基本资料",
+    "accountInfo": "账号信息",
+    "identity": "实名认证",
+    "security": "安全设置",
     "avatar": "头像",
+    "avatarSet": "已设置",
     "nickname": "昵称",
     "gender": "性别",
     "male": "男",
@@ -232,6 +238,17 @@
     "unknown": "未知",
     "username": "用户名",
     "mobile": "手机号",
+    "userId": "用户ID",
+    "referralCode": "推荐码",
+    "referrerStatus": "推荐绑定状态",
+    "bound": "已绑定",
+    "referrer": "推荐人",
+    "referrerAccount": "推荐人摘要",
+    "referrerBoundAt": "绑定时间",
+    "kycStatusLabel": "认证状态",
+    "enterKyc": "进入实名认证",
+    "kycStatus": { "unverified": "未实名", "pending": "待审核", "verified": "已实名", "rejected": "已驳回" },
+    "status": { "active": "正常", "disabled": "禁用", "frozen": "冻结", "unknown": "未知" },
     "email": "邮箱",
     "dept": "部门",
     "roles": "角色",
@@ -243,6 +260,7 @@
     "nicknameRequired": "请填写昵称"
   },
   "account": {
+    "navTitle": "安全设置",
     "password": "账户密码",
     "passwordTip": "定期修改密码有助于保护账户安全",
     "modify": "修改",
@@ -251,9 +269,12 @@
     "confirmPassword": "确认密码",
     "oldPlaceholder": "请输入原密码",
     "submit": "提交",
+    "submitting": "提交中...",
     "success": "密码修改成功",
     "oldRequired": "请输入原密码",
-    "newLength": "新密码至少 6 位"
+    "newLength": "新密码至少 6 位",
+    "forgotPassword": "忘记/重置密码",
+    "forgotPasswordTip": "通过手机号和短信验证码重置密码"
   },
   "notices": {
     "title": "通知公告",

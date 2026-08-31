@@ -61,6 +61,13 @@ class AppResetPasswordSchema(BaseModel):
     new_password: str = Field(..., min_length=6, max_length=128, description="新密码")
 
 
+class AppChangePasswordSchema(BaseModel):
+    """Authenticated password change payload."""
+
+    current_password: str = Field(..., min_length=1, max_length=128, description="当前密码")
+    new_password: str = Field(..., min_length=6, max_length=128, description="新密码")
+
+
 class AppUserOutSchema(BaseSchema):
     """Business User summary; never exposes the password hash."""
 
@@ -117,6 +124,7 @@ class AppLoginOutSchema(JWTOutSchema):
 
 __all__ = [
     "AppLoginOutSchema",
+    "AppChangePasswordSchema",
     "AppLoginSchema",
     "AppMobilePasswordLoginSchema",
     "AppMobileSmsLoginSchema",
