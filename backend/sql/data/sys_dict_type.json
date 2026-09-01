@@ -70,5 +70,11 @@
         "dict_type": "app_user_kyc_status",
         "status": 0,
         "description": "用户端用户实名状态摘要"
+    },
+    {
+        "dict_name": "用户银行卡状态",
+        "dict_type": "app_user_bank_account_status",
+        "status": 0,
+        "description": "用户银行卡业务状态（0正常 1禁用）"
     }
 ]

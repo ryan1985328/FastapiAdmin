@@ -9,6 +9,7 @@ from starlette.background import BackgroundTask
 
 from app.config.setting import settings
 from app.core.logger import logger
+from app.core.sensitive import redact_sensitive_payload, redact_sensitive_text
 from app.utils.ip_local_util import get_client_ip
 
 _WRITE_METHODS = {"POST", "PUT", "DELETE", "PATCH"}
@@ -70,21 +71,23 @@ class OperationLogRoute(APIRoute):
                     try:
                         form_data = await request.form()
                         # 过滤掉 UploadFile 对象，只保留纯表单字段
-                        oper_param["form"] = {k: v for k, v in form_data.items() if not hasattr(v, "read")}
+                        oper_param["form"] = redact_sensitive_payload(
+                            {k: v for k, v in form_data.items() if not hasattr(v, "read")}
+                        )
                     except Exception:
                         oper_param["form"] = {}
                 else:
                     payload = await request.body()
                     if payload:
                         try:
-                            oper_param["body"] = json.loads(payload.decode())
+                            oper_param["body"] = redact_sensitive_payload(json.loads(payload.decode()))
                         except (json.JSONDecodeError, UnicodeDecodeError):
-                            oper_param["body"] = payload.decode("utf-8", errors="ignore")
+                            oper_param["body"] = redact_sensitive_text(payload.decode("utf-8", errors="ignore"))
 
                 if request.path_params:
                     oper_param["path_params"] = dict(request.path_params)
 
-                log_payload = json.dumps(oper_param, ensure_ascii=False)
+                log_payload = redact_sensitive_text(json.dumps(oper_param, ensure_ascii=False))
                 if len(log_payload) > 2000:
                     log_payload = "请求参数过长"
 
@@ -97,7 +100,7 @@ class OperationLogRoute(APIRoute):
                     "request_method": request.method,
                     "request_payload": log_payload,
                     "response_code": response.status_code,
-                    "response_json": bytes(response_data).decode(),
+                    "response_json": redact_sensitive_text(bytes(response_data).decode(errors="ignore")),
                     "process_time": f"{(time.perf_counter() - start):.2f}s",
                     "description": route.summary if route else "",
                     "request_ip": get_client_ip(request),

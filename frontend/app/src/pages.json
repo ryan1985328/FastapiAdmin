@@ -152,6 +152,22 @@
             "navigationBarTitleText": "我的地址"
           }
         },
+        {
+          "path": "module_app/bank-account/form",
+          "type": "page",
+          "name": "bank-account-form",
+          "style": {
+            "navigationBarTitleText": "银行卡"
+          }
+        },
+        {
+          "path": "module_app/bank-account/index",
+          "type": "page",
+          "name": "bank-accounts",
+          "style": {
+            "navigationBarTitleText": "我的银行卡"
+          }
+        },
         // #ifdef H5
         {
           "path": "module_system/kyc/index",

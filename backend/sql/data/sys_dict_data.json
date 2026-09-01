@@ -490,5 +490,29 @@
         "is_default": false,
         "status": 0,
         "description": "实名资料审核未通过"
+    },
+    {
+        "dict_sort": 1,
+        "dict_label": "正常",
+        "dict_value": "0",
+        "dict_type": "app_user_bank_account_status",
+        "dict_type_id": 13,
+        "css_class": "",
+        "list_class": "success",
+        "is_default": true,
+        "status": 0,
+        "description": "银行卡可正常使用"
+    },
+    {
+        "dict_sort": 2,
+        "dict_label": "禁用",
+        "dict_value": "1",
+        "dict_type": "app_user_bank_account_status",
+        "dict_type_id": 13,
+        "css_class": "",
+        "list_class": "danger",
+        "is_default": false,
+        "status": 0,
+        "description": "银行卡已被管理员禁用"
     }
 ]

@@ -54,6 +54,7 @@ const settingsList = [
   { titleKey: 'common.profile', name: 'profile' },
   { titleKey: 'mine.kyc', name: 'kyc' },
   { titleKey: 'mine.addresses', name: 'addresses' },
+  { titleKey: 'mine.bankAccounts', name: 'bank-accounts' },
   { titleKey: 'mine.security', name: 'account' },
   { titleKey: 'common.aboutUs', name: 'about' },
 ]

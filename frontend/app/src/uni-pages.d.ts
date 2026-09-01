@@ -14,6 +14,8 @@ type _LocationUrl =
   "/subPages/setting/index" |
   "/subPages/module_app/address/form" |
   "/subPages/module_app/address/index" |
+  "/subPages/module_app/bank-account/form" |
+  "/subPages/module_app/bank-account/index" |
   "/subPages/module_system/account/index" |
   "/subPages/module_system/kyc/index" |
   "/subPages/module_system/notices/index" |

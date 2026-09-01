@@ -11,6 +11,7 @@ from app.common.enums import RET, EnvironmentEnum
 from app.common.response import ErrorResponse
 from app.config.setting import settings
 from app.core.logger import logger
+from app.core.sensitive import redact_sensitive_payload, redact_sensitive_text, redact_validation_errors
 
 
 def require_superadmin(func):
@@ -61,17 +62,19 @@ class CustomException(Exception):
 def handle_exception(app: FastAPI) -> None:
     @app.exception_handler(CustomException)
     async def custom_exception_handler(request: Request, exc: CustomException) -> JSONResponse:
+        safe_data = redact_sensitive_payload(exc.data)
+        safe_message = redact_sensitive_text(exc.msg)
         logger.error(
             "[自定义异常] {} {} | code={} | msg={} | data={}",
             request.method,
             request.url.path,
             exc.code,
-            exc.msg,
-            exc.data,
+            safe_message,
+            safe_data,
         )
         # 生产环境不外泄 data（可能含 SQL 字段、约束名等内部细节）
-        expose_data = exc.data if settings.ENVIRONMENT != EnvironmentEnum.PROD else None
-        return ErrorResponse(msg=exc.msg, code=exc.code, status_code=exc.status_code, data=expose_data)
+        expose_data = safe_data if settings.ENVIRONMENT != EnvironmentEnum.PROD else None
+        return ErrorResponse(msg=safe_message, code=exc.code, status_code=exc.status_code, data=expose_data)
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
@@ -80,13 +83,13 @@ def handle_exception(app: FastAPI) -> None:
             request.method,
             request.url.path,
             exc.status_code,
-            exc.detail,
+            redact_sensitive_payload(exc.detail),
         )
-        return ErrorResponse(msg=exc.detail, status_code=exc.status_code)
+        return ErrorResponse(msg=redact_sensitive_text(str(exc.detail)), status_code=exc.status_code)
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-        errors = exc.errors()
+        errors = redact_validation_errors(exc.errors())
         msg = errors[0].get("msg", str(errors[0])) if errors else "请求参数验证失败"
         if msg.startswith("Value error"):
             msg = msg[11:].lstrip(" ,")
@@ -100,13 +103,15 @@ def handle_exception(app: FastAPI) -> None:
 
     @app.exception_handler(ResponseValidationError)
     async def response_validation_handler(request: Request, exc: ResponseValidationError) -> JSONResponse:
+        errors = redact_validation_errors(exc.errors())
+        safe_body = redact_sensitive_payload(exc.body)
         logger.error(
             "[响应验证异常] {} {} | errors={}",
             request.method,
             request.url.path,
-            exc.errors(),
+            errors,
         )
-        return ErrorResponse(msg="服务器响应格式错误", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, data=exc.body)
+        return ErrorResponse(msg="服务器响应格式错误", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, data=safe_body)
 
     @app.exception_handler(SQLAlchemyError)
     async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
@@ -114,7 +119,8 @@ def handle_exception(app: FastAPI) -> None:
 
         if isinstance(exc, IntegrityError):
             detail = str(exc.orig) if exc.orig else str(exc)
-            expose_detail = detail if settings.ENVIRONMENT != EnvironmentEnum.PROD else None
+            safe_detail = redact_sensitive_text(detail)
+            expose_detail = safe_detail if settings.ENVIRONMENT != EnvironmentEnum.PROD else None
             if "connect" in detail or "connection" in detail:
                 return ErrorResponse(msg="数据库连接失败", status_code=status.HTTP_403_SERVICE_UNAVAILABLE, data=expose_detail)
             if "Duplicate entry" in detail:
@@ -125,14 +131,16 @@ def handle_exception(app: FastAPI) -> None:
                 return ErrorResponse(msg="必填字段缺失", status_code=status.HTTP_409_CONFLICT, data=expose_detail)
             return ErrorResponse(msg="数据已存在或违反完整性约束", status_code=status.HTTP_409_CONFLICT, data=expose_detail)
 
-        logger.error("[数据库异常] {} {} | type={} | detail={}", request.method, request.url.path, exc_type, exc)
-        data = str(exc) if settings.ENVIRONMENT != EnvironmentEnum.PROD else None
+        safe_exception = redact_sensitive_text(str(exc))
+        logger.error("[数据库异常] {} {} | type={} | detail={}", request.method, request.url.path, exc_type, safe_exception)
+        data = safe_exception if settings.ENVIRONMENT != EnvironmentEnum.PROD else None
         return ErrorResponse(msg=f"数据库操作失败: {exc_type}", status_code=status.HTTP_400_BAD_REQUEST, data=data)
 
     @app.exception_handler(ValueError)
     async def value_exception_handler(request: Request, exc: ValueError) -> JSONResponse:
-        logger.error("[值异常] {} {} | msg={}", request.method, request.url.path, exc)
-        return ErrorResponse(msg=str(exc), status_code=status.HTTP_400_BAD_REQUEST)
+        safe_message = redact_sensitive_text(str(exc))
+        logger.error("[值异常] {} {} | msg={}", request.method, request.url.path, safe_message)
+        return ErrorResponse(msg=safe_message, status_code=status.HTTP_400_BAD_REQUEST)
 
     @app.exception_handler(Exception)
     async def all_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -142,6 +150,6 @@ def handle_exception(app: FastAPI) -> None:
             request.method,
             request.url.path,
             exc_type,
-            exc,
+            redact_sensitive_text(str(exc)),
         )
         return ErrorResponse(msg="服务器内部错误", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
