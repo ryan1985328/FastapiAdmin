@@ -12,6 +12,8 @@ type _LocationUrl =
   "/pages/login/register/index" |
   "/subPages/about/index" |
   "/subPages/setting/index" |
+  "/subPages/module_app/address/form" |
+  "/subPages/module_app/address/index" |
   "/subPages/module_system/account/index" |
   "/subPages/module_system/kyc/index" |
   "/subPages/module_system/notices/index" |

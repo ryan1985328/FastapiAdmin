@@ -53,6 +53,7 @@ function handleLogout() {
 const settingsList = [
   { titleKey: 'common.profile', name: 'profile' },
   { titleKey: 'mine.kyc', name: 'kyc' },
+  { titleKey: 'mine.addresses', name: 'addresses' },
   { titleKey: 'mine.security', name: 'account' },
   { titleKey: 'common.aboutUs', name: 'about' },
 ]
@@ -158,6 +159,5 @@ const quickLinks = [
         {{ t('mine.logout') }}
       </wd-button>
     </view>
-
   </view>
 </template>
