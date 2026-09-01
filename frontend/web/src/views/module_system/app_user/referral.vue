@@ -372,6 +372,14 @@ async function selectUser(userId: number) {
 }
 
 const loadTreeNode: LoadFunction = async (node, resolve) => {
+  // Element Plus invokes the lazy loader once for its synthetic level-0 root.
+  // The actual center user is supplied as the first item in treeData, so the
+  // synthetic root must expose that item before user-level loading begins.
+  if (node.level === 0) {
+    resolve(treeData.value);
+    return;
+  }
+
   const parent = node.data as ReferralTreeNode;
   try {
     const response = await AppUserAPI.getReferralChildren(parent.user_id, {
