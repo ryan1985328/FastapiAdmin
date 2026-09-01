@@ -26,11 +26,12 @@ export interface AppUserBankAccountForm {
 
 const AppUserBankAccountAPI = {
   list(): Promise<AppUserBankAccount[]> {
-    return http.Get(BANK_ACCOUNT_BASE_URL)
+    // 银行卡由用户随时增删改，不能命中 Alova 默认的 GET 缓存。
+    return http.Get(BANK_ACCOUNT_BASE_URL, { cacheFor: 0 })
   },
 
   detail(id: number): Promise<AppUserBankAccount> {
-    return http.Get(`${BANK_ACCOUNT_BASE_URL}/${id}`)
+    return http.Get(`${BANK_ACCOUNT_BASE_URL}/${id}`, { cacheFor: 0 })
   },
 
   create(body: AppUserBankAccountForm & { card_number: string }): Promise<AppUserBankAccount> {

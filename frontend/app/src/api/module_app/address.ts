@@ -27,11 +27,12 @@ export interface AppUserAddressForm {
 
 const AppUserAddressAPI = {
   list(): Promise<AppUserAddress[]> {
-    return http.Get(ADDRESS_BASE_URL)
+    // 地址由用户随时增删改，不能命中 Alova 默认的 GET 缓存。
+    return http.Get(ADDRESS_BASE_URL, { cacheFor: 0 })
   },
 
   detail(id: number): Promise<AppUserAddress> {
-    return http.Get(`${ADDRESS_BASE_URL}/${id}`)
+    return http.Get(`${ADDRESS_BASE_URL}/${id}`, { cacheFor: 0 })
   },
 
   create(body: AppUserAddressForm): Promise<AppUserAddress> {
