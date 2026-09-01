@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import CustomException
@@ -13,6 +13,88 @@ from .referral import normalize_referral_code
 
 class AppUserReferralService:
     """Own the one-time direct-referrer binding contract."""
+
+    @classmethod
+    async def search_users(
+        cls,
+        db: AsyncSession,
+        *,
+        keyword: str,
+        offset: int,
+        limit: int,
+    ) -> tuple[int, list[AppUserModel]]:
+        """Search existing users for relationship exploration."""
+
+        term = f"%{str(keyword).strip()}%"
+        conditions = [
+            AppUserModel.is_deleted.is_(False),
+            or_(
+                cast(AppUserModel.id, String).like(term),
+                AppUserModel.username.like(term),
+                AppUserModel.nickname.like(term),
+                AppUserModel.mobile.like(term),
+                AppUserModel.referral_code.like(term),
+            ),
+        ]
+        count_result = await db.execute(select(func.count(AppUserModel.id)).where(*conditions))
+        total = int(count_result.scalar() or 0)
+        result = await db.execute(
+            select(AppUserModel)
+            .where(*conditions)
+            .order_by(AppUserModel.id.asc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return total, list(result.scalars().all())
+
+    @classmethod
+    async def get_direct_children(
+        cls,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        offset: int,
+        limit: int,
+    ) -> tuple[int, list[AppUserModel]]:
+        """Return one paginated level of the existing ``referrer_id`` graph."""
+
+        conditions = [
+            AppUserModel.is_deleted.is_(False),
+            AppUserModel.referrer_id == user_id,
+            AppUserModel.id != user_id,
+        ]
+        count_result = await db.execute(select(func.count(AppUserModel.id)).where(*conditions))
+        total = int(count_result.scalar() or 0)
+        result = await db.execute(
+            select(AppUserModel)
+            .where(*conditions)
+            .order_by(AppUserModel.id.asc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return total, list(result.scalars().all())
+
+    @classmethod
+    async def count_descendants(cls, db: AsyncSession, *, user_id: int) -> int:
+        """Count all visible descendants with cycle-safe level traversal."""
+
+        visited: set[int] = {user_id}
+        frontier: set[int] = {user_id}
+
+        while frontier:
+            result = await db.execute(
+                select(AppUserModel.id).where(
+                    AppUserModel.is_deleted.is_(False),
+                    AppUserModel.referrer_id.in_(frontier),
+                )
+            )
+            next_ids = set(result.scalars().all()) - visited
+            if not next_ids:
+                break
+            visited.update(next_ids)
+            frontier = next_ids
+
+        return len(visited) - 1
 
     @classmethod
     async def bind_by_code(

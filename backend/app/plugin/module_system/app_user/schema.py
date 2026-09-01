@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.base_schema import BaseQueryParam
+from app.core.validator import DateTimeStr
 from app.plugin.module_app.user.constants import AppUserKycStatus, AppUserStatus
 from app.plugin.module_app.user.schema import (
     AppUserBindReferrerSchema,
@@ -46,9 +47,55 @@ class AppUserQueryParam(BaseQueryParam):
     kyc_status: AppUserKycStatus | None = Field(None, description="实名状态", json_schema_extra={"q": "eq"})
 
 
+class AppUserReferralSearchQueryParam(BaseModel):
+    """Required search input for the relationship explorer."""
+
+    keyword: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="用户ID/用户名/昵称/手机号/推荐码",
+    )
+
+
+class AppUserReferralNodeSchema(BaseModel):
+    """Safe, masked relationship node used by search and lazy tree loading."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int = Field(..., description="用户ID")
+    username: str = Field(..., description="用户名")
+    nickname: str = Field(..., description="昵称")
+    mobile: str | None = Field(default=None, description="掩码手机号")
+    referral_code: str = Field(..., description="推荐码")
+    status: int = Field(..., description="账号状态")
+    kyc_status: AppUserKycStatus = Field(..., description="实名状态")
+    direct_count: int = Field(default=0, ge=0, description="直属下级数量")
+    has_children: bool = Field(default=False, description="是否存在直属下级")
+    referrer_bound_at: DateTimeStr | None = Field(default=None, description="推荐关系绑定时间")
+
+
+class AppUserReferralSummarySchema(AppUserReferralNodeSchema):
+    """Current center user plus direct-referrer context and aggregate count."""
+
+    referrer_id: int | None = Field(default=None, description="直接推荐人ID")
+    referrer: AppUserReferralNodeSchema | None = Field(default=None, description="直接推荐人摘要")
+    total_descendant_count: int = Field(default=0, ge=0, description="所有层级后代数量")
+
+
+class AppUserReferralDescendantCountSchema(BaseModel):
+    """Explicit count response for clients that only need the aggregate."""
+
+    total_descendant_count: int = Field(default=0, ge=0, description="所有层级后代数量")
+
+
 __all__ = [
     "AppUserOutSchema",
     "AppUserBindReferrerSchema",
+    "AppUserReferralDescendantCountSchema",
+    "AppUserReferralNodeSchema",
+    "AppUserReferralSearchQueryParam",
+    "AppUserReferralSummarySchema",
     "AppUserKycStatus",
     "AppUserQueryParam",
     "AppUserResetPasswordSchema",

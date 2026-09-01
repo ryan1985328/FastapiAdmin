@@ -15,6 +15,10 @@ from .schema import (
     AppUserBindReferrerSchema,
     AppUserOutSchema,
     AppUserQueryParam,
+    AppUserReferralDescendantCountSchema,
+    AppUserReferralNodeSchema,
+    AppUserReferralSearchQueryParam,
+    AppUserReferralSummarySchema,
     AppUserResetPasswordSchema,
     AppUserStatusActionSchema,
     AppUserUpdateSchema,
@@ -22,6 +26,73 @@ from .schema import (
 from .service import AppUserService
 
 AppUserRouter = APIRouter(route_class=OperationLogRoute, prefix="/app_user", tags=["用户端用户模块"])
+REFERRAL_PERMISSION = "module_system:app_user:referral"
+
+
+@AppUserRouter.get(
+    "/referral/search",
+    summary="搜索推荐关系中心用户",
+    response_model=ResponseSchema[PageResultSchema[AppUserReferralNodeSchema]],
+)
+async def referral_search_controller(
+    _auth: Annotated[AuthSchema, Security(AuthPermission([REFERRAL_PERMISSION]))],
+    page: Annotated[PaginationQueryParam, Depends()],
+    search: Annotated[AppUserReferralSearchQueryParam, Query()],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> JSONResponse:
+    result = await AppUserService(_auth, db).referral_search(
+        search=search,
+        page_no=page.page_no,
+        page_size=page.page_size,
+    )
+    return SuccessResponse(data=result, msg="搜索推荐关系用户成功")
+
+
+@AppUserRouter.get(
+    "/referral/{id}",
+    summary="获取用户推荐关系摘要",
+    response_model=ResponseSchema[AppUserReferralSummarySchema],
+)
+async def referral_summary_controller(
+    _auth: Annotated[AuthSchema, Security(AuthPermission([REFERRAL_PERMISSION]))],
+    id: Annotated[int, Path(description="用户端用户ID", ge=1)],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> JSONResponse:
+    result = await AppUserService(_auth, db).referral_summary(id=id)
+    return SuccessResponse(data=result, msg="获取推荐关系摘要成功")
+
+
+@AppUserRouter.get(
+    "/referral/{id}/children",
+    summary="分页获取用户直属下级",
+    response_model=ResponseSchema[PageResultSchema[AppUserReferralNodeSchema]],
+)
+async def referral_children_controller(
+    _auth: Annotated[AuthSchema, Security(AuthPermission([REFERRAL_PERMISSION]))],
+    id: Annotated[int, Path(description="用户端用户ID", ge=1)],
+    page: Annotated[PaginationQueryParam, Depends()],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> JSONResponse:
+    result = await AppUserService(_auth, db).referral_children(
+        id=id,
+        page_no=page.page_no,
+        page_size=page.page_size,
+    )
+    return SuccessResponse(data=result, msg="获取直属下级成功")
+
+
+@AppUserRouter.get(
+    "/referral/{id}/descendant-count",
+    summary="获取用户后代总数",
+    response_model=ResponseSchema[AppUserReferralDescendantCountSchema],
+)
+async def referral_descendant_count_controller(
+    _auth: Annotated[AuthSchema, Security(AuthPermission([REFERRAL_PERMISSION]))],
+    id: Annotated[int, Path(description="用户端用户ID", ge=1)],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> JSONResponse:
+    result = await AppUserService(_auth, db).referral_descendant_count(id=id)
+    return SuccessResponse(data=result, msg="获取后代总数成功")
 
 
 @AppUserRouter.get("/detail/{id}", summary="获取用户端用户详情", response_model=ResponseSchema[AppUserOutSchema])

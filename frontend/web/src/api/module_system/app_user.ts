@@ -57,6 +57,36 @@ const AppUserAPI = {
       data: body,
     });
   },
+
+  searchReferralUsers(query: AppUserReferralSearchQuery) {
+    return request<ApiResponse<PageResult<AppUserReferralNode>>>({
+      url: `${API_PATH}/referral/search`,
+      method: "get",
+      params: query,
+    });
+  },
+
+  getReferralSummary(id: number) {
+    return request<ApiResponse<AppUserReferralSummary>>({
+      url: `${API_PATH}/referral/${id}`,
+      method: "get",
+    });
+  },
+
+  getReferralChildren(id: number, query: PageQuery) {
+    return request<ApiResponse<PageResult<AppUserReferralNode>>>({
+      url: `${API_PATH}/referral/${id}/children`,
+      method: "get",
+      params: query,
+    });
+  },
+
+  getReferralDescendantCount(id: number) {
+    return request<ApiResponse<{ total_descendant_count: number }>>({
+      url: `${API_PATH}/referral/${id}/descendant-count`,
+      method: "get",
+    });
+  },
 };
 
 export default AppUserAPI;
@@ -103,6 +133,29 @@ export interface AppUserTable extends BaseType {
   kyc_reviewed_at?: string;
   created_time?: string;
   updated_time?: string;
+}
+
+export interface AppUserReferralSearchQuery extends PageQuery {
+  keyword: string;
+}
+
+export interface AppUserReferralNode {
+  user_id: number;
+  username: string;
+  nickname: string;
+  mobile?: string | null;
+  referral_code: string;
+  status: number;
+  kyc_status: AppUserKycStatus;
+  direct_count: number;
+  has_children: boolean;
+  referrer_bound_at?: string | null;
+}
+
+export interface AppUserReferralSummary extends AppUserReferralNode {
+  referrer_id?: number | null;
+  referrer?: AppUserReferralNode | null;
+  total_descendant_count: number;
 }
 
 export interface AppUserForm extends BaseFormType {

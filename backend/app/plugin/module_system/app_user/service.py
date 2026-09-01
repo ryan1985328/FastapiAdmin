@@ -17,12 +17,20 @@ from app.plugin.module_app.user.schema import (
 )
 from app.plugin.module_app.user.summary import get_app_user_out, serialize_app_user
 from app.plugin.module_system.kyc.model import AppUserKycModel
-from app.plugin.module_system.sms.constants import normalize_mobile
+from app.plugin.module_system.sms.constants import mask_mobile, normalize_mobile
 from app.utils.common_util import search_to_dict
 from app.utils.password_util import PwdUtil
 
 from .crud import AppUserCRUD
-from .schema import AppUserQueryParam, AppUserResetPasswordSchema, AppUserUpdateSchema
+from .schema import (
+    AppUserQueryParam,
+    AppUserReferralDescendantCountSchema,
+    AppUserReferralNodeSchema,
+    AppUserReferralSearchQueryParam,
+    AppUserReferralSummarySchema,
+    AppUserResetPasswordSchema,
+    AppUserUpdateSchema,
+)
 
 
 class AppUserService:
@@ -146,6 +154,156 @@ class AppUserService:
                 column = getattr(AppUserModel, field)
                 columns.append(column.desc() if direction.lower() == "desc" else column.asc())
         return columns or [AppUserModel.id.asc()]
+
+    async def _get_referral_user(self, id: int) -> AppUserModel:
+        result = await self.db.execute(
+            select(AppUserModel).where(AppUserModel.id == id, AppUserModel.is_deleted.is_(False))
+        )
+        user = result.scalars().first()
+        if not user:
+            raise CustomException(msg="该用户不存在")
+        return user
+
+    async def _referral_nodes(self, users: list[AppUserModel]) -> dict[int, AppUserReferralNodeSchema]:
+        """Project a bounded set of users with batched direct/KYC summaries."""
+
+        if not users:
+            return {}
+
+        user_ids = [user.id for user in users]
+        direct_result = await self.db.execute(
+            select(AppUserModel.referrer_id, func.count(AppUserModel.id))
+            .where(
+                AppUserModel.is_deleted.is_(False),
+                AppUserModel.referrer_id.in_(user_ids),
+                AppUserModel.id != AppUserModel.referrer_id,
+            )
+            .group_by(AppUserModel.referrer_id)
+        )
+        direct_counts = {
+            int(referrer_id): int(count)
+            for referrer_id, count in direct_result.all()
+            if referrer_id is not None
+        }
+
+        latest_kyc = self._latest_kyc_subquery()
+        kyc_result = await self.db.execute(
+            select(AppUserModel.id, latest_kyc.c.status)
+            .outerjoin(latest_kyc, AppUserModel.id == latest_kyc.c.app_user_id)
+            .where(AppUserModel.id.in_(user_ids), AppUserModel.is_deleted.is_(False))
+        )
+        kyc_statuses = {
+            int(user_id): aggregate_kyc_status(status)
+            for user_id, status in kyc_result.all()
+        }
+
+        nodes: dict[int, AppUserReferralNodeSchema] = {}
+        for user in users:
+            direct_count = direct_counts.get(user.id, 0)
+            nodes[user.id] = AppUserReferralNodeSchema(
+                user_id=user.id,
+                username=user.username,
+                nickname=user.nickname,
+                mobile=mask_mobile(user.mobile) if user.mobile else None,
+                referral_code=user.referral_code,
+                # Preserve unknown historical status values for a safe UI
+                # fallback instead of failing the entire relationship page.
+                status=int(user.status),
+                kyc_status=kyc_statuses.get(user.id, AppUserKycStatus.UNVERIFIED),
+                direct_count=direct_count,
+                has_children=direct_count > 0,
+                referrer_bound_at=user.referrer_bound_at,
+            )
+        return nodes
+
+    async def referral_search(
+        self,
+        search: AppUserReferralSearchQueryParam,
+        *,
+        page_no: int,
+        page_size: int,
+    ) -> PageResultSchema[AppUserReferralNodeSchema]:
+        keyword = search.keyword.strip()
+        if not keyword:
+            raise CustomException(msg="搜索关键词不能为空", status_code=422)
+
+        offset = (page_no - 1) * page_size
+        total, users = await AppUserReferralService.search_users(
+            self.db,
+            keyword=keyword,
+            offset=offset,
+            limit=page_size,
+        )
+        nodes = await self._referral_nodes(users)
+        items = [nodes[user.id] for user in users if user.id in nodes]
+        return PageResultSchema(
+            page_no=page_no,
+            page_size=page_size,
+            total=total,
+            has_next=offset + page_size < total,
+            items=items,
+        )
+
+    async def referral_summary(self, id: int) -> AppUserReferralSummarySchema:
+        user = await self._get_referral_user(id)
+        referrer = None
+        if user.referrer_id is not None:
+            result = await self.db.execute(
+                select(AppUserModel).where(
+                    AppUserModel.id == user.referrer_id,
+                    AppUserModel.is_deleted.is_(False),
+                )
+            )
+            referrer = result.scalars().first()
+
+        related_users = [user] + ([referrer] if referrer is not None else [])
+        nodes = await self._referral_nodes(related_users)
+        payload = nodes[user.id].model_dump()
+        payload.update(
+            {
+                "referrer_id": user.referrer_id,
+                "referrer": nodes.get(referrer.id) if referrer is not None else None,
+                "total_descendant_count": await AppUserReferralService.count_descendants(
+                    self.db,
+                    user_id=user.id,
+                ),
+            }
+        )
+        return AppUserReferralSummarySchema.model_validate(payload)
+
+    async def referral_children(
+        self,
+        id: int,
+        *,
+        page_no: int,
+        page_size: int,
+    ) -> PageResultSchema[AppUserReferralNodeSchema]:
+        await self._get_referral_user(id)
+        offset = (page_no - 1) * page_size
+        total, users = await AppUserReferralService.get_direct_children(
+            self.db,
+            user_id=id,
+            offset=offset,
+            limit=page_size,
+        )
+        nodes = await self._referral_nodes(users)
+        items = [nodes[user.id] for user in users if user.id in nodes]
+        return PageResultSchema(
+            page_no=page_no,
+            page_size=page_size,
+            total=total,
+            has_next=offset + page_size < total,
+            items=items,
+        )
+
+    async def referral_descendant_count(self, id: int) -> AppUserReferralDescendantCountSchema:
+        await self._get_referral_user(id)
+        return AppUserReferralDescendantCountSchema(
+            total_descendant_count=await AppUserReferralService.count_descendants(
+                self.db,
+                user_id=id,
+            )
+        )
 
     async def detail(self, id: int) -> AppUserOutSchema:
         obj = await AppUserCRUD(self.auth, self.db).get(id=id)

@@ -113,7 +113,8 @@ import FaForm from "@/components/forms/fa-form/index.vue";
 import FaTableHeader from "@/components/tables/fa-table-header/index.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { checkPerm } from "@/utils/checkPerm";
-import { h, onMounted } from "vue";
+import { h, nextTick, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
 import { useDictStore } from "@stores";
 import AppUserAPI, {
   type AppUserKycStatus,
@@ -135,6 +136,7 @@ const DICT_TAG_TYPES = ["primary", "success", "warning", "danger", "info"] as co
 type DictTagType = (typeof DICT_TAG_TYPES)[number];
 
 const dictStore = useDictStore();
+const route = useRoute();
 
 function getDictTagType(value?: string): DictTagType {
   return DICT_TAG_TYPES.includes(value as DictTagType) ? (value as DictTagType) : "info";
@@ -193,7 +195,15 @@ function renderDictTag(dictType: string, value: unknown) {
 
 onMounted(() => {
   void dictStore.getDict([USER_STATUS_DICT, KYC_STATUS_DICT, REFERRER_BOUND_DICT]);
+  void openDetailFromQuery();
 });
+
+watch(
+  () => route.query.user_id,
+  () => {
+    void openDetailFromQuery();
+  }
+);
 
 const createInitialFormData = (): AppUserForm => ({
   nickname: undefined,
@@ -471,6 +481,15 @@ const canBindReferrer = computed(() => checkPerm("module_system:app_user:bind_re
 async function openDetail(id: number) {
   detailFormData.value = {};
   await handleOpenDialog("detail", id);
+}
+
+async function openDetailFromQuery() {
+  const queryValue = route.query.user_id;
+  const rawId = Array.isArray(queryValue) ? queryValue[0] : queryValue;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id < 1) return;
+  await nextTick();
+  await openDetail(id);
 }
 
 async function handleResetPassword(row: AppUserTable) {
