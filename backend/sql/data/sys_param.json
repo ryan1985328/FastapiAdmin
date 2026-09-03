@@ -112,6 +112,22 @@
         "description": "平台系统名称，用于登录页等界面展示"
     },
     {
+        "config_name": "后台名称",
+        "config_key": "admin_name",
+        "config_value": "",
+        "config_type": true,
+        "status": 0,
+        "description": "后台登录页和管理工作区名称，留空时继承系统名称"
+    },
+    {
+        "config_name": "后台 Logo URL",
+        "config_key": "admin_logo_url",
+        "config_value": "",
+        "config_type": true,
+        "status": 0,
+        "description": "后台登录页和管理工作区 Logo，留空时继承系统 Logo"
+    },
+    {
         "config_name": "登录页标题",
         "config_key": "login_title",
         "config_value": "通用后台管理 Starter",
@@ -127,12 +143,28 @@
         "status": 0,
         "description": "登录页左侧面板副标题文案"
     },
-    {
-        "config_name": "IP归属地查询",
-        "config_key": "ip_location_enable",
-        "config_value": "on",
-        "config_type": true,
-        "status": 0,
-        "description": "是否启用IP归属地查询（登录时对外发起HTTP请求，关闭后只记录内网/未知）"
-    }
+  {
+    "config_name": "IP归属地查询",
+    "config_key": "ip_location_enable",
+    "config_value": "on",
+    "config_type": true,
+    "status": 0,
+    "description": "是否启用IP归属地查询（登录时对外发起HTTP请求，关闭后只记录内网/未知）"
+  },
+  {
+    "config_name": "短信服务启用",
+    "config_key": "sms_enabled",
+    "config_value": "off",
+    "config_type": true,
+    "status": 0,
+    "description": "是否允许 App 认证流程调用真实短信供应商；开发固定验证码仍遵循环境保护规则"
+  },
+  {
+    "config_name": "短信当前供应商",
+    "config_key": "sms_active_provider",
+    "config_value": "aliyun",
+    "config_type": true,
+    "status": 0,
+    "description": "App 认证短信使用的内置供应商（aliyun 或 tencent）"
+  }
 ]

@@ -27,7 +27,7 @@ class SmsLogService:
 
     async def detail(self, id: int) -> SmsLogOutSchema:
         obj = await SmsLogCRUD(self.auth, self.db).get_or_404(id=id)
-        return self._to_out(obj, mask=False)
+        return self._to_out(obj, mask=True)
 
     async def page(
         self,

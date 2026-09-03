@@ -11,7 +11,9 @@ from app.api.v1.module_system.params.model import ParamsModel
 from app.api.v1.module_system.role.model import RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.api.v1.module_system.versions.model import VersionModel
+from app.common.enums import EnvironmentEnum
 from app.config.path_conf import SCRIPT_DIR
+from app.config.setting import settings
 from app.core.database import async_db_session, check_db, create_tables
 from app.core.logger import logger
 
@@ -42,7 +44,16 @@ class InitializeData:
         await create_tables()
 
         async with async_db_session() as session, session.begin():
+            if settings.ENVIRONMENT == EnvironmentEnum.PROD:
+                user_count = await session.execute(select(func.count()).select_from(UserModel))
+                self._ensure_production_admin_seed_safe(int(user_count.scalar() or 0))
             await self.__init_data(session)
+
+    @staticmethod
+    def _ensure_production_admin_seed_safe(user_count: int) -> None:
+        """Prevent an empty production database from receiving default seed admins."""
+        if settings.ENVIRONMENT == EnvironmentEnum.PROD and user_count == 0:
+            raise RuntimeError("生产环境禁止从默认 seed 创建管理员；请先预置管理员账号后再启动")
 
     async def __init_data(self, db: AsyncSession) -> None:
         """按依赖顺序初始化各表种子数据"""

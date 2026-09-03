@@ -31,8 +31,8 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type { AppRouteRecord } from "@/types/router";
-import { getFirstMenuPath } from "@utils";
 import { HOME_PAGE_PATH } from "@/router";
+import { LEGACY_HOME_PATH } from "@/router/constants";
 import { mergeShellRoutesIntoMenu } from "@/router/MenuProcessor";
 
 /**
@@ -43,7 +43,7 @@ export const useMenuStore = defineStore(
   "menuStore",
   () => {
     /** 首页路径 */
-    const homePath = ref(HOME_PAGE_PATH);
+    const homePath = ref<string>(HOME_PAGE_PATH);
     /** 菜单列表 */
     const menuList = ref<AppRouteRecord[]>([]);
     /** 菜单宽度 */
@@ -64,21 +64,26 @@ export const useMenuStore = defineStore(
     const setMenuList = (list: AppRouteRecord[]) => {
       const merged = mergeShellRoutesIntoMenu(list);
       menuList.value = merged;
-      setHomePath(HOME_PAGE_PATH || getFirstMenuPath(merged));
+      setHomePath(HOME_PAGE_PATH);
     };
 
     /**
      * 获取首页路径
      * @returns 首页路径字符串
      */
-    const getHomePath = () => homePath.value;
+    const getHomePath = () => {
+      if (homePath.value === LEGACY_HOME_PATH) {
+        homePath.value = HOME_PAGE_PATH;
+      }
+      return homePath.value;
+    };
 
     /**
      * 设置主页路径
      * @param path 主页路径
      */
     const setHomePath = (path: string) => {
-      homePath.value = path;
+      homePath.value = path === LEGACY_HOME_PATH ? HOME_PAGE_PATH : path;
     };
 
     /**

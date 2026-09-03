@@ -10,64 +10,66 @@
       :validate-on-rule-change="false"
       @keyup.enter="$emit('submit')"
     >
-      <ElFormItem prop="username">
-        <ElInput
-          class="custom-height"
-          v-model.trim="loginForm.username"
-          clearable
-          :placeholder="$t('login.placeholder.username')"
-        >
-          <template #prefix>
-            <ElIcon><User /></ElIcon>
-          </template>
-        </ElInput>
-      </ElFormItem>
-
-      <ElTooltip :visible="isCapsLock" :content="$t('login.capsLock')" placement="right">
-        <ElFormItem prop="password">
+      <div class="login-form-field">
+        <p class="login-form-field__label">{{ $t("login.fields.username") }}</p>
+        <ElFormItem prop="username">
           <ElInput
             class="custom-height"
-            v-model.trim="loginForm.password"
-            type="password"
-            autocomplete="off"
-            show-password
+            v-model.trim="loginForm.username"
             clearable
-            :placeholder="$t('login.placeholder.password')"
-            @keyup="onPasswordKeyup"
+            :placeholder="$t('login.placeholder.username')"
           >
             <template #prefix>
-              <ElIcon><Lock /></ElIcon>
+              <ElIcon><User /></ElIcon>
             </template>
           </ElInput>
         </ElFormItem>
-      </ElTooltip>
+      </div>
 
-      <div class="login-form-tail flex flex-col gap-[1.1rem]">
-        <div class="relative pb-3">
-          <div
-            class="relative z-2 overflow-hidden select-none rounded-lg border border-transparent transition duration-300"
-            :class="{ 'border-[#FF4E4F]!': !isPassing && isClickPass }"
-          >
+      <div class="login-form-field">
+        <p class="login-form-field__label">{{ $t("login.fields.password") }}</p>
+        <ElTooltip :visible="isCapsLock" :content="$t('login.capsLock')" placement="right">
+          <ElFormItem prop="password">
+            <ElInput
+              class="custom-height"
+              v-model.trim="loginForm.password"
+              type="password"
+              autocomplete="off"
+              show-password
+              clearable
+              :placeholder="$t('login.placeholder.password')"
+              @keyup="onPasswordKeyup"
+            >
+              <template #prefix>
+                <ElIcon><Lock /></ElIcon>
+              </template>
+            </ElInput>
+          </ElFormItem>
+        </ElTooltip>
+      </div>
+
+      <div class="login-form-tail">
+        <div v-if="captchaEnabled" class="login-form-field login-form-field--captcha">
+          <p class="login-form-field__label">{{ $t("login.fields.captcha") }}</p>
+          <div class="login-captcha-shell" :class="{ 'is-error': !isPassing && isClickPass }">
             <FaDragVerify
               ref="dragVerifyRef"
               v-model:value="isPassing"
+              :height="52"
               :text="$t('login.sliderText')"
               :text-color="dragVerifyTextColor"
               :success-text="$t('login.sliderSuccessText')"
               progress-bar-bg="var(--el-color-success)"
-              :background="isDark ? '#26272F' : 'var(--el-border-color-light)'"
+              background="transparent"
               handler-bg="var(--default-box-color)"
             />
+            <p class="login-captcha-error" :class="{ 'is-visible': !isPassing && isClickPass }">
+              {{ $t("login.placeholder.slider") }}
+            </p>
           </div>
-          <p
-            class="absolute top-0 z-1 mt-2 px-px text-xs text-[#f56c6c] transition duration-300"
-            :class="{ 'translate-y-10': !isPassing && isClickPass }"
-          >
-            {{ $t("login.placeholder.slider") }}
-          </p>
         </div>
 
-        <div class="login-options-row flex items-center justify-between text-sm">
+        <div class="login-options-row">
           <ElCheckbox v-model="loginForm.remember" class="login-remember">
             {{ $t("login.rememberPwd") }}
           </ElCheckbox>
@@ -75,7 +77,7 @@
 
         <div>
           <ElButton
-            class="h-11 w-full rounded-lg! text-base font-medium"
+            class="login-submit"
             type="primary"
             :loading="loading"
             v-ripple
@@ -99,6 +101,7 @@ const loginForm = defineModel<LoginFormData>("loginForm", { required: true });
 defineOptions({ name: "FaLoginAccountForm" });
 
 interface Props {
+  captchaEnabled: boolean;
   rules: FormRules;
   formKey: number | string;
   isDark: boolean;

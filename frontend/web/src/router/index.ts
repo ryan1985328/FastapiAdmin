@@ -2,6 +2,7 @@ import type { App } from "vue";
 import { createRouter, createWebHashHistory } from "vue-router";
 import { HOME_ROUTE_NAME, ROOT_LAYOUT_ROUTE_NAME, staticRoutes } from "./routes";
 import { setupAfterEachGuard, setupBeforeEachGuard } from "./guards";
+import { CANONICAL_HOME_PATH } from "./constants";
 import "@utils/ui";
 
 /**
@@ -26,10 +27,11 @@ export async function initRouter(app: App<Element>): Promise<void> {
   app.use(router);
 }
 
-/** 首页 path，供外部获取（须与静态路由首页子路由 path 一致） */
-export const HOME_PAGE_PATH = "/home";
+/** Canonical home path; `/home` remains a compatibility redirect only. */
+export const HOME_PAGE_PATH = CANONICAL_HOME_PATH;
 
 export { HOME_ROUTE_NAME, ROOT_LAYOUT_ROUTE_NAME };
+export { CANONICAL_HOME_PATH, LEGACY_HOME_PATH } from "./constants";
 
 /** iframe 路由管理器 */
 export { IframeRouteManager } from "./routes";

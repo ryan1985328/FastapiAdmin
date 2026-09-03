@@ -12,7 +12,6 @@
       :show-search="true"
       :disabled-search="false"
       :default-expanded="false"
-      include-audit
       @search="handleSearch"
       @reset="onResetSearch"
     />
@@ -25,7 +24,7 @@
         @refresh="refreshData"
       >
         <template #left>
-          <span class="text-sm text-g-500">实名认证仅支持查看与审核，不提供删除操作</span>
+          <span class="text-sm text-g-500">实名认证审核工作台</span>
         </template>
       </FaTableHeader>
 
@@ -42,7 +41,7 @@
     <FaDialog
       v-model="dialogVisible.visible"
       :title="dialogVisible.title"
-      width="920px"
+      width="960px"
       dialog-class="crud-embed-dialog"
       modal-class="crud-embed-dialog"
       :form-mode="dialogVisible.type"
@@ -50,145 +49,233 @@
       @close="handleCloseDialog"
     >
       <template v-if="dialogVisible.type === 'detail'">
-        <FaDescriptions
-          :column="4"
-          :data="detailFormData"
-          :items="detailItems"
-          max-height="70vh"
-        >
-          <template #id_card_front>
-            <ElImage
-              v-if="detailImageUrls.front"
-              :src="detailImageUrls.front"
-              :preview-src-list="[detailImageUrls.front]"
-              fit="contain"
-              style="width: 180px; height: 120px"
+        <div class="kyc-review-detail">
+          <section class="kyc-detail-section">
+            <h3 class="kyc-section-title">用户信息</h3>
+            <div class="kyc-user-summary">
+              <div class="kyc-user-summary-main">
+                <span class="kyc-field-label">用户摘要</span>
+                <span class="kyc-user-summary-name">
+                  {{ formatUserIdentity(detailFormData.app_user) }}
+                </span>
+              </div>
+              <div>
+                <span class="kyc-field-label">手机号</span>
+                <span>{{ detailFormData.app_user?.mobile || "—" }}</span>
+              </div>
+              <div>
+                <span class="kyc-field-label">用户 ID</span>
+                <span>{{ detailFormData.app_user?.id ?? detailFormData.app_user_id ?? "—" }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="kyc-detail-section">
+            <h3 class="kyc-section-title">认证资料</h3>
+            <FaDescriptions
+              :column="2"
+              :span="1"
+              :data="detailFormData"
+              :items="identityItems"
+              :scrollbar="false"
             />
-            <span v-else class="text-g-400">图片不可用</span>
-          </template>
-          <template #id_card_back>
-            <ElImage
-              v-if="detailImageUrls.back"
-              :src="detailImageUrls.back"
-              :preview-src-list="[detailImageUrls.back]"
-              fit="contain"
-              style="width: 180px; height: 120px"
-            />
-            <span v-else class="text-g-400">图片不可用</span>
-          </template>
-        </FaDescriptions>
+            <div class="kyc-image-grid">
+              <div class="kyc-image-card">
+                <span class="kyc-field-label">证件正面</span>
+                <div class="kyc-image-frame">
+                  <ElImage
+                    v-if="detailImageUrls.front"
+                    :src="detailImageUrls.front"
+                    :preview-src-list="[detailImageUrls.front]"
+                    fit="contain"
+                    preview-teleported
+                    class="kyc-image"
+                  />
+                  <span v-else class="text-g-400">
+                    {{ detailImageLoading.front ? "图片加载中…" : "图片不可用" }}
+                  </span>
+                </div>
+              </div>
+              <div class="kyc-image-card">
+                <span class="kyc-field-label">证件反面</span>
+                <div class="kyc-image-frame">
+                  <ElImage
+                    v-if="detailImageUrls.back"
+                    :src="detailImageUrls.back"
+                    :preview-src-list="[detailImageUrls.back]"
+                    fit="contain"
+                    preview-teleported
+                    class="kyc-image"
+                  />
+                  <span v-else class="text-g-400">
+                    {{ detailImageLoading.back ? "图片加载中…" : "图片不可用" }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="kyc-detail-section kyc-detail-section-last">
+            <h3 class="kyc-section-title">审核信息</h3>
+            <FaDescriptions
+              :column="2"
+              :span="1"
+              :data="detailFormData"
+              :items="reviewItems"
+              :scrollbar="false"
+            >
+              <template #status="{ value }">
+                <FaStatusTag v-bind="kycStatusTagProps(value)" />
+              </template>
+              <template #review_remark="{ value }">
+                <span class="whitespace-pre-wrap">{{ value || "—" }}</span>
+              </template>
+            </FaDescriptions>
+          </section>
+        </div>
       </template>
     </FaDialog>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted } from "vue";
+import { h, onMounted, onUnmounted } from "vue";
 import type { TableOperationAction } from "@/utils/table";
 import { renderTableOperationCell } from "@utils";
 import { ElMessageBox } from "element-plus";
-import type { AuditSearchFormParams } from "@/components/forms/fa-search-bar/auditSearchFormItems";
-import type { ColumnOption } from "@/types/component";
+import type { DescriptionsItem } from "@/components/display/fa-descriptions/index.vue";
 import FaDescriptions from "@/components/display/fa-descriptions/index.vue";
+import FaStatusTag from "@/components/display/fa-status-tag/index.vue";
 import FaTableHeader from "@/components/tables/fa-table-header/index.vue";
-import AppUserKycAPI, { type AppUserKycTable } from "@/api/module_system/kyc";
+import { useDictStore } from "@stores";
+import AppUserKycAPI, {
+  type AppUserKycTable,
+  type AppUserKycUserSummary,
+} from "@/api/module_system/kyc";
+import type { AppUserKycStatus } from "@/api/module_system/app_user";
+import type { ColumnOption } from "@/types/component";
 
 defineOptions({
   name: "AppUserKyc",
   inheritAttrs: false,
 });
 
+const KYC_STATUS_DICT = "app_user_kyc_status";
+const DEFAULT_KYC_STATUS: AppUserKycStatus = "pending";
+const KYC_STATUS_BY_RECORD_VALUE: Record<number, AppUserKycStatus> = {
+  0: "pending",
+  1: "verified",
+  2: "rejected",
+};
+const DICT_TAG_TYPES = ["primary", "success", "warning", "danger", "info"] as const;
+type DictTagType = (typeof DICT_TAG_TYPES)[number];
 
-const STATUS_OPTIONS = [
-  { label: "待审核", value: 0 },
-  { label: "已通过", value: 1 },
-  { label: "已驳回", value: 2 },
-] as const;
+const dictStore = useDictStore();
 
-type AppUserKycSearchFormParams = {
-  app_user_id?: string;
-  real_name?: string;
-  id_card_no?: string;
-  id_card_front?: string;
-  id_card_back?: string;
-  status?: string;
-  review_remark?: string;
-  reviewed_at?: string;
-} & AuditSearchFormParams;
+function getDictTagType(value?: string): DictTagType {
+  return DICT_TAG_TYPES.includes(value as DictTagType) ? (value as DictTagType) : "info";
+}
 
-const searchForm = ref<AppUserKycSearchFormParams>({
-  app_user_id: undefined,
-  real_name: undefined,
-  id_card_no: undefined,
-  id_card_front: undefined,
-  id_card_back: undefined,
-  status: undefined,
-  review_remark: undefined,
-  reviewed_at: undefined,
-  created_id: undefined,
-  updated_id: undefined,
-  created_time: [],
-  updated_time: [],
+function kycDictValue(value: unknown): AppUserKycStatus | undefined {
+  const recordStatus = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(recordStatus) ? KYC_STATUS_BY_RECORD_VALUE[recordStatus] : undefined;
+}
+
+function kycStatusTagProps(value: unknown) {
+  const dictValue = kycDictValue(value);
+  const entry = dictStore.dictData[KYC_STATUS_DICT]?.find((item) => item.dict_value === dictValue);
+  return {
+    type: getDictTagType(entry?.list_class),
+    label: entry?.dict_label ?? "—",
+  };
+}
+
+const kycStatusOptions = computed(() => {
+  const order: Record<AppUserKycStatus, number> = {
+    pending: 0,
+    verified: 1,
+    rejected: 2,
+    unverified: 3,
+  };
+  return [...dictStore.getDictArray(KYC_STATUS_DICT)]
+    .map((item) => ({
+      label: item.dict_label,
+      value: item.dict_value as AppUserKycStatus,
+    }))
+    .sort((left, right) => (order[left.value] ?? 99) - (order[right.value] ?? 99));
 });
 
-/** 搜索区域默认展开展示 */
-const showSearchBar = ref(true);
+onMounted(() => {
+  void dictStore.getDict([KYC_STATUS_DICT]);
+});
 
+type AppUserKycSearchFormParams = {
+  keyword?: string;
+  kyc_status?: AppUserKycStatus;
+  created_time?: string[];
+};
+
+const searchForm = ref<AppUserKycSearchFormParams>({
+  keyword: undefined,
+  kyc_status: DEFAULT_KYC_STATUS,
+  created_time: [],
+});
+
+const showSearchBar = ref(true);
 const searchBarRef = ref<{ validate: () => Promise<boolean> } | null>(null);
 const searchBarRules: Record<string, unknown> = {};
 
-/** 业务搜索项（审计四字段由 FaSearchBar 的 includeAudit 属性追加） */
 const businessSearchItems = computed(() => [
   {
-    label: "用户端用户ID",
-    key: "app_user_id",
+    label: "关键词",
+    key: "keyword",
     type: "input",
-    placeholder: "请输入用户端用户ID",
+    placeholder: "用户ID / 用户名 / 昵称 / 手机号 / 真实姓名 / 证件号码",
     clearable: true,
-    span: 6,
+    span: 12,
   },
   {
-    label: "真实姓名",
-    key: "real_name",
-    type: "input",
-    placeholder: "请输入真实姓名",
-    clearable: true,
-    span: 6,
-  },
-  {
-    label: "证件号码",
-    key: "id_card_no",
-    type: "input",
-    placeholder: "请输入证件号码",
-    clearable: true,
-    span: 6,
-  },
-  {
-    label: "状态",
-    key: "status",
+    label: "实名状态",
+    key: "kyc_status",
     type: "select",
     props: {
-      placeholder: "请选择状态",
-      options: STATUS_OPTIONS,
+      placeholder: "请选择实名状态",
+      options: kycStatusOptions.value,
       clearable: true,
     },
     span: 6,
   },
   {
-    label: "审核时间",
-    key: "reviewed_at",
-    type: "date-picker",
+    label: "提交时间",
+    key: "created_time",
+    type: "datetimerange",
     props: {
-      type: "date",
-      valueFormat: "YYYY-MM-DD",
+      type: "datetimerange",
+      valueFormat: "YYYY-MM-DD HH:mm:ss",
       clearable: true,
-      placeholder: "请选择审核时间",
+      startPlaceholder: "提交开始",
+      endPlaceholder: "提交结束",
     },
-    span: 6,
+    span: 12,
   },
 ]);
 
+function formatUserIdentity(user?: AppUserKycUserSummary | null): string {
+  if (!user) return "—";
+  const username = user.username?.trim();
+  const nickname = user.nickname?.trim();
+  if (nickname && username && nickname !== username) return `${nickname}（${username}）`;
+  return nickname || username || "—";
+}
+
+function formatUserCell(row: AppUserKycTable) {
+  const user = row.app_user;
+  const userId = user?.id ?? row.app_user_id;
+  return h("div", { class: "kyc-user-cell" }, [
+    h("div", { class: "kyc-user-name", title: formatUserIdentity(user) }, formatUserIdentity(user)),
+    h("div", { class: "kyc-user-meta" }, `手机号 ${user?.mobile || "—"} · ID ${userId ?? "—"}`),
+  ]);
+}
 
 const {
   columns,
@@ -208,35 +295,43 @@ const {
     apiParams: {
       page_no: 1,
       page_size: 10,
+      kyc_status: DEFAULT_KYC_STATUS,
+      order_by: JSON.stringify([{ created_time: "desc" }, { id: "desc" }]),
     },
     columnsFactory: (): ColumnOption<AppUserKycTable>[] => [
-      { type: "globalIndex", width: 56, label: "序号" },
-      { prop: "app_user_id", label: "用户端用户ID", minWidth: 120, showOverflowTooltip: true },
+      {
+        prop: "app_user",
+        label: "用户",
+        minWidth: 240,
+        showOverflowTooltip: true,
+        formatter: (row: AppUserKycTable) => formatUserCell(row),
+      },
       { prop: "real_name", label: "真实姓名", minWidth: 120, showOverflowTooltip: true },
       {
         prop: "id_card_no",
         label: "证件号码",
         minWidth: 150,
+        showOverflowTooltip: true,
         formatter: (row: AppUserKycTable) => maskIdCard(row.id_card_no),
       },
       {
         prop: "status",
-        label: "状态",
-        width: 88,
-        status: {
-          0: { type: "warning", text: "待审核" },
-          1: { type: "success", text: "已通过" },
-          2: { type: "danger", text: "已驳回" },
-        },
+        label: "实名状态",
+        width: 100,
+        formatter: (row: AppUserKycTable) => h(FaStatusTag, kycStatusTagProps(row.status)),
       },
-      { prop: "review_remark", label: "审核备注", minWidth: 120, showOverflowTooltip: true },
-      { prop: "reviewed_at", label: "审核时间", minWidth: 120, showOverflowTooltip: true },
-      { prop: "created_time", label: "创建时间", width: 168, sortable: true, showOverflowTooltip: true },
-      { prop: "updated_time", label: "更新时间", width: 168, sortable: true, showOverflowTooltip: true },
+      {
+        prop: "created_time",
+        label: "提交时间",
+        width: 168,
+        sortable: true,
+        showOverflowTooltip: true,
+      },
+      { prop: "reviewed_at", label: "审核时间", width: 168, showOverflowTooltip: true },
       {
         prop: "operation",
         label: "操作",
-        width: 180,
+        width: 220,
         fixed: "right",
         align: "center",
         formatter: (row: AppUserKycTable) => formatOperationCell(row),
@@ -247,18 +342,18 @@ const {
 
 const detailFormData = ref<AppUserKycTable>({});
 const detailImageUrls = reactive({ front: "", back: "" });
+const detailImageLoading = reactive({ front: false, back: false });
 
-const detailItems: import("@/components/display/fa-descriptions/index.vue").DescriptionsItem[] = [
-  { label: "用户端用户ID", prop: "app_user_id" },
+const identityItems: DescriptionsItem[] = [
   { label: "真实姓名", prop: "real_name" },
-  { label: "证件号码", prop: "id_card_no" },
-  { label: "证件正面", prop: "id_card_front" },
-  { label: "证件反面", prop: "id_card_back" },
-  { label: "状态", prop: "status", tag: { map: { "0": { type: "warning", text: "待审核" }, "1": { type: "success", text: "已通过" }, "2": { type: "danger", text: "已驳回" } } } },
-  { label: "审核备注", prop: "review_remark" },
+  { label: "完整证件号码", prop: "id_card_no" },
+];
+
+const reviewItems: DescriptionsItem[] = [
+  { label: "实名状态", prop: "status" },
+  { label: "提交时间", prop: "created_time" },
   { label: "审核时间", prop: "reviewed_at" },
-  { label: "创建时间", prop: "created_time" },
-  { label: "更新时间", prop: "updated_time" },
+  { label: "审核备注", prop: "review_remark", span: 2 },
 ];
 
 const { dialogVisible, openDialog, closeDialog } = useCrudDialog();
@@ -266,23 +361,11 @@ const { dialogVisible, openDialog, closeDialog } = useCrudDialog();
 const handleSearch = async (params: AppUserKycSearchFormParams) => {
   await searchBarRef.value?.validate();
   replaceSearchParams({
-    app_user_id: params.app_user_id,
-    real_name: params.real_name,
-    id_card_no: params.id_card_no,
-    id_card_front: params.id_card_front,
-    id_card_back: params.id_card_back,
-    status: params.status,
-    review_remark: params.review_remark,
-    reviewed_at: params.reviewed_at,
-    created_id: params.created_id ?? undefined,
-    updated_id: params.updated_id ?? undefined,
+    keyword: params.keyword?.trim() || undefined,
+    kyc_status: params.kyc_status,
     created_time:
       Array.isArray(params.created_time) && params.created_time.length === 2
         ? params.created_time
-        : undefined,
-    updated_time:
-      Array.isArray(params.updated_time) && params.updated_time.length === 2
-        ? params.updated_time
         : undefined,
   } as Record<string, unknown>);
   await getData();
@@ -290,34 +373,25 @@ const handleSearch = async (params: AppUserKycSearchFormParams) => {
 
 const onResetSearch = async () => {
   searchForm.value = {
-    app_user_id: undefined,
-    real_name: undefined,
-    id_card_no: undefined,
-    id_card_front: undefined,
-    id_card_back: undefined,
-    status: undefined,
-    review_remark: undefined,
-    reviewed_at: undefined,
-    created_id: undefined,
-    updated_id: undefined,
+    keyword: undefined,
+    kyc_status: DEFAULT_KYC_STATUS,
     created_time: [],
-    updated_time: [],
   };
   await resetSearchParams();
 };
 
 function buildRowActions(row: AppUserKycTable): TableOperationAction[] {
-  const all: TableOperationAction[] = [
+  const actions: TableOperationAction[] = [
     {
       key: "detail",
-      label: "详情",
+      label: "查看认证详情",
       artType: "view",
       perm: "module_system:kyc:detail",
       run: () => void openDetail(row.id as number),
     },
   ];
   if (row.status === 0) {
-    all.push(
+    actions.push(
       {
         key: "approve",
         label: "审核通过",
@@ -334,22 +408,25 @@ function buildRowActions(row: AppUserKycTable): TableOperationAction[] {
         iconColor: "var(--el-color-danger)",
         perm: "module_system:kyc:update",
         run: () => void handleReview(row, 2),
-      },
+      }
     );
   }
-  return all;
+  return actions;
 }
 
 function formatOperationCell(row: AppUserKycTable) {
+  // Keep review actions in a labelled action menu; only the detail affordance
+  // stays inline, so approval/rejection is never an unexplained icon.
   return renderTableOperationCell(buildRowActions(row), {
-    wrapperClass: "inline-flex flex-wrap items-center justify-end gap-1",
+    maxInline: 1,
+    wrapperClass: "inline-flex flex-wrap items-center justify-center gap-1",
   });
 }
 
 async function openDetail(id: number) {
   clearDetailImageUrls();
   detailFormData.value = {};
-  openDialog("detail", "实名认证详情");
+  openDialog("detail", "实名认证审核详情");
   try {
     const response = await AppUserKycAPI.getAppUserKycDetail(id);
     detailFormData.value = response.data.data ?? {};
@@ -375,14 +452,19 @@ function clearDetailImageUrls() {
   if (detailImageUrls.back) URL.revokeObjectURL(detailImageUrls.back);
   detailImageUrls.front = "";
   detailImageUrls.back = "";
+  detailImageLoading.front = false;
+  detailImageLoading.back = false;
 }
 
 async function loadDetailImage(id: number, side: "front" | "back") {
+  detailImageLoading[side] = true;
   try {
     const response = await AppUserKycAPI.downloadKycImage(id, side);
     detailImageUrls[side] = URL.createObjectURL(response.data);
   } catch {
-    // 详情仍可展示文字字段，图片加载失败由占位文案说明。
+    // 详情仍可展示认证字段，图片区域保留稳定占位。
+  } finally {
+    detailImageLoading[side] = false;
   }
 }
 
@@ -390,6 +472,23 @@ onUnmounted(clearDetailImageUrls);
 
 async function handleReview(row: AppUserKycTable, status: 1 | 2) {
   if (!row.id || row.status !== 0) return;
+
+  if (status === 1) {
+    try {
+      await ElMessageBox.confirm(
+        `确认通过${row.real_name ? `「${row.real_name}」` : "该用户"}的实名认证申请？`,
+        "确认审核通过",
+        {
+          confirmButtonText: "确认通过",
+          cancelButtonText: "取消",
+          type: "success",
+        }
+      );
+    } catch {
+      return;
+    }
+  }
+
   let review_remark: string | undefined;
   if (status === 2) {
     try {
@@ -397,14 +496,15 @@ async function handleReview(row: AppUserKycTable, status: 1 | 2) {
         confirmButtonText: "确认驳回",
         cancelButtonText: "取消",
         inputType: "textarea",
-        inputPlaceholder: "请输入审核备注",
-        inputValidator: (value) => value.trim() ? true : "驳回原因不能为空",
+        inputPlaceholder: "请输入审核备注（必填）",
+        inputValidator: (value) => (value.trim() ? true : "驳回原因不能为空"),
       });
       review_remark = result.value.trim();
     } catch {
       return;
     }
   }
+
   try {
     await AppUserKycAPI.reviewAppUserKyc(row.id, { status, review_remark });
     await refreshData();
@@ -412,7 +512,126 @@ async function handleReview(row: AppUserKycTable, status: 1 | 2) {
     // 接口错误已由拦截器提示。
   }
 }
-
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.kyc-review-detail {
+  padding: 2px 4px;
+}
+
+.kyc-detail-section {
+  margin-bottom: 22px;
+}
+
+.kyc-detail-section-last {
+  margin-bottom: 0;
+}
+
+.kyc-section-title {
+  padding-bottom: 8px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.kyc-user-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 0.55fr) minmax(120px, 0.45fr);
+  gap: 12px 24px;
+  padding: 14px 16px;
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+}
+
+.kyc-user-summary-main {
+  min-width: 0;
+}
+
+.kyc-user-summary-name,
+.kyc-field-label {
+  display: block;
+}
+
+.kyc-field-label {
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.kyc-user-summary-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+}
+
+.kyc-image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.kyc-image-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+}
+
+.kyc-image-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 260px;
+  overflow: hidden;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+}
+
+.kyc-image {
+  width: 100%;
+  height: 100%;
+}
+
+.kyc-image :deep(.el-image__inner) {
+  object-fit: contain;
+}
+
+:global(.kyc-user-cell) {
+  min-width: 0;
+}
+
+:global(.kyc-user-name) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+}
+
+:global(.kyc-user-meta) {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+@media (width <= 700px) {
+  .kyc-user-summary,
+  .kyc-image-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kyc-image-frame {
+    height: 220px;
+  }
+}
+</style>

@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.base_schema import BaseQueryParam, BaseSchema
 
-SmsProviderName = Literal["aliyun"]
+SmsProviderName = Literal["aliyun", "tencent"]
 
 
 def _required_text(value: str, field_name: str) -> str:
@@ -23,6 +23,7 @@ class SmsChannelCreateSchema(BaseModel):
     provider: SmsProviderName = Field(..., description="供应商")
     access_key_id: str = Field(..., min_length=1, max_length=255, description="AccessKey ID")
     access_key_secret: str = Field(..., min_length=1, max_length=512, description="AccessKey Secret")
+    sms_sdk_app_id: str | None = Field(default=None, max_length=64, description="腾讯云短信 SDK App ID")
     sign_name: str = Field(..., min_length=1, max_length=128, description="短信签名")
     status: int = Field(default=0, ge=0, le=1, description="状态（0启用 1停用）")
     is_default: bool = Field(default=False, description="是否默认渠道")
@@ -40,11 +41,12 @@ class SmsChannelUpdateSchema(BaseModel):
     provider: SmsProviderName | None = Field(default=None, description="供应商")
     access_key_id: str | None = Field(default=None, min_length=1, max_length=255, description="AccessKey ID")
     access_key_secret: str | None = Field(default=None, max_length=512, description="新 AccessKey Secret")
+    sms_sdk_app_id: str | None = Field(default=None, max_length=64, description="腾讯云短信 SDK App ID")
     sign_name: str | None = Field(default=None, min_length=1, max_length=128, description="短信签名")
     status: int | None = Field(default=None, ge=0, le=1, description="状态（0启用 1停用）")
     is_default: bool | None = Field(default=None, description="是否默认渠道")
 
-    @field_validator("name", "access_key_id", "sign_name")
+    @field_validator("name", "access_key_id", "sms_sdk_app_id", "sign_name")
     @classmethod
     def validate_optional_text(cls, value: str | None, info) -> str | None:
         return _required_text(value, info.field_name) if value is not None else None
@@ -63,6 +65,7 @@ class SmsChannelOutSchema(BaseSchema):
     name: str
     provider: str
     access_key_id: str
+    sms_sdk_app_id: str | None = None
     sign_name: str
     status: int
     is_default: bool

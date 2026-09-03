@@ -13,6 +13,8 @@ FastAPI Admin Starter 支持以下部署方式：
 - **手动部署**：适用于需要高度定制的场景
 - **云服务部署**：可部署到阿里云、腾讯云等
 
+本文提供部署脚手架和操作参考，不承诺一键生产部署。生产环境仍需按根目录文档配置真实密钥、域名、CORS/Host 白名单、SSL 和预置管理员，并在上线前人工核验。
+
 ## 🐳 Docker Compose 部署（推荐）
 
 > 详细说明见项目根目录 [docker/README.md](https://github.com/ryan1985328/FastapiAdmin/blob/master/docker/README.md)。
@@ -46,7 +48,7 @@ cd FastapiAdmin
 cp docker/.env.example docker/.env
 # 编辑 docker/.env，填写数据库密码、Redis 密码等
 
-# 一键部署
+# 部署
 chmod +x deploy.sh
 ./deploy.sh
 ```

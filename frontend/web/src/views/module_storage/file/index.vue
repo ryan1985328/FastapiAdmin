@@ -24,7 +24,12 @@
           <ElOption label="目录" value="dir" />
         </ElSelect>
         <div class="flex-1" />
-        <ElButton type="primary" :icon="UploadFilled" :disabled="uploading" @click="uploadVisible = true">
+        <ElButton
+          type="primary"
+          :icon="UploadFilled"
+          :disabled="uploading"
+          @click="uploadVisible = true"
+        >
           上传文件
         </ElButton>
         <ElButton :icon="Refresh" :loading="loading" @click="loadFiles">刷新</ElButton>
@@ -51,12 +56,7 @@
       <FaTable :loading="loading" :data="filteredData" :columns="columns" />
     </ElCard>
 
-    <ElDialog
-      v-model="uploadVisible"
-      title="上传文件"
-      width="520px"
-      :close-on-click-modal="false"
-    >
+    <ElDialog v-model="uploadVisible" title="上传文件" width="520px" :close-on-click-modal="false">
       <ElUpload
         ref="uploadRef"
         drag
@@ -290,7 +290,10 @@ async function handleUploadRequest(options: UploadRequestOptions) {
 
 async function downloadItem(item: StorageObject) {
   try {
-    const response = await FileAPI.downloadFile({ remote_path: item.key ?? "", source_id: sourceId.value });
+    const response = await FileAPI.downloadFile({
+      remote_path: item.key ?? "",
+      source_id: sourceId.value,
+    });
     const blob = response.data;
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -331,7 +334,9 @@ async function getFileUrl(item: StorageObject) {
 async function deleteItem(item: StorageObject) {
   try {
     await ElMessageBox.confirm(
-      item.is_dir ? `确定删除目录「${item.name}」及其全部内容吗？` : `确定删除文件「${item.name}」吗？`,
+      item.is_dir
+        ? `确定删除目录「${item.name}」及其全部内容吗？`
+        : `确定删除文件「${item.name}」吗？`,
       "确认删除",
       {
         confirmButtonText: "确定",
@@ -346,8 +351,10 @@ async function deleteItem(item: StorageObject) {
   }
 }
 
-onMounted(() => {
-  void loadSources();
-  void loadFiles();
+onMounted(async () => {
+  await loadSources();
+  if (sourceOptions.value.length > 0) {
+    await loadFiles();
+  }
 });
 </script>

@@ -15,7 +15,7 @@ outline: "deep"
 | **前端** | Vue3 + TypeScript + Element Plus，开箱即用 | Jinja 模板渲染 | Vue3 + Element Plus |
 | **移动端** | UniApp 多端（H5/小程序/App）一体 | 无 | 无 |
 | **代码生成** | 内置，数据库表 → 前后端 CRUD | 需额外插件 | 无 |
-| **部署** | Docker Compose 一键，含 Nginx + SSL | 需自行配置 | 需自行配置 |
+| **部署** | Docker Compose + Nginx/SSL 脚手架；生产配置需显式提供并核验 | 需自行配置 | 需自行配置 |
 | **架构** | 按业务域竖切分包，插件自动注册 | 按层分包为主 | 按层分包 |
 | **数据库** | MySQL（Alembic 迁移） | Django ORM 迁移 | 无 |
 

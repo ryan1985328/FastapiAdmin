@@ -14,8 +14,10 @@ FastAPI Admin Starter 是一个基于 [FastapiAdmin upstream](https://github.com
 - Authentication / Session、User、Role、Menu、Department、Position
 - Dictionary、Parameters、Login Log、Operation Log、Notice / Announcement
 - Redis、Online Session、Health / Readiness、API Docs、Generic CRUD、权限控制
-- Dashboard（Workplace、Analysis、Screen）
-- Scheduler / Cron Job、Generator、Storage（Local、FTP/SFTP、S3、OSS、OBS、COS）
+- Dashboard（Workplace）
+- App authentication foundation（注册、密码登录、短信验证码登录、密码重置）
+- Scheduler / Cron Job、Generator、Storage Source/File（Local、FTP/SFTP、S3、OSS、OBS、COS）
+- SMS Foundation（Aliyun / Tencent 固定配置、认证场景模板、发送记录）
 - Plugin infrastructure、Web Admin shell、App/H5 shell
 
 ## 本地启动
@@ -48,7 +50,7 @@ uv run --locked main.py revision --env=dev
 uv run --locked main.py upgrade --env=dev
 ```
 
-当前 upstream 没有提交 Alembic revision；`upgrade` 可运行但不会替代首次 `create_all`。生成 revision 后必须人工审核，再用于部署迁移。
+首次 `create_all + seed` 建立上游基础 schema/data，`upgrade` 再应用已提交的 Starter Alembic revisions；它不会替代首次 `create_all`。新增 revision 后必须人工审核，再用于部署迁移。
 
 ### 3. 启动 Web Admin
 
@@ -74,6 +76,12 @@ pnpm dev:h5
 ## 本地默认账号
 
 `admin / 123456` 仅用于本地开发初始化。首次进入可用环境后请立即修改密码；不要将默认凭据用于生产环境。
+
+## 生产配置边界
+
+使用 `ENVIRONMENT=prod` 启动时，应用会拒绝已知的不安全开发回退配置：必须关闭 `DEBUG`，设置不同于仓库默认值且足够长的 `SECRET_KEY`，配置明确的非通配 `PROD_CORS_ORIGINS`、`ALLOWED_HOSTS` 和 `OAUTH_ALLOWED_HOSTS`，并在启用凭据时为 CORS 提供明确的方法和请求头。`APP_SMS_FIXED_CODE_ENABLED` 在生产环境必须关闭；空生产库也不会自动创建本地默认管理员，请先预置管理员账号。
+
+开发环境仍可使用 `create_all + seed` 和上述本地账号；生产环境需按实际域名、密钥和账号要求提供显式配置。本文不承诺一键生产部署。
 
 ## 扩展方式
 

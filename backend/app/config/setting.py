@@ -4,10 +4,13 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote_plus
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.common.enums import EnvironmentEnum
 from app.config.path_conf import ENV_DIR
+
+_DEFAULT_SECRET_KEY = "fastapi-admin-starter-dev-secret-key-do-not-use-in-production"
 
 
 class Settings(BaseSettings):
@@ -65,7 +68,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ******************* 登录认证配置 ****************** #
     # ================================================= #
-    SECRET_KEY: str = "fastapi-admin-starter-dev-secret-key-do-not-use-in-production"  # JWT密钥（必须通过环境变量 SECRET_KEY 设置，无默认值）
+    SECRET_KEY: str = _DEFAULT_SECRET_KEY  # JWT密钥（生产环境必须显式设置）
     ALGORITHM: str = "HS256"  # JWT算法
     ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 12  # access_token过期时间(秒)12 小时
     REFRESH_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 12  # refresh_token过期时间(秒)12 小时
@@ -240,6 +243,56 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in self.PROD_CORS_ORIGINS.split(",") if origin.strip()]
         return ["*"]
 
+    @model_validator(mode="after")
+    def validate_production_safety(self) -> "Settings":
+        """Reject known development fallbacks when the application runs in production."""
+        if self.ENVIRONMENT != EnvironmentEnum.PROD:
+            return self
+
+        errors: list[str] = []
+        if self.DEBUG:
+            errors.append("DEBUG 必须为 false")
+
+        secret_key = self.SECRET_KEY.strip()
+        if not secret_key or secret_key == _DEFAULT_SECRET_KEY or len(secret_key) < 32:
+            errors.append("SECRET_KEY 必须是长度至少 32 位且不同于仓库默认值的显式密钥")
+
+        cors_origins = [origin.strip() for origin in self.PROD_CORS_ORIGINS.split(",") if origin.strip()]
+        if not cors_origins or any("*" in origin for origin in cors_origins):
+            errors.append("PROD_CORS_ORIGINS 必须配置为明确的非通配来源")
+
+        if self.ALLOW_CREDENTIALS and any(method.strip() == "*" for method in self.ALLOW_METHODS):
+            errors.append("ALLOW_METHODS 在启用凭据时不能使用通配符")
+        if self.ALLOW_CREDENTIALS and any(header.strip() == "*" for header in self.ALLOW_HEADERS):
+            errors.append("ALLOW_HEADERS 在启用凭据时不能使用通配符")
+
+        if any("*" in host for host in self.ALLOWED_HOSTS):
+            errors.append("ALLOWED_HOSTS 不能使用通配符")
+        if any("*" in host for host in self.OAUTH_ALLOWED_HOSTS):
+            errors.append("OAUTH_ALLOWED_HOSTS 不能使用通配符")
+
+        if self.APP_SMS_FIXED_CODE_ENABLED:
+            errors.append("APP_SMS_FIXED_CODE_ENABLED 在生产环境必须为 false")
+
+        oauth_credentials = (
+            self.OAUTH_GITHUB_CLIENT_ID,
+            self.OAUTH_GITHUB_CLIENT_SECRET,
+            self.OAUTH_GITEE_CLIENT_ID,
+            self.OAUTH_GITEE_CLIENT_SECRET,
+            self.OAUTH_WECHAT_OPEN_APP_ID,
+            self.OAUTH_WECHAT_OPEN_APP_SECRET,
+            self.OAUTH_QQ_APP_ID,
+            self.OAUTH_QQ_APP_SECRET,
+        )
+        if any(value.strip() for value in oauth_credentials):
+            fallback = self.OAUTH_FRONTEND_FALLBACK.strip().lower()
+            if not fallback.startswith("https://") or any(host in fallback for host in ("localhost", "127.0.0.1")):
+                errors.append("启用 OAuth 时 OAUTH_FRONTEND_FALLBACK 必须是生产 HTTPS 地址")
+
+        if errors:
+            raise ValueError("生产环境配置不安全，请修正：" + "；".join(errors))
+        return self
+
     # ================================================= #
     @property
     def REDIS_URI(self) -> str:
@@ -313,7 +366,7 @@ class Settings(BaseSettings):
                 404: {"description": "资源不存在"},
                 422: {"description": "请求参数验证错误"},
                 500: {"description": "服务器内部错误"},
-            }
+            },
         }
 
 

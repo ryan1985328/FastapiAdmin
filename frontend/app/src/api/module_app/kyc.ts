@@ -1,4 +1,5 @@
 import { http } from '@/http'
+import { HttpStatus, ResultEnum } from '@/http/tools/enum'
 
 const KYC_BASE_URL = '/app/kyc'
 
@@ -10,7 +11,7 @@ export const AppKycAPI = {
   async uploadImage(body: { filePath: string, name?: string }): Promise<AppKycUploadResult> {
     const response = await http.Post(`${KYC_BASE_URL}/upload`, body, { requestType: 'upload' }) as UploadResponse
     const raw = typeof response.data === 'string' ? JSON.parse(response.data) as ApiResponse<AppKycUploadResult> : response.data
-    if (raw.code !== 200 || !raw.data)
+    if (response.statusCode !== HttpStatus.SUCCESS || raw.code !== ResultEnum.SUCCESS || !raw.data)
       throw new Error(raw.msg || '身份证图片上传失败')
     return raw.data
   },

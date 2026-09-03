@@ -45,6 +45,8 @@
         :data="data"
         :columns="columns"
         :pagination="pagination"
+        :error="error"
+        @retry="getData"
         @selection-change="onTableSelectionChange"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
@@ -460,6 +462,7 @@ const {
   columnChecks,
   data,
   loading,
+  error,
   pagination,
   getData,
   replaceSearchParams,

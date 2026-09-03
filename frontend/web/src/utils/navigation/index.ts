@@ -3,8 +3,8 @@ import type { AppRouteRecord } from "@/types/router";
 import { router } from "@/router";
 
 import i18n, { $t } from "@/locales";
-import AppConfig from "@/config";
 import { useConfigStore, useSettingsStore, useWorktabStore } from "@stores";
+import { resolveAdminBranding } from "@/utils/branding";
 import { IframeRouteManager } from "@/router";
 import { useCommon } from "@/hooks/core/useCommon";
 
@@ -25,8 +25,7 @@ export const setPageTitle = (to: RouteLocationNormalized): void => {
   if (!title) return;
 
   const configStore = useConfigStore();
-  const siteName =
-    configStore.configData.sys_name?.config_value?.trim() || AppConfig.systemInfo.name;
+  const siteName = resolveAdminBranding(configStore.configData).resolvedAdminName;
 
   document.title = `${formatMenuTitle(String(title))} - ${siteName}`;
 };

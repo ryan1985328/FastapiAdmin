@@ -22,17 +22,9 @@
       z-index: 50;
       flex-shrink: 0;
       width: 100%;
-      border-bottom: 1px solid var(--fa-gray-200);
-      // 毛玻璃效果移到伪元素，避免创建 containing block 影响内部 fixed 定位元素
-      &::before {
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        content: "";
-        background-color: color-mix(in srgb, var(--default-box-color) 85%, transparent);
-        -webkit-backdrop-filter: blur(12px);
-        backdrop-filter: blur(12px);
-      }
+      background: var(--default-box-color);
+      border-bottom: 1px solid var(--fa-card-border);
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--el-color-primary) 4%, transparent);
     }
 
     #app-content {
@@ -43,6 +35,7 @@
       min-height: 0;
       padding: 20px;
       overflow: auto;
+      background: var(--app-bg);
 
       .layout-content {
         box-sizing: border-box;
@@ -58,7 +51,9 @@
           padding: 20px;
           overflow: hidden auto;
           background: var(--default-box-color);
+          border: 1px solid var(--fa-card-border);
           border-radius: calc(var(--custom-radius) / 2 + 2px) !important;
+          box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
         }
       }
     }
@@ -71,7 +66,35 @@
       height: 100dvh;
 
       #app-header {
-        backdrop-filter: none; // 移动端无毛玻璃
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+/* Global shell accents: quiet hierarchy for navigation chrome and page canvas. */
+.fa-breadcrumb {
+  max-width: min(42vw, 34rem);
+  overflow: hidden;
+  border-left: 1px solid var(--fa-card-border);
+
+  li:last-child span {
+    font-weight: 500;
+    color: var(--el-text-color-primary);
+  }
+}
+
+.dark {
+  .fa-breadcrumb {
+    border-left-color: var(--fa-dark-border-subtle);
+  }
+
+  .app-layout {
+    #app-main {
+      #app-content {
+        .layout-content .page-content {
+          box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+        }
       }
     }
   }

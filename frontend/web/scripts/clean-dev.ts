@@ -156,9 +156,7 @@ const targets = [
   "CHANGELOG.md",
   "CHANGELOG.zh-CN.md",
   "src/views/safeguard",
-  "src/views/dashboard/analysis",
   "src/views/dashboard/ecommerce",
-  "src/mock/json",
   "src/mock/temp/articleList.ts",
   "src/mock/temp/commentDetail.ts",
   "src/mock/temp/commentList.ts",
@@ -331,9 +329,6 @@ async function cleanLanguageFiles() {
         });
 
         if (langData.menus.dashboard) {
-          if (langData.menus.dashboard.analysis) {
-            delete langData.menus.dashboard.analysis;
-          }
           if (langData.menus.dashboard.ecommerce) {
             delete langData.menus.dashboard.ecommerce;
           }
@@ -552,7 +547,7 @@ async function showCleanupWarning() {
     {
       icon: icons.bolt,
       name: "快速入口",
-      desc: "移除分析页、礼花效果、聊天、更新日志、定价、留言管理等无效项目",
+      desc: "移除旧演示入口、礼花效果、聊天、更新日志、定价、留言管理等无效项目",
       color: theme.purple,
     },
   ];

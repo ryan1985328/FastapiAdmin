@@ -14,7 +14,8 @@ FastAPI Admin Starter is a general-purpose admin foundation built with FastAPI, 
 - Authentication / Session, User, Role, Menu, Department, and Position
 - Dictionary, Parameters, Login Log, Operation Log, Notice / Announcement
 - Redis, Online Session, Health / Readiness, API Docs, Generic CRUD, and permissions
-- Dashboard, Scheduler / Cron Job, Generator, Storage, and plugin infrastructure
+- App authentication foundation (registration, password login, SMS login, password reset)
+- Dashboard, Scheduler / Cron Job, Generator, Storage Source/File, SMS Foundation, and plugin infrastructure
 - MySQL, async SQLAlchemy, Web Admin shell, and App/H5 shell
 
 ## Technology

@@ -64,7 +64,6 @@ docker/
    | `HTTPS_PORT` | 否 | `443` | HTTPS 宿主机端口 |
    | `DEPLOY_ENV` | 否 | `prod` | 部署环境（dev/prod） |
    | `BACKEND_IMAGE_TAG` | 否 | `3.0.0` | 后端镜像标签 |
-   | `BUILD_WEB` | 否 | `false` | 部署时构建前端 Web |
    | `NGINX_SERVER_NAME` | 否 | `localhost` | Nginx 域名 |
 
 2. **SSL 证书配置**（可选，但生产环境必须）
@@ -102,10 +101,9 @@ docker/
 | `./deploy.sh logs` | 查看所有容器日志 |
 | `./deploy.sh verify` | 验证部署状态 |
 | `./deploy.sh clean` | 清理旧镜像和构建缓存 |
-| `./deploy.sh --build-frontend` | 完整部署并构建前端（web / app / docs） |
-| `./deploy.sh --skip-frontend` | 完整部署并跳过前端构建（默认） |
+| `./deploy.sh` | 完整部署；当前脚本不负责构建前端 |
 
-或在 `.env` 中设置 `BUILD_WEB=true` 使部署脚本自动构建前端。
+前端构建不由当前 `deploy.sh` 选项控制，请按根目录 README 分别构建 Web / App；不要使用未实现的 `--build-frontend`、`--skip-frontend` 或 `BUILD_WEB` 配置项。
 
 ### 方式二：手动操作
 
@@ -170,26 +168,13 @@ docker compose logs -f [服务名]
 
 ## 前端构建
 
-构建前端有三种方式：
+当前部署脚本不负责构建前端。请本地构建后手动部署（Web 为例）：
 
-1. **本地构建后手动部署**（推荐）
-   ```bash
-   cd frontend/web
-   npm install && npm run build
-   cp -r dist ../docker/nginx/web/
-   ```
-
-2. **使用部署脚本**
-   ```bash
-   ./deploy.sh --build-frontend
-   ```
-
-3. **自动构建**：在 `.env` 中设置
-   ```env
-   BUILD_WEB=true
-   # BUILD_APP=true
-   # BUILD_DOCS=true
-   ```
+```bash
+cd frontend/web
+npm install && npm run build
+cp -r dist ../../docker/nginx/web/
+```
 
 ## 生产部署建议
 

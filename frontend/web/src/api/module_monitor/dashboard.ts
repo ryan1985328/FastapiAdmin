@@ -10,12 +10,20 @@ export interface RecentLoginItem {
   login_location?: string;
 }
 
+export interface LoginTrendItem {
+  day: string;
+  logins: number;
+  unique_users: number;
+  new_users: number;
+}
+
 export interface DashboardStats {
   online_users: number;
   total_users: number;
   today_login_count: number;
   today_unique_users: number;
   week_user_created: number;
+  login_trend: LoginTrendItem[];
   recent_logins: RecentLoginItem[];
 }
 

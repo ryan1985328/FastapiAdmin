@@ -14,6 +14,8 @@ FastAPI Admin Starter supports:
 - **Manual deployment**: For highly customized setups
 - **Cloud services**: Alibaba Cloud, Tencent Cloud, etc.
 
+This guide describes deployment scaffolding and operational steps; it does not promise one-command production deployment. Production still requires real secrets, domains, CORS/Host allowlists, SSL, a pre-provisioned administrator, and human review before go-live.
+
 ## Docker Compose Deployment (Recommended)
 
 > See [docker/README.md](https://github.com/ryan1985328/FastapiAdmin/blob/master/docker/README.md) for details.

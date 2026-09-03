@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.base_crud import CRUDBase
 from app.core.base_schema import AuthSchema
+
 from .model import AppUserKycModel
 from .schema import AppUserKycCreateSchema, AppUserKycUpdateSchema
 

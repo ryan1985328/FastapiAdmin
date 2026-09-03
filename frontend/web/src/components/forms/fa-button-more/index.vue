@@ -2,7 +2,13 @@
 <template>
   <div>
     <ElDropdown v-if="visibleItems.length">
-      <FaIconButton icon="ri:more-2-fill" class="size-8! bg-g-200 dark:bg-g-300/45 text-sm" />
+      <FaIconButton
+        as-button
+        aria-label="更多操作"
+        title="更多操作"
+        icon="ri:more-2-fill"
+        class="size-8! bg-g-200 dark:bg-g-300/45 text-sm"
+      />
       <template #dropdown>
         <ElDropdownMenu>
           <ElDropdownItem

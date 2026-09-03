@@ -409,6 +409,8 @@ dependencies = [
     { name = "rich" },
     { name = "sqlalchemy" },
     { name = "sqlglot", extra = ["rs"] },
+    { name = "tencentcloud-sdk-python-common" },
+    { name = "tencentcloud-sdk-python-sms" },
     { name = "tinycss2" },
     { name = "typer" },
     { name = "ua-parser" },
@@ -473,6 +475,8 @@ requires-dist = [
     { name = "rich", specifier = "==15.0.0" },
     { name = "sqlalchemy", specifier = "==2.0.51" },
     { name = "sqlglot", extras = ["rs"], specifier = "==27.8.0" },
+    { name = "tencentcloud-sdk-python-common", specifier = "==3.1.92" },
+    { name = "tencentcloud-sdk-python-sms", specifier = "==3.1.92" },
     { name = "tinycss2", specifier = "==1.5.1" },
     { name = "typer", specifier = "==0.26.7" },
     { name = "ua-parser", specifier = "==1.0.2" },
@@ -2178,6 +2182,30 @@ dependencies = [
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c4/68/79977123bb7be889ad680d79a40f339082c1978b5cfcf62c2d8d196873ac/starlette-0.52.1.tar.gz", hash = "sha256:834edd1b0a23167694292e94f597773bc3f89f362be6effee198165a35d62933", size = 2653702, upload-time = "2026-01-18T13:34:11.062Z" }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/81/0d/13d1d239a25cbfb19e740db83143e95c772a1fe10202dda4b76792b114dd/starlette-0.52.1-py3-none-any.whl", hash = "sha256:0029d43eb3d273bc4f83a08720b4912ea4b071087a3b48db01b7c839f7954d74", size = 74272, upload-time = "2026-01-18T13:34:09.188Z" },
+]
+
+[[package]]
+name = "tencentcloud-sdk-python-common"
+version = "3.1.92"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e4/57/1b3ee2769b3c7c0c3cf6fd39ee14f2b8deb86c312c1bba36c4550987386b/tencentcloud_sdk_python_common-3.1.92.tar.gz", hash = "sha256:19a31e990f0d1d22b57565617b8e6ea368d36e2a859c41713e74ec63302a8918", size = 22648, upload-time = "2026-05-07T21:21:10.552Z" }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/8d/ec/9f1f6d83c9bf15559d7176cf2df92ce830e2f985af64534e68b41e98108d/tencentcloud_sdk_python_common-3.1.92-py2.py3-none-any.whl", hash = "sha256:5513da3369e63542ccada4f07fa9fb52895d16da57238c0018b759fdf6628f8b", size = 34262, upload-time = "2026-05-07T21:21:07.949Z" },
+]
+
+[[package]]
+name = "tencentcloud-sdk-python-sms"
+version = "3.1.92"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "tencentcloud-sdk-python-common" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0f/26/4a8fe9939c20f76ef25f9d7629d46829bf1532bff501b3b16bb33136544c/tencentcloud_sdk_python_sms-3.1.92.tar.gz", hash = "sha256:697c30179d9bd3febe13d6e2d8e02cadfdb41896dd2b41d2739639244c969342", size = 52195, upload-time = "2026-05-07T21:24:03.294Z" }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/53/7a/a19e0e4c6c4ab5da478bb76ffd40bb358956407d3e95a80a2c4900570d79/tencentcloud_sdk_python_sms-3.1.92-py2.py3-none-any.whl", hash = "sha256:64159382acec0bccb858194403dac341fb437a443094c548ed58aea2bf73337b", size = 60133, upload-time = "2026-05-07T21:24:00.642Z" },
 ]
 
 [[package]]

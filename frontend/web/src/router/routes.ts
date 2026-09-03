@@ -15,17 +15,15 @@ import { RouterView, useRoute } from "vue-router";
 import { $t } from "@/locales";
 import LayoutComponent from "@/layouts/index.vue";
 import DashboardWorkplace from "@views/dashboard/workplace/index.vue";
-import DashboardAnalysis from "@views/dashboard/analysis/index.vue";
-import DashboardScreen from "@views/dashboard/screen/index.vue";
 import RedirectView from "@views/redirect/index.vue";
 import LoginView from "@views/module_system/auth/login/index.vue";
 import Exception401 from "@views/exception/401/index.vue";
 import Exception403 from "@views/exception/403/index.vue";
 import Exception404 from "@views/exception/404/index.vue";
 import Exception500 from "@views/exception/500/index.vue";
-import DashboardHome from "@views/dashboard/home/index.vue";
 import FastlinkProfile from "@views/fastlink/current/profile.vue";
 import FastlinkChangelog from "@views/fastlink/changelog/index.vue";
+import { CANONICAL_HOME_PATH, LEGACY_HOME_PATH } from "./constants";
 
 // ──────── IframeRouteManager ────────
 
@@ -94,44 +92,30 @@ export class IframeRouteManager {
 
 // ──────── 壳层常量 ────────
 
-/** 首页菜单配置（图标、缓存、固定标签） */
-export const HOME_MENU_META: RouteMeta = {
-  title: "menus.home.title",
-  icon: "ri:home-smile-2-line",
+/** Workplace 菜单配置（唯一默认入口、缓存、固定标签） */
+export const WORKPLACE_MENU_META: RouteMeta = {
+  title: "menus.dashboard.workplace",
+  icon: "ri:bar-chart-box-line",
   keepAlive: true,
   fixedTab: true,
 };
 
-/** 仪表盘父菜单配置 */
-export const DASHBOARD_PARENT_META: RouteMeta = {
-  title: "menus.dashboard.title",
+/** Dashboard 兼容路由配置，不参与可见菜单 */
+const SHELL_COMPAT_META: RouteMeta = {
+  title: WORKPLACE_MENU_META.title,
   icon: "ri:pie-chart-line",
-  alwaysShow: true,
+  hidden: true,
+  isHide: true,
+  isHideTab: true,
 };
 
-/** Dashboard 静态子路由（唯一数据源，壳层补全和静态路由共用） */
+/** Workplace 静态路由（壳层菜单和静态路由共用） */
 export const dashboardLayoutChildren: AppRouteRecordRaw[] = [
   {
-    path: "workplace",
+    path: "dashboard/workplace",
     name: "DashboardWorkplace",
     component: DashboardWorkplace,
-    meta: { title: "menus.dashboard.workplace", icon: "ri:bar-chart-box-line", keepAlive: true },
-  },
-  {
-    path: "analysis",
-    name: "DashboardAnalysis",
-    component: DashboardAnalysis,
-    meta: {
-      title: "menus.dashboard.analysis",
-      icon: "ri:align-item-bottom-line",
-      keepAlive: false,
-    },
-  },
-  {
-    path: "screen",
-    name: "DashboardScreen",
-    component: DashboardScreen,
-    meta: { title: "数据大屏", icon: "ri:tv-line", keepAlive: false, hidden: false },
+    meta: WORKPLACE_MENU_META,
   },
 ];
 
@@ -215,6 +199,17 @@ export const staticRoutes: AppRouteRecordRaw[] = [
       },
     ],
   },
+  // 已移除的 Dashboard 演示页：保留轻量兼容跳转，避免旧链接落入 404
+  {
+    path: "/dashboard/analysis",
+    redirect: CANONICAL_HOME_PATH,
+    meta: { hidden: true, isHide: true, isHideTab: true },
+  },
+  {
+    path: "/dashboard/screen",
+    redirect: CANONICAL_HOME_PATH,
+    meta: { hidden: true, isHide: true, isHideTab: true },
+  },
   // 登录页
   {
     path: "/login",
@@ -247,27 +242,26 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { hidden: true, title: "500" },
     component: Exception500,
   },
-  // 根 Layout：存放壳层路由（home/dashboard/fastlink）
+  // 根 Layout：存放壳层路由和兼容入口
   {
     path: "/",
     name: ROOT_LAYOUT_ROUTE_NAME,
-    redirect: "/home",
+    redirect: CANONICAL_HOME_PATH,
     component: LayoutComponent,
     children: [
       {
-        path: "home",
+        path: LEGACY_HOME_PATH.slice(1),
         name: HOME_ROUTE_NAME,
-        component: DashboardHome,
-        meta: HOME_MENU_META,
+        redirect: CANONICAL_HOME_PATH,
+        meta: SHELL_COMPAT_META,
       },
       {
         path: "dashboard",
         name: "Dashboard",
-        redirect: "/dashboard/workplace",
-        component: NestedRouterParent,
-        meta: DASHBOARD_PARENT_META,
-        children: dashboardLayoutChildren,
+        redirect: CANONICAL_HOME_PATH,
+        meta: SHELL_COMPAT_META,
       },
+      ...dashboardLayoutChildren,
       // 隐藏的壳层路由：个人中心、更新日志
       {
         path: "fastlink",

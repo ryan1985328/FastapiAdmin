@@ -841,6 +841,37 @@ watch(
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 55%, transparent);
 }
 
+/* Default tabs: reduce persistent chrome while keeping the active route obvious. */
+.worktab-tab:not(.worktab-tab--card, .google-tab) {
+  background: transparent !important;
+  border-color: transparent !important;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.worktab-tab:not(.worktab-tab--card, .google-tab):hover {
+  background: var(--fa-hover-color) !important;
+}
+
+.worktab-tab:not(.worktab-tab--card, .google-tab).activ-tab {
+  background: var(--el-color-primary-light-9) !important;
+  border-color: color-mix(in srgb, var(--el-color-primary) 26%, transparent) !important;
+}
+
+.dark .worktab-tab:not(.worktab-tab--card, .google-tab) {
+  border-color: transparent !important;
+}
+
+.dark .worktab-tab:not(.worktab-tab--card, .google-tab):hover {
+  background: var(--fa-dark-hover) !important;
+}
+
+.dark .worktab-tab:not(.worktab-tab--card, .google-tab).activ-tab {
+  background: var(--fa-dark-active) !important;
+  border-color: color-mix(in srgb, var(--el-color-primary) 40%, transparent) !important;
+}
+
 /* tab-card：胶囊 + 轻阴影（仅 .worktab-tab--card；Chrome 由 .google-tab 负责） */
 .worktab-tab.worktab-tab--card {
   gap: 6px;

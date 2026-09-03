@@ -9,7 +9,7 @@
 <template>
   <div class="app-layout">
     <!-- 水印覆盖层（FaWatermark 组件，内含 ElWatermark，通过 store watermarkVisible 控制显隐） -->
-    <FaWatermark :content="userStore.basicInfo?.username || AppConfig.systemInfo.name" />
+    <FaWatermark :content="userStore.basicInfo?.username || resolvedAdminName" />
 
     <!-- 左侧菜单导航 -->
     <aside id="app-sidebar" aria-label="主菜单导航">
@@ -31,7 +31,6 @@
       <FaGlobalComponent />
       <FaGuide v-if="guideVisible" v-model="guideVisible" @skip="onGuideFinished" />
     </div>
-
   </div>
 </template>
 
@@ -49,13 +48,14 @@
  */
 import { computed } from "vue";
 import { useAppStore, useSettingsStore, useUserStore } from "@stores";
-import AppConfig from "@/config";
+import { useAdminBranding } from "@/hooks/core/useAdminBranding";
 
 defineOptions({ name: "AppLayout" });
 
 const appStore = useAppStore();
 const settingStore = useSettingsStore();
 const userStore = useUserStore();
+const { resolvedAdminName } = useAdminBranding();
 
 /** 新手指引显隐 —— session 级状态，首次登录/注册后自动弹出 */
 const guideVisible = computed({

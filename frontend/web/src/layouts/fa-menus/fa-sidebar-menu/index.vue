@@ -11,7 +11,13 @@
       class="dual-menu-left"
       :style="{ width: dualMenuShowText ? '80px' : '64px', background: getMenuTheme.background }"
     >
-      <FaLogo v-if="showAppLogo" class="logo" :src="sidebarLogoSrc" @click="navigateToHome" />
+      <FaLogo
+        v-if="showAppLogo"
+        class="logo"
+        :src="resolvedAdminLogo"
+        :fallback-src="systemLogo"
+        @click="navigateToHome"
+      />
 
       <ElScrollbar :style="{ height: 'calc(100% - 135px)' }">
         <ul>
@@ -75,7 +81,12 @@
           background: getMenuTheme.background,
         }"
       >
-        <FaLogo v-if="!isDualMenu" class="logo" :src="sidebarLogoSrc" />
+        <FaLogo
+          v-if="!isDualMenu"
+          class="logo"
+          :src="resolvedAdminLogo"
+          :fallback-src="systemLogo"
+        />
 
         <p
           :class="{ 'is-dual-menu-name': isDualMenu }"
@@ -125,12 +136,12 @@
 </template>
 
 <script setup lang="ts">
-import AppConfig from "@/config";
-import { useConfigStore, useSettingsStore, useMenuStore } from "@stores";
+import { useSettingsStore, useMenuStore } from "@stores";
 import { MenuWidth, MenuTypeEnum } from "@/enums/appEnum";
 import { isIframe, handleMenuJump, formatMenuTitle } from "@utils";
 import SidebarSubmenu from "./widgets/FaSidebarSubmenu.vue";
 import { useCommon } from "@/hooks/core/useCommon";
+import { useAdminBranding } from "@/hooks/core/useAdminBranding";
 import { useWindowSize, useTimeoutFn } from "@vueuse/core";
 import { MOBILE_BREAKPOINT } from "@utils/constants";
 import type { AppRouteRecord } from "@/types/router";
@@ -143,18 +154,7 @@ const MENU_CLOSE_WIDTH = MenuWidth.CLOSE;
 const route = useRoute();
 const router = useRouter();
 const settingStore = useSettingsStore();
-const configStore = useConfigStore();
-/** 租户配置：logo_url / name */
-const sidebarLogoSrc = computed(() => {
-  const raw = configStore.configData.logo_url?.config_value;
-  return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
-});
-
-const sidebarTitle = computed(() => {
-  const raw = configStore.configData.sys_name?.config_value;
-  if (typeof raw === "string" && raw.trim()) return raw.trim();
-  return AppConfig.systemInfo.name;
-});
+const { resolvedAdminName: sidebarTitle, resolvedAdminLogo, systemLogo } = useAdminBranding();
 
 const {
   getMenuOpenWidth,
@@ -215,15 +215,19 @@ const menuList = computed(() => {
     return [];
   }
 
+  // 顶级 Shell 叶子（例如 Workplace）直接展示自身，避免按 /dashboard 查找不存在的父级。
+  let currentMenu = allMenus.find(
+    (menu) => menu.meta?.shellRoute && menu.path === route.path && !menu.children?.length
+  );
   // 返回当前顶级路径对应的子菜单
   const currentTopPath = `/${route.path.split("/")[1]}`;
-  let currentMenu = allMenus.find((menu) => menu.path === currentTopPath);
+  if (!currentMenu) currentMenu = allMenus.find((menu) => menu.path === currentTopPath);
   if (!currentMenu && allMenus.length > 0) {
     currentMenu =
       allMenus.find((menu) => !menu.meta?.isHide && menu.children?.length) ?? allMenus[0];
   }
   const sub = currentMenu?.children ?? [];
-  // 顶部+左侧 / 双列：顶级为叶子（如 /home）时右侧展示自身
+  // 顶部+左侧 / 双列：顶级为叶子（如 Workplace）时右侧展示自身
   if (sub.length === 0 && currentMenu?.path && !currentMenu.meta?.isHide) {
     return [currentMenu];
   }
@@ -519,8 +523,13 @@ watch(menuOpen, (isMenuOpen: boolean) => {
       bottom: 0;
       left: 58px;
       box-sizing: border-box;
+      max-width: calc(100% - 72px);
       margin-left: 10px;
-      font-size: 18px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 15px;
+      line-height: 60px;
+      white-space: nowrap;
 
       &.is-dual-menu-name {
         left: 25px;
@@ -822,6 +831,29 @@ $popup-menu-radius: 6px;
       color: var(--fa-gray-600);
     }
   }
+
+  /* Shell polish: keep the brand block and navigation on one quiet surface. */
+  .header {
+    background: color-mix(in srgb, var(--default-box-color) 96%, var(--theme-color) 4%);
+    border-bottom: 1px solid var(--fa-card-border);
+    transition: background-color 0.18s ease;
+
+    &:hover {
+      background: color-mix(in srgb, var(--default-box-color) 92%, var(--theme-color) 8%);
+    }
+
+    p {
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+  }
+
+  .el-sub-menu__title,
+  .el-menu-item {
+    transition:
+      color 0.16s ease,
+      background-color 0.16s ease;
+  }
 }
 
 @media only screen and (width <= 640px) {
@@ -879,6 +911,15 @@ $popup-menu-radius: 6px;
     /* 右侧箭头颜色 */
     .el-sub-menu__icon-arrow {
       color: var(--fa-gray-900);
+    }
+
+    .header {
+      background: color-mix(in srgb, var(--default-box-color) 94%, var(--theme-color) 6%);
+      border-bottom-color: var(--fa-dark-border-subtle);
+
+      &:hover {
+        background: color-mix(in srgb, var(--default-box-color) 88%, var(--theme-color) 12%);
+      }
     }
   }
 }

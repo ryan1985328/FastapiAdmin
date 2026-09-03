@@ -46,6 +46,8 @@ node_modules
 backend/logs
 backend/*.db
 backend/*.db-*
+backend/static/upload/*
+!backend/static/upload/.gitkeep
 backend/alembic/versions/*
 backend/env/.env.dev
 backend/env/.env.prod

@@ -14,7 +14,8 @@ FastAPI Admin Starter 是一个基于 FastAPI、Vue 3 和 TypeScript 的通用�
 - Authentication / Session、User、Role、Menu、Department、Position
 - Dictionary、Parameters、Login Log、Operation Log、Notice / Announcement
 - Redis、Online Session、Health / Readiness、API Docs、Generic CRUD 和权限控制
-- Dashboard、Scheduler / Cron Job、Generator、Storage 与插件基础设施
+- App 认证基础（注册、密码登录、短信登录、密码重置）
+- Dashboard、Scheduler / Cron Job、Generator、Storage Source/File、SMS Foundation 与插件基础设施
 - MySQL、异步 SQLAlchemy、Web Admin shell 与 App/H5 shell
 
 ## 技术栈

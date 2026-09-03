@@ -14,8 +14,10 @@ FastAPI Admin Starter is an extensible admin foundation based on [FastapiAdmin u
 - Authentication / Session, User, Role, Menu, Department, Position
 - Dictionary, Parameters, Login Log, Operation Log, Notice / Announcement
 - Redis, Online Session, Health / Readiness, API Docs, Generic CRUD, permissions
-- Dashboard (Workplace, Analysis, Screen)
-- Scheduler / Cron Job, Generator, Storage (Local, FTP/SFTP, S3, OSS, OBS, COS)
+- Dashboard (Workplace)
+- App authentication foundation (registration, password login, SMS-code login, password reset)
+- Scheduler / Cron Job, Generator, Storage Source/File (Local, FTP/SFTP, S3, OSS, OBS, COS)
+- SMS Foundation (fixed Aliyun / Tencent settings, auth-scene templates, send logs)
 - Plugin infrastructure, Web Admin shell, App/H5 shell
 
 ## Local setup
@@ -48,7 +50,7 @@ uv run --locked main.py revision --env=dev
 uv run --locked main.py upgrade --env=dev
 ```
 
-The upstream baseline currently has no committed Alembic revisions. `upgrade` is runnable but does not replace the initial `create_all`; review generated revisions before deployment.
+The clean initialization contract is `create_all + seed` for the upstream base schema/data, followed by `upgrade` for the committed Starter Alembic revisions. `upgrade` does not replace the initial `create_all`; review every new revision before deployment.
 
 ### 3. Start the Web Admin
 
@@ -74,6 +76,12 @@ Use the URL printed by Vite/UniApp. The tracked `frontend/app/.env.development` 
 ## Local default account
 
 `admin / 123456` is provided only for local development initialization. Change it before using a deployed environment; never use the default credential in production.
+
+## Production configuration boundary
+
+When started with `ENVIRONMENT=prod`, the application rejects known unsafe development fallbacks: `DEBUG` must be disabled, `SECRET_KEY` must be an explicit sufficiently long value different from the repository default, and `PROD_CORS_ORIGINS`, `ALLOWED_HOSTS`, and `OAUTH_ALLOWED_HOSTS` must use explicit non-wildcard values. When credentials are enabled, CORS methods and headers must also be explicit. `APP_SMS_FIXED_CODE_ENABLED` must be disabled in production; an empty production database will not create the local default admin, so provision an administrator first.
+
+Development keeps the convenient `create_all + seed` flow and local account above. Production must provide explicit values for its real domains, secrets, and accounts. This document does not claim one-command production deployment.
 
 ## Extending the Starter
 

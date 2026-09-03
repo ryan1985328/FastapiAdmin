@@ -1,8 +1,8 @@
 import io
-import os
 import re
 import zipfile
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import anyio
@@ -655,7 +655,7 @@ class GenTableService:
 
     @handle_service_exception
     async def generate_code(self, table_name: str) -> bool:
-        """生成代码至指定路径（安全写入+可跳过覆盖）。
+        """生成代码至指定路径（安全写入，目标冲突时拒绝覆盖）。
 
         菜单固定为 **目录(type=1) + 菜单(type=2) + 按钮(type=3)**：
         - **目录层(name)**：固定为你填写的 ``module_name``（模块）
@@ -694,42 +694,21 @@ class GenTableService:
         if not gen_table_schema.package_name:
             raise CustomException(msg="包名不能为空")
 
-        # 1. 先写代码文件（风险最高，放最前，失败不产生菜单孤儿数据）
-        async def _write_templates(templates: list[str], ctx: dict[str, Any], table_schema: GenTableOutSchema) -> None:
-            for template in templates:
-                try:
-                    render_content = await env.get_template(template).render_async(**ctx)
-                    file_name = Jinja2TemplateUtil.get_file_name(template, table_schema)
-                    full_path = BASE_DIR.parent.joinpath(file_name)
-                    gen_path = str(full_path)
-                    if not gen_path:
-                        raise CustomException(msg="【代码生成】生成路径为空")
-                    os.makedirs(os.path.dirname(gen_path), exist_ok=True)
-                    await anyio.Path(gen_path).write_text(render_content, encoding="utf-8")
-                    # Python 插件目录需保证包层级可导入：为分系统/模块目录补齐 __init__.py
-                    pn_inner = (table_schema.package_name or "").strip()
-                    mn_inner = (table_schema.module_name or "").strip()
-                    if pn_inner and mn_inner:
-                        plugin_base = BASE_DIR.parent.joinpath(f"backend/app/plugin/{pn_inner}")
-                        module_base = plugin_base.joinpath(mn_inner)
-                        for d in (plugin_base, module_base):
-                            init_path = d.joinpath("__init__.py")
-                            if not init_path.exists():
-                                os.makedirs(str(d), exist_ok=True)
-                                await anyio.Path(str(init_path)).write_text("# -*- coding: utf-8 -*-", encoding="utf-8")
-                except Exception as e:
-                    raise CustomException(msg=f"渲染模板失败，表名：{table_schema.table_name}，详细错误信息：{e!s}")
-
-        await _write_templates(render_info[0], render_info[2], gen_table_schema)
+        # 在写入前完成所有可预见校验，避免生成文件与菜单元数据出现可避免的半成品。
+        await self._assert_parent_menu_is_catalog(gen_table_schema.parent_menu_id)
+        table_schemas = [gen_table_schema]
+        rendered_outputs = await self._render_generation_outputs(env, render_info[0], render_info[2], gen_table_schema)
         if gen_table_schema.sub and gen_table_schema.sub_table:
             gen_table_schema.sub_table.package_name = gen_table_schema.package_name
             sub_ctx = Jinja2TemplateUtil.prepare_sub_render_context(gen_table_schema, gen_table_schema.sub_table)
             sub_templates = Jinja2TemplateUtil.get_sub_table_template_list()
-            await _write_templates(sub_templates, sub_ctx, gen_table_schema.sub_table)
+            table_schemas.append(gen_table_schema.sub_table)
+            rendered_outputs.extend(await self._render_generation_outputs(env, sub_templates, sub_ctx, gen_table_schema.sub_table))
+        self._preflight_generation_outputs(rendered_outputs)
+        await self._write_generation_outputs(rendered_outputs, table_schemas)
 
         # 2. 代码成功写入后，再创建菜单（避免失败时产生孤儿菜单数据）
         menu_crud = MenuCRUD(self.auth, self.db)
-        await self._assert_parent_menu_is_catalog(gen_table_schema.parent_menu_id)
         # 1. 目录 + 菜单 + 按钮：先取/建模块目录（名称规则见 _catalog_menu_dir_key）
         dir_menu_id = await self._get_or_create_package_directory_menu(
             menu_crud,
@@ -1241,6 +1220,142 @@ class GenTableService:
             raise CustomException(msg=gen_table.master_sub_hint or "子表表名与子表外键列须同时填写或同时留空")
         if not gen_table.sub_table:
             raise CustomException(msg=gen_table.master_sub_hint or "无法生成主子表代码：请确认子表已在当前数据库中存在，且外键列名正确")
+
+    @staticmethod
+    def _resolve_generation_path(file_name: str, repository_root: Path | None = None) -> Path:
+        """将模板输出路径解析到仓库内，并拒绝路径越界。"""
+        root = (repository_root or BASE_DIR.parent).resolve()
+        if not file_name or Path(file_name).is_absolute():
+            raise CustomException(msg=f"【代码生成】生成路径无效：{file_name!r}")
+        target = (root / Path(file_name)).resolve()
+        try:
+            target.relative_to(root)
+        except ValueError as exc:
+            raise CustomException(msg=f"【代码生成】生成路径越界：{file_name}") from exc
+        return target
+
+    @classmethod
+    def _preflight_generation_outputs(
+        cls,
+        output_files: list[tuple[Path, str]],
+        repository_root: Path | None = None,
+    ) -> None:
+        """在任何写入或菜单变更前检查输出冲突。"""
+        root = (repository_root or BASE_DIR.parent).resolve()
+        seen: set[Path] = set()
+        duplicate_paths: list[Path] = []
+        conflicts: list[Path] = []
+        for target, _ in output_files:
+            resolved_target = target.resolve()
+            if resolved_target in seen:
+                duplicate_paths.append(resolved_target)
+                continue
+            seen.add(resolved_target)
+            if resolved_target.exists():
+                conflicts.append(resolved_target)
+
+        if duplicate_paths:
+            duplicate_names = ", ".join(cls._display_generation_path(path, root) for path in duplicate_paths)
+            raise CustomException(msg=f"【代码生成】输出路径重复，已停止生成：{duplicate_names}")
+        if conflicts:
+            conflict_names = "\n".join(f"- {cls._display_generation_path(path, root)}" for path in conflicts)
+            raise CustomException(msg=f"【代码生成】目标文件已存在，默认拒绝覆盖：\n{conflict_names}")
+
+    @staticmethod
+    def _display_generation_path(path: Path, repository_root: Path) -> str:
+        """以仓库相对路径展示生成目标，避免暴露本机绝对路径。"""
+        try:
+            return path.relative_to(repository_root).as_posix()
+        except ValueError:
+            return path.as_posix()
+
+    @classmethod
+    async def _render_generation_outputs(
+        cls,
+        env: Any,
+        templates: list[str],
+        context: dict[str, Any],
+        table_schema: GenTableOutSchema,
+    ) -> list[tuple[Path, str]]:
+        """渲染一组模板到内存，返回尚未写入磁盘的目标与内容。"""
+        rendered_outputs: list[tuple[Path, str]] = []
+        for template in templates:
+            try:
+                render_content = await env.get_template(template).render_async(**context)
+                file_name = Jinja2TemplateUtil.get_file_name(template, table_schema)
+                rendered_outputs.append((cls._resolve_generation_path(file_name), render_content))
+            except CustomException:
+                raise
+            except Exception as e:
+                logger.error(f"渲染模板 {template} 时出错: {e!s}")
+                raise CustomException(msg=f"渲染模板失败，表名：{table_schema.table_name}，详细错误信息：{e!s}") from e
+        return rendered_outputs
+
+    @staticmethod
+    def _rollback_generation_files(created_files: list[Path], created_dirs: list[Path]) -> None:
+        """仅回滚本次生成实际创建的文件和空目录。"""
+        for path in reversed(created_files):
+            try:
+                path.unlink(missing_ok=True)
+            except OSError as e:
+                logger.warning(f"回滚代码生成文件失败 {path}: {e!s}")
+        for path in sorted(created_dirs, key=lambda item: len(item.parts), reverse=True):
+            try:
+                path.rmdir()
+            except OSError:
+                # 目录非空或已被其他进程使用时保留，不触碰非本次生成内容。
+                continue
+
+    @classmethod
+    async def _write_generation_outputs(
+        cls,
+        output_files: list[tuple[Path, str]],
+        table_schemas: list[GenTableOutSchema],
+    ) -> None:
+        """以独占创建方式写入代码，发生异常时回滚本次新建文件。"""
+        created_files: list[Path] = []
+        created_dirs: list[Path] = []
+
+        def ensure_parent_dirs(path: Path) -> None:
+            missing_dirs: list[Path] = []
+            cursor = path.parent
+            while not cursor.exists():
+                missing_dirs.append(cursor)
+                cursor = cursor.parent
+            for directory in reversed(missing_dirs):
+                directory.mkdir()
+                created_dirs.append(directory)
+
+        async def create_file(path: Path, content: str) -> None:
+            ensure_parent_dirs(path)
+            # x 模式保证即使文件在 preflight 之后被其他进程创建，也不会被覆盖。
+            async with await anyio.open_file(str(path), mode="x", encoding="utf-8") as output_file:
+                created_files.append(path)
+                await output_file.write(content)
+
+        try:
+            for target, content in output_files:
+                await create_file(target, content)
+
+            # 分系统包级 __init__.py 可能被多个生成模块共享：不存在时创建，已存在时保留。
+            seen_package_inits: set[Path] = set()
+            for table_schema in table_schemas:
+                package_name = (table_schema.package_name or "").strip()
+                module_name = (table_schema.module_name or "").strip()
+                if not package_name or not module_name:
+                    continue
+                package_init = cls._resolve_generation_path(f"backend/app/plugin/{package_name}/__init__.py")
+                if package_init in seen_package_inits:
+                    continue
+                seen_package_inits.add(package_init)
+                if package_init.exists():
+                    continue
+                await create_file(package_init, "# -*- coding: utf-8 -*-")
+        except Exception as e:
+            cls._rollback_generation_files(created_files, created_dirs)
+            if isinstance(e, CustomException):
+                raise
+            raise CustomException(msg=f"代码生成写入失败，详细错误信息：{e!s}") from e
 
     async def set_pk_column(self, gen_table: GenTableOutSchema) -> None:
         """设置主键列信息（主表/子表）。

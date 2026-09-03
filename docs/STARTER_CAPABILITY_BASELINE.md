@@ -1,6 +1,6 @@
 # FastAPI Admin Starter — Capability Baseline
 
-这份文档记录当前 Starter 的可运行基线和最短扩展路径，目标是 Clone → Configure → Run → Develop。它不改变现有 FastAPI Admin 的认证、权限、异步 SQLAlchemy、Redis、Generator、Storage 或 Scheduler 结构。
+这份文档记录当前 Starter 的可运行基线和最短扩展路径，目标是 Clone → Configure → Run → Develop。它不改变现有 FastAPI Admin 的认证、权限、异步 SQLAlchemy、Redis、Generator、Storage、Scheduler 或 SMS Foundation 结构。
 
 ## 1. 本地启动
 
@@ -72,8 +72,8 @@ VITE_API_BASE_URL=http://127.0.0.1:8001 VITE_APP_WS_ENDPOINT= pnpm dev:h5
 - `create_tables()` 使用 `MappedBase.metadata.create_all` 创建当前 ORM 表。
 - seed 从 `backend/sql/data/{table}.json` 读取；已有数据的表会跳过，不做覆盖或回滚。
 - 当前目标数据库是 MySQL 8.4；Redis 同时用于缓存、会话和 APScheduler 默认 jobstore。
-- Alembic 配置在 `backend/alembic.ini` 和 `backend/app/alembic/env.py`；当前 `backend/app/alembic/versions/` 没有实际 revision，仅有 `__init__.py`。
-- `uv run --locked main.py upgrade --env=dev` 可以运行，但没有 revision head；第一次初始化仍由 `create_all + seed` 完成。
+- Alembic 配置在 `backend/alembic.ini` 和 `backend/app/alembic/env.py`；当前 Starter revision 从 `11a_business_user_foundation` 延伸到 `12g_sms_settings_productization`，其中 `12d_merge_starter_heads` 收敛开发期间的并行分支，`12e`/`12f`/`12g` 负责现有数据库的用户与 SMS 菜单基线前向 reconciliation。
+- clean clone 的初始化契约仍是 `create_all → seed → uv run --locked main.py upgrade --env=dev`：前两步建立上游基础表和种子数据，Alembic 再应用 Starter 演进；Alembic 不替代原始 `create_all` 基线。
 
 未来模型变更流程：修改并测试 ORM → `revision --env=dev` 生成 revision → 人工审核 SQL/数据影响 → 在目标环境执行 `upgrade --env=dev`。当前没有自动迁移体系改造，也不应把 `create_all` 当作生产迁移方案。
 
@@ -129,7 +129,16 @@ Storage 入口为 `/api/v1/storage`，管理层位于 `backend/app/api/v1/module
 
 业务模块应保存返回的 `file_path`/对象 key 或业务引用，并按 source_id 读取；不要把 provider SDK 直接写进业务 controller。
 
-## 8. Scheduler / Cron Job
+## 8. SMS Foundation
+
+SMS Foundation 是面向 App 认证场景的固定双供应商基础能力，不是通用消息平台。
+
+- 内置供应商：Aliyun 与 Tencent Cloud；配置页为 `/api/v1/system/sms/settings`，发送记录为只读 `/api/v1/system/sms_log`。
+- 固定场景：注册验证码、短信登录、重置密码验证码；每个供应商保留固定配置槽位和模板编码，不提供渠道/模板 CRUD 菜单。
+- AccessKey / SecretKey 使用现有加密层保存，响应只返回 `has_secret`；seed 默认 `sms_enabled=off`，开发固定验证码仍受环境保护规则约束。
+- App 认证通过共享 SMS Service 发送验证码；真实供应商调用、发送日志和生产 fail-closed 边界由后端负责。真实供应商交付仍需使用部署方凭据单独验证。
+
+## 9. Scheduler / Cron Job
 
 Scheduler 由 `backend/app/core/ap_scheduler.py` 管理，启动时注册系统操作日志清理任务。
 
@@ -140,16 +149,17 @@ Scheduler 由 `backend/app/core/ap_scheduler.py` 管理，启动时注册系统�
 
 新任务沿用 Node 的 `func` 代码块约定，定义 `handler(*args, **kwargs)`，先用 `now` 或短期 date trigger 验证，再配置 cron/interval。应使用无副作用的维护、同步、缓存刷新或统计任务；任务失败由现有事件监听写入执行日志。
 
-## 9. App/H5 边界
+## 10. App/H5 边界
 
-`frontend/app` 保留为未来 C 端用户基础工程。本阶段只确认：
+`frontend/app` 是独立的 C 端用户基础工程；App authentication foundation 已由现有后端认证路由和 App API client 提供。本阶段保持 Admin 与 App/H5 的边界：
 
 - 请求基址由 `VITE_API_BASE_URL + VITE_APP_BASE_API` 组成，实现在 `src/http/adapters/alova.ts`。
+- App 认证包含注册、密码登录、短信验证码登录、密码重置和 token 刷新；验证码发送使用 `/app/sms/send-code`。
 - 路由守卫在 `src/router/index.ts`，用户状态在 `src/store/userStore.ts`。
 - H5 使用 UniApp/Vite，`base` 为 `/app`。
-- 不删除 OA 页面、不调整 App shell、不改 `sys_user`，也不把 App 当作 Admin 扩展路径。
+- 不删除 OA 页面、不把 App 当作 Admin 扩展路径，也不把 App/H5 UAT 结果混同为 Admin 运行验证。
 
-## 10. Baseline 验证命令
+## 11. Baseline 验证命令
 
 ```bash
 (cd backend && uv sync --locked && uv run --locked pytest)
@@ -165,4 +175,4 @@ curl -f http://127.0.0.1:8001/common/health/ready
 curl -f http://127.0.0.1:8001/api/v1/openapi.json
 ```
 
-当前基线的生产注意事项只有两项：默认账号仅限本地；Alembic 尚无提交 revision，生产结构变更必须先建立并审核 migration lineage。
+生产启动会拒绝已知的不安全开发回退配置：关闭 `DEBUG`、使用非默认且足够长的 `SECRET_KEY`、配置明确的非通配 CORS 与 Host/OAuth 白名单、关闭固定短信验证码；空生产库不会从 seed 创建默认管理员，必须先预置账号。开发环境仍使用 `create_all + seed` 建立基础 schema/data，再通过已提交的 Alembic lineage 应用 Starter 演进；生产结构变更必须人工审核 migration 后执行 `upgrade`。

@@ -89,9 +89,17 @@ class OnlineService:
     async def get_dashboard_stats(db: AsyncSession, redis: Redis) -> DashboardStatsSchema:
         """获取仪表盘统计数据"""
         today_start = datetime.combine(date.today(), datetime.min.time())
-        week_start = today_start - timedelta(days=7)
+        # 最近 7 个自然日，包含今天。
+        week_start = today_start - timedelta(days=6)
 
-        online_count = len(await OnlineService.get_online_list(redis))
+        online_sessions = await OnlineService.get_online_list(redis)
+        # 在线列表保留“会话”维度；首页“在线用户”按实际用户去重，避免同一用户多次登录被重复计数。
+        online_user_ids = {
+            session.get("user_id")
+            for session in online_sessions
+            if session.get("user_id") is not None
+        }
+        online_count = len(online_user_ids)
 
         # Dashboard business-user metric is sourced from the reusable App User foundation.
         users_sql = select(func.count()).select_from(AppUserModel).where(AppUserModel.is_deleted.is_(False))
@@ -105,14 +113,22 @@ class OnlineService:
 
         today_login_sql = (
             select(func.count()).select_from(LoginLogModel)
-            .where(LoginLogModel.created_time >= today_start)
+            .where(
+                LoginLogModel.is_deleted.is_(False),
+                LoginLogModel.status == 1,  # 仅统计成功登录
+                LoginLogModel.created_time >= today_start,
+            )
         )
         today_login_count = (await db.execute(today_login_sql)).scalar() or 0
 
         today_unique_sql = (
             select(func.count(func.distinct(LoginLogModel.username)))
             .select_from(LoginLogModel)
-            .where(LoginLogModel.created_time >= today_start)
+            .where(
+                LoginLogModel.is_deleted.is_(False),
+                LoginLogModel.status == 1,  # 与今日登录次数保持同一成功口径
+                LoginLogModel.created_time >= today_start,
+            )
         )
         today_unique_count = (await db.execute(today_unique_sql)).scalar() or 0
 

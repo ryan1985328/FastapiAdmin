@@ -7,24 +7,56 @@
           <ParamTabPane
             title="品牌标识"
             :modified="brandModified"
-            @save-group="saveGroup(fieldsMap.brand)"
+            @save-group="saveGroup([...fieldsMap.brand, ...fieldsMap.adminBrand])"
           >
-            <ParamFieldCard
-              v-for="field in fieldsMap.brand"
-              :key="field.key"
-              :label="field.label"
-              :modified="field.modified"
-              @save="saveField(field)"
-            >
-              <FaUpload
-                v-model="field.localValue"
-                :style="{ width: '160px', height: '160px' }"
-                :show-tip="false"
-                :max-file-size="5"
-                enable-crop
-                @update:model-value="onFieldChange(field)"
-              />
-            </ParamFieldCard>
+            <section class="param-section">
+              <div class="param-section__heading">网站品牌</div>
+              <ParamFieldCard
+                v-for="field in fieldsMap.brand"
+                :key="field.key"
+                :label="field.label"
+                :modified="field.modified"
+                @save="saveField(field)"
+              >
+                <FaUpload
+                  v-model="field.localValue"
+                  :style="{ width: '160px', height: '160px' }"
+                  :show-tip="false"
+                  :max-file-size="5"
+                  enable-crop
+                  @update:model-value="onFieldChange(field)"
+                />
+              </ParamFieldCard>
+            </section>
+
+            <section class="param-section">
+              <div class="param-section__heading">后台品牌</div>
+              <ParamFieldCard
+                v-for="field in fieldsMap.adminBrand"
+                :key="field.key"
+                :label="field.label"
+                :modified="field.modified"
+                @save="saveField(field)"
+              >
+                <FaUpload
+                  v-if="field.kind === 'upload'"
+                  v-model="field.localValue"
+                  :style="{ width: '160px', height: '160px' }"
+                  :show-tip="false"
+                  :max-file-size="5"
+                  enable-crop
+                  @update:model-value="onFieldChange(field)"
+                />
+                <ElInput
+                  v-else
+                  v-model="field.localValue"
+                  :placeholder="'输入' + field.label"
+                  clearable
+                  @input="onFieldChange(field)"
+                />
+                <p v-if="field.hint" class="param-field-hint">{{ field.hint }}</p>
+              </ParamFieldCard>
+            </section>
           </ParamTabPane>
         </ElTabPane>
 
@@ -250,6 +282,8 @@ interface ParamField {
   label: string;
   localValue: string;
   displayValue: string;
+  kind: "input" | "upload";
+  hint?: string;
   id?: number;
   configName?: string;
   configKey?: string;
@@ -260,7 +294,11 @@ interface ParamField {
 
 // ─── 工具函数 ───
 
-function buildField(key: string, label: string): ParamField {
+function buildField(
+  key: string,
+  label: string,
+  options: { kind?: ParamField["kind"]; hint?: string } = {}
+): ParamField {
   const param = configStore.configData[key];
   const raw = param?.config_value ?? "";
   const display = typeof raw === "string" && raw.trim() ? raw.trim() : "";
@@ -278,6 +316,8 @@ function buildField(key: string, label: string): ParamField {
     label,
     localValue: display,
     displayValue: display,
+    kind: options.kind ?? "input",
+    hint: options.hint,
     id: param?.id,
     configName: param?.config_name,
     configKey: param?.config_key,
@@ -291,6 +331,7 @@ function buildField(key: string, label: string): ParamField {
 
 const fieldsMap = reactive({
   brand: [] as ParamField[],
+  adminBrand: [] as ParamField[],
   website: [] as ParamField[],
   security: [] as ParamField[],
   access: [] as ParamField[],
@@ -299,9 +340,16 @@ const fieldsMap = reactive({
 
 function rebuildFields() {
   fieldsMap.brand = [
-    buildField("logo_url", "Logo"),
-    buildField("favicon", "Favicon"),
-    buildField("login_bg", "登录背景图"),
+    buildField("logo_url", "Logo", { kind: "upload" }),
+    buildField("favicon", "Favicon", { kind: "upload" }),
+    buildField("login_bg", "登录背景图", { kind: "upload" }),
+  ];
+  fieldsMap.adminBrand = [
+    buildField("admin_name", "后台名称", { hint: "留空时继承系统名称" }),
+    buildField("admin_logo_url", "后台 Logo", {
+      kind: "upload",
+      hint: "留空时继承系统 Logo",
+    }),
   ];
   fieldsMap.website = [
     buildField("sys_name", "系统名称"),
@@ -326,7 +374,9 @@ function rebuildFields() {
 
 // ─── 计算 ▸ 分组是否有修改 ───
 
-const brandModified = computed(() => fieldsMap.brand.some((f) => f.modified));
+const brandModified = computed(() =>
+  [...fieldsMap.brand, ...fieldsMap.adminBrand].some((f) => f.modified)
+);
 const websiteModified = computed(() => fieldsMap.website.some((f) => f.modified));
 const securityModified = computed(() => fieldsMap.security.some((f) => f.modified));
 const accessModified = computed(() => fieldsMap.access.some((f) => f.modified));
@@ -463,5 +513,33 @@ onMounted(async () => {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.param-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.param-section + .param-section {
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.param-section__heading {
+  padding-left: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+  border-left: 3px solid var(--el-color-primary);
+}
+
+.param-field-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--el-text-color-secondary);
 }
 </style>

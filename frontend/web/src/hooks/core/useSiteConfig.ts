@@ -9,6 +9,7 @@
 
 import { watch } from "vue";
 import { useConfigStore } from "@stores";
+import { resolveAdminBranding } from "@/utils/branding";
 
 const updateFavicon = (url: string) => {
   let link = document.querySelector<HTMLLinkElement>('link[rel="icon"], link[rel="shortcut icon"]');
@@ -25,9 +26,8 @@ export function useSiteConfig() {
 
   /** 替换 document.title 中的站点名后缀 */
   const applyConfig = () => {
-    const { sys_name, favicon } = configStore.configData;
-    if (!sys_name?.config_value) return;
-    const siteName = sys_name.config_value.trim();
+    const { favicon } = configStore.configData;
+    const siteName = resolveAdminBranding(configStore.configData).resolvedAdminName;
     const existing = document.title;
     const dashIdx = existing.lastIndexOf(" - ");
     document.title = dashIdx > 0 ? `${existing.slice(0, dashIdx)} - ${siteName}` : siteName;
@@ -48,7 +48,7 @@ export function useSiteConfig() {
   watch(
     () => configStore.configData,
     () => applyConfig(),
-    { deep: false }
+    { deep: true }
   );
 
   return { initSiteConfig };

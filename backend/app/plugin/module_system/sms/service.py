@@ -20,6 +20,7 @@ from .constants import (
     SMS_CODE_TTL,
     SMS_HOURLY_LIMIT,
     SMS_MAX_VERIFY_FAILURES,
+    SMS_PROVIDER_ALIYUN,
     SMS_RESEND_INTERVAL,
     get_fixed_sms_code,
     mobile_hash,
@@ -28,6 +29,7 @@ from .constants import (
     validate_scene,
 )
 from .provider import SmsProvider, SmsProviderResult, create_provider
+from .settings_service import read_sms_runtime_config
 
 ProviderFactory = Callable[[SmsChannelModel], SmsProvider]
 
@@ -103,21 +105,47 @@ class SmsService:
     def count_key(scene: str, mobile: str) -> str:
         return f"sms:count:{scene}:{mobile_hash(mobile)}:hour"
 
-    async def _resolve_channel(self, channel_id: int | None = None) -> SmsChannelModel:
+    async def _resolve_channel(self, channel_id: int | None = None, provider: str | None = None) -> SmsChannelModel:
         base = [SmsChannelModel.is_deleted.is_(False)]
         if channel_id is not None:
             result = await self.db.execute(select(SmsChannelModel).where(SmsChannelModel.id == channel_id, *base))
             channel = result.scalars().first()
             if not channel:
                 raise CustomException(msg="短信渠道不存在", status_code=404)
+            if provider and channel.provider != provider:
+                raise CustomException(msg="短信渠道与当前供应商不一致", status_code=422)
             if channel.status == 1:
-                raise CustomException(msg="短信渠道已停用", status_code=422)
+                raise CustomException(msg="当前短信供应商已停用", status_code=503)
+            return channel
+
+        if provider:
+            result = await self.db.execute(
+                select(SmsChannelModel).where(
+                    SmsChannelModel.provider == provider,
+                    SmsChannelModel.is_deleted.is_(False),
+                ).order_by(SmsChannelModel.id.asc()),
+            )
+            channels = list(result.scalars().all())
+            if len(channels) > 1:
+                raise CustomException(msg="当前短信供应商存在多个配置，已停止短信发送", status_code=500)
+            channel = channels[0] if channels else None
+            if not channel:
+                if provider == SMS_PROVIDER_ALIYUN:
+                    raise CustomException(msg="当前短信供应商（阿里云）未配置", status_code=503)
+                raise CustomException(msg="当前短信供应商（腾讯云）未配置", status_code=503)
+            if channel.status == 1:
+                display = "阿里云" if provider == SMS_PROVIDER_ALIYUN else "腾讯云"
+                raise CustomException(msg=f"当前短信供应商（{display}）已停用", status_code=503)
             return channel
 
         result = await self.db.execute(
-            select(SmsChannelModel).where(SmsChannelModel.status == 0, SmsChannelModel.is_deleted.is_(False)).order_by(SmsChannelModel.is_default.desc(), SmsChannelModel.id.asc()),
+            select(SmsChannelModel).where(
+                SmsChannelModel.status == 0,
+                SmsChannelModel.is_deleted.is_(False),
+            ).order_by(SmsChannelModel.is_default.desc(), SmsChannelModel.id.asc()),
         )
-        channel = result.scalars().first()
+        channels = list(result.scalars().all())
+        channel = channels[0] if channels else None
         if not channel:
             raise CustomException(msg="未配置可用的短信渠道", status_code=503)
         return channel
@@ -131,9 +159,14 @@ class SmsService:
                 SmsTemplateModel.is_deleted.is_(False),
             ),
         )
-        template = result.scalars().first()
+        templates = list(result.scalars().all())
+        if len(templates) > 1:
+            raise CustomException(msg=f"短信模板配置重复: {scene}", status_code=500)
+        template = templates[0] if templates else None
         if not template:
             raise CustomException(msg=f"未配置启用的短信模板: {scene}", status_code=503)
+        if not str(template.provider_template_code or "").strip():
+            raise CustomException(msg=f"短信模板编码未配置: {scene}", status_code=503)
         return template
 
     @staticmethod
@@ -158,6 +191,7 @@ class SmsService:
             channel.provider,
             channel.access_key_id,
             decrypt_password(channel.access_key_secret),
+            sms_sdk_app_id=channel.sms_sdk_app_id,
         )
 
     async def _call_provider(
@@ -230,10 +264,22 @@ class SmsService:
         await self._write_log(mobile, scene, template, result)
         return result
 
-    async def test_send(self, *, mobile: str, scene: str, params: Mapping[str, Any], channel_id: int | None = None) -> SmsProviderResult:
+    async def test_send(
+        self,
+        *,
+        mobile: str,
+        scene: str,
+        params: Mapping[str, Any],
+        channel_id: int | None = None,
+        provider: str | None = None,
+    ) -> SmsProviderResult:
         normalized_mobile = normalize_mobile(mobile)
         normalized_scene = validate_scene(scene)
-        channel = await self._resolve_channel(channel_id)
+        runtime = await read_sms_runtime_config(self.db)
+        if not runtime.sms_enabled:
+            raise CustomException(msg="短信服务未启用，请先在短信配置中开启", status_code=503)
+        selected_provider = provider or runtime.active_provider
+        channel = await self._resolve_channel(channel_id=channel_id, provider=selected_provider)
         template = await self._resolve_template(normalized_scene, channel.provider)
         normalized_params = self._validate_params(template, params)
         return await self._send_resolved(channel, template, normalized_mobile, normalized_scene, normalized_params)
@@ -277,7 +323,10 @@ class SmsService:
                 "debug_code": fixed_code,
             }
 
-        channel = await self._resolve_channel()
+        runtime = await read_sms_runtime_config(self.db)
+        if not runtime.sms_enabled:
+            raise CustomException(msg="短信服务未启用，请先在短信配置中开启", status_code=503)
+        channel = await self._resolve_channel(provider=runtime.active_provider)
         template = await self._resolve_template(normalized_scene, channel.provider)
         code = f"{secrets.randbelow(1_000_000):06d}"
         params = self._validate_params(template, {"code": code})

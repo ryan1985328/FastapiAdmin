@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.core.base_schema import BaseQueryParam, BaseSchema
 from app.plugin.module_system.sms.constants import SMS_SCENES
 
-SmsProviderName = Literal["aliyun"]
+SmsProviderName = Literal["aliyun", "tencent"]
 _PARAMETER_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,63}$")
 
 

@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from typing import Any
 
 REDACTED_VALUE = "[REDACTED]"
-_SENSITIVE_FIELD_NAMES = frozenset({"card_number", "cardnumber"})
+_SENSITIVE_FIELD_NAMES = frozenset({"access_key_secret", "card_number", "cardnumber", "secret_key"})
 _LONG_DIGIT_PATTERN = re.compile(r"(?<!\d)\d{12,19}(?!\d)")
 
 

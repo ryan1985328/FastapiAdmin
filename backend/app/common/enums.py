@@ -69,6 +69,8 @@ class SysParamKey(str, Enum):
 
     SYS_NAME = "sys_name"
     LOGO_URL = "logo_url"
+    ADMIN_NAME = "admin_name"
+    ADMIN_LOGO_URL = "admin_logo_url"
     FAVICON = "favicon"
     LOGIN_BG = "login_bg"
     VERSION = "version"
@@ -84,6 +86,8 @@ class SysParamKey(str, Enum):
     LOGIN_TITLE = "login_title"
     LOGIN_SUBTITLE = "login_subtitle"
     IP_LOCATION_ENABLE = "ip_location_enable"
+    SMS_ENABLED = "sms_enabled"
+    SMS_ACTIVE_PROVIDER = "sms_active_provider"
 
 
 @unique

@@ -17,7 +17,7 @@ description: "Project overview: FastAPI Admin Starter, its async backend, admin 
 
 **FastAPI Admin Starter** is a general-purpose admin foundation built with FastAPI, Vue 3, and TypeScript. It keeps reusable system management, permissions, logging, jobs, storage, code generation, and multi-platform shell capabilities.
 
-> **Scope**: Keep the existing async SQLAlchemy, Auth/RBAC, Redis, plugin registration, Generator, Storage, and Scheduler architecture. Add business modules using the existing structure.
+> **Scope**: Keep the existing async SQLAlchemy, Auth/RBAC, Redis, plugin registration, Generator, Storage, Scheduler, and SMS Foundation architecture. Add business modules using the existing structure.
 
 ## Engineering Structure
 
@@ -49,10 +49,10 @@ FastapiAdmin/
 | 🧱 Modular | Highly decoupled, plug-in architecture, auto route discovery |
 | ⚡️ High Performance | Async framework + Redis caching |
 | 🔒 Security | JWT OAuth2, RBAC permission control |
-| 🚀 Deployment | Docker Compose one-click deployment |
+| 🚀 Deployment baseline | Docker Compose/Nginx deployment scaffolding; production still requires explicit configuration and review |
 | 📖 Developer Friendly | Complete documentation + Chinese UI + visual toolchain |
 | 📱 Mobile Support | UniApp App/H5 shell retained for future extensions |
-| 🛠️ Code Generator | Built-in code generation tools |
+| 🛠️ Code Generator | Standard CRUD generation; not a full low-code platform |
 
 ## Technology Stack
 
@@ -65,7 +65,7 @@ FastapiAdmin/
 | Frontend Framework | Vue3 / Vite / Pinia / TypeScript |
 | Web UI | Element Plus |
 | Mobile | UniApp / Wot Design Uni |
-| Database | MySQL / PostgreSQL / SQLite |
+| Database | MySQL 8.4 (Starter baseline) |
 | Cache | Redis |
 | Deployment | Docker / Nginx / Docker Compose |
 
@@ -73,13 +73,15 @@ FastapiAdmin/
 
 | Module | Features | Description |
 |--------|----------|-------------|
-| Dashboard | Workbench, Analysis | System overview and data analysis |
+| Dashboard | Workplace | System overview and runtime status |
 | System Management | Users, Roles, Menus, Departments, Positions, Dictionaries, Config, Notices | Core system management |
 | Monitoring | Online users, Server, Cache | System health monitoring |
 | Task Management | Scheduled tasks | Async task scheduling |
 | Log Management | Operation logs | User behavior auditing |
-| Development Tools | Code generation, Form builder, API docs | Developer productivity tools |
-| File Management | File storage | Unified file management |
+| Development Tools | Standard code generation, API docs | Developer productivity; Generator is not a full low-code platform |
+| File Management | Storage Source, File | Unified file and source management; Transfer is not in the Starter menu baseline |
+| App Authentication | Registration, password login, SMS login, password reset | App/H5 user authentication foundation |
+| SMS Foundation | Aliyun, Tencent settings and send logs | Fixed authentication scenarios, not a general messaging platform |
 
 ## Package Architecture: Domain Vertical Slice vs Layer-First
 

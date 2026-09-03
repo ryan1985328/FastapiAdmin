@@ -1,12 +1,13 @@
-"""Provider abstraction and the first Alibaba Cloud SMS adapter."""
+"""Provider abstraction and the built-in Alibaba/Tencent SMS adapters."""
 
+import asyncio
 import json
 from dataclasses import dataclass
 from typing import Any, Protocol
 
 from app.core.exceptions import CustomException
 
-from .constants import SMS_PROVIDER_ALIYUN
+from .constants import SMS_PROVIDER_ALIYUN, SMS_PROVIDER_TENCENT
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,6 +119,76 @@ class AliyunSmsProvider:
             )
 
 
+class TencentSmsProvider:
+    """Thin adapter around Tencent Cloud's official SMS SDK."""
+
+    provider = SMS_PROVIDER_TENCENT
+
+    def __init__(self, secret_id: str, secret_key: str, sms_sdk_app_id: str, *, region: str = "ap-guangzhou") -> None:
+        self.secret_id = secret_id.strip()
+        self.secret_key = secret_key
+        self.sms_sdk_app_id = sms_sdk_app_id.strip()
+        self.region = region
+
+    @staticmethod
+    def _phone_number(mobile: str) -> str:
+        """Tencent's API expects E.164; the Starter's default market is China."""
+
+        return mobile if mobile.startswith("+") else f"+86{mobile}"
+
+    async def send(
+        self,
+        *,
+        mobile: str,
+        sign_name: str,
+        template_code: str,
+        params: dict[str, Any],
+    ) -> SmsProviderResult:
+        if not self.secret_id or not self.secret_key or not self.sms_sdk_app_id:
+            return SmsProviderResult(
+                provider=self.provider,
+                success=False,
+                code="CONFIG_MISSING",
+                message="腾讯云短信渠道未配置完整的 SecretId、SecretKey 或 SDK App ID",
+            )
+
+        try:
+            from tencentcloud.common import credential
+            from tencentcloud.sms.v20210111 import models, sms_client
+
+            cred = credential.Credential(self.secret_id, self.secret_key)
+            client = sms_client.SmsClient(cred, self.region)
+            request = models.SendSmsRequest()
+            request.SmsSdkAppId = self.sms_sdk_app_id
+            request.SignName = sign_name
+            request.TemplateId = template_code
+            request.TemplateParamSet = [str(value) for value in params.values()]
+            request.PhoneNumberSet = [self._phone_number(mobile)]
+
+            response = await asyncio.to_thread(client.SendSms, request)
+            status_set = _value(response, "SendStatusSet", "send_status_set") or []
+            first_status = status_set[0] if status_set else None
+            code = _value(first_status, "Code", "code")
+            message = _value(first_status, "Message", "message")
+            request_id = _value(response, "RequestId", "request_id")
+            request_id = request_id or _value(first_status, "SerialNo", "serial_no")
+            code_text = str(code) if code is not None else None
+            return SmsProviderResult(
+                provider=self.provider,
+                success=code_text is not None and code_text.lower() == "ok",
+                code=code_text,
+                message=str(message) if message is not None else None,
+                request_id=str(request_id) if request_id is not None else None,
+            )
+        except Exception as exc:
+            return SmsProviderResult(
+                provider=self.provider,
+                success=False,
+                code="PROVIDER_EXCEPTION",
+                message=_safe_error_message(exc, (self.secret_id, self.secret_key)),
+            )
+
+
 class MockSmsProvider:
     """Small injectable provider used by focused service tests."""
 
@@ -144,9 +215,17 @@ class MockSmsProvider:
         return self.result
 
 
-def create_provider(provider: str, access_key_id: str, access_key_secret: str) -> SmsProvider:
+def create_provider(
+    provider: str,
+    access_key_id: str,
+    access_key_secret: str,
+    *,
+    sms_sdk_app_id: str | None = None,
+) -> SmsProvider:
     if provider == SMS_PROVIDER_ALIYUN:
         return AliyunSmsProvider(access_key_id, access_key_secret)
+    if provider == SMS_PROVIDER_TENCENT:
+        return TencentSmsProvider(access_key_id, access_key_secret, sms_sdk_app_id or "")
     raise CustomException(msg=f"暂不支持短信供应商: {provider}", status_code=422)
 
 
@@ -155,5 +234,6 @@ __all__ = [
     "MockSmsProvider",
     "SmsProvider",
     "SmsProviderResult",
+    "TencentSmsProvider",
     "create_provider",
 ]

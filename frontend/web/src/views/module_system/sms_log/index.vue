@@ -7,6 +7,7 @@
       :items="searchItems"
       :rules="searchBarRules"
       :show-expand="false"
+      :default-expanded="true"
       :show-reset="true"
       :show-search="true"
       @search="handleSearch"
@@ -41,6 +42,7 @@
     >
       <FaDescriptions :column="2" :data="detailData" :items="detailItems">
         <template #scene="{ row }">{{ sceneLabel(row?.scene as string) }}</template>
+        <template #provider="{ row }">{{ providerLabel(row?.provider as string) }}</template>
         <template #status="{ row }">
           <ElTag :type="row?.status === 0 ? 'success' : 'danger'">
             {{ row?.status === 0 ? "成功" : "失败" }}
@@ -79,6 +81,15 @@ const SCENE_OPTIONS = [
   { label: "重置密码验证码", value: "reset_password_code" },
 ] as const;
 
+const PROVIDER_OPTIONS = [
+  { label: "阿里云", value: "aliyun" },
+  { label: "腾讯云", value: "tencent" },
+] as const;
+
+function providerLabel(provider?: string): string {
+  return PROVIDER_OPTIONS.find((item) => item.value === provider)?.label ?? provider ?? "";
+}
+
 function sceneLabel(scene?: string) {
   return SCENE_OPTIONS.find((item) => item.value === scene)?.label ?? scene ?? "";
 }
@@ -91,7 +102,7 @@ const searchBarRules: Record<string, unknown> = {};
 const searchItems = computed<SearchFormItem[]>(() => [
   { label: "手机号", key: "mobile", type: "input", placeholder: "请输入手机号", clearable: true, span: 6 },
   { label: "业务场景", key: "scene", type: "select", props: { options: SCENE_OPTIONS, clearable: true, placeholder: "请选择场景" }, span: 6 },
-  { label: "供应商", key: "provider", type: "select", props: { options: [{ label: "阿里云", value: "aliyun" }], clearable: true, placeholder: "请选择供应商" }, span: 6 },
+  { label: "供应商", key: "provider", type: "select", props: { options: PROVIDER_OPTIONS, clearable: true, placeholder: "请选择供应商" }, span: 6 },
   { label: "发送状态", key: "status", type: "select", props: { options: STATUS_OPTIONS, clearable: true }, span: 6 },
 ]);
 
@@ -116,7 +127,7 @@ const {
       { prop: "mobile", label: "手机号", minWidth: 130, showOverflowTooltip: true },
       { prop: "scene", label: "业务场景", minWidth: 145, formatter: (row) => sceneLabel(row.scene) },
       { prop: "template_code", label: "模板编码", minWidth: 165, showOverflowTooltip: true },
-      { prop: "provider", label: "供应商", width: 100, formatter: () => "阿里云" },
+      { prop: "provider", label: "供应商", width: 100, formatter: (row) => providerLabel(row.provider) },
       {
         prop: "status",
         label: "发送状态",
@@ -137,7 +148,7 @@ const detailItems: DescriptionsItem[] = [
   { label: "手机号", prop: "mobile" },
   { label: "业务场景", prop: "scene", slot: "scene" },
   { label: "模板编码", prop: "template_code" },
-  { label: "供应商", prop: "provider" },
+  { label: "供应商", prop: "provider", slot: "provider" },
   { label: "发送状态", prop: "status", slot: "status" },
   { label: "供应商请求 ID", prop: "provider_request_id" },
   { label: "供应商返回码", prop: "provider_code" },

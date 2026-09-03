@@ -17,7 +17,7 @@ outline: "deep"
 
 **FastAPI Admin Starter** 是一套基于 FastAPI、Vue 3 和 TypeScript 的通用后台基础工程。它采用前后端分离架构，保留系统管理、权限、日志、任务、存储、代码生成和多端壳等可复用能力。
 
-> **设计边界**: 保持现有异步 SQLAlchemy、Auth/RBAC、Redis、插件注册、Generator、Storage 和 Scheduler 架构，业务模块在其上按现有结构扩展。
+> **设计边界**: 保持现有异步 SQLAlchemy、Auth/RBAC、Redis、插件注册、Generator、Storage、Scheduler 和 SMS Foundation 架构，业务模块在其上按现有结构扩展。
 
 ## 📦 工程结构概览
 
@@ -35,7 +35,7 @@ FastapiAdmin/
 │   ├── nginx/            # Nginx 配置和静态文件
 │   ├── mysql/            # MySQL 数据目录
 │   └── redis/            # Redis 数据目录
-├─ deploy.sh              # 一键部署脚本
+├─ deploy.sh              # 部署脚本
 ├─ deploy.bat             # Windows 启动脚本
 ├─ LICENSE                # 开源协议
 └─ README.md              # 项目文档
@@ -53,14 +53,14 @@ FastapiAdmin/
 | ⚡️ 高性能异步 | 使用 FastAPI 异步框架 + Redis 缓存优化接口响应速度。 |
 | 🔒 安全认证 | 支持 JWT OAuth2 认证机制，保障系统安全。 |
 | 📊 权限管理 | RBAC 模型实现菜单、按钮、数据级别的细粒度权限控制。 |
-| 🚀 快速部署 | 支持 Docker/Docker Compose/Nginx 一键部署。 |
+| 🚀 部署基础 | 提供 Docker/Docker Compose/Nginx 部署脚手架；生产环境仍需显式配置和人工核验。 |
 | 📄 开发友好 | 提供完善的中文文档 + 中文化界面 + 可视化工具链，降低学习成本。 |
 | 🧩 快速接入 | 基于 Vue3、Vite5、Pinia、ElementPlus 等主流前端技术栈，开箱即用。 |
 | 📱 移动端支持 | 保留 UniApp App/H5 shell，支持未来按需扩展多端应用。 |
 | 🎨 主题定制 | 支持深色/浅色主题切换，提供个性化界面体验。 |
 | 🌍 国际化支持 | 内置国际化框架，支持多语言切换。 |
 | 📈 数据可视化 | 集成图表库，提供丰富的数据可视化能力。 |
-| 🛠️ 代码生成 | 内置代码生成工具，提升开发效率。 |
+| 🛠️ 代码生成 | 根据数据库表生成常规 CRUD；它不是完整低代码平台。 |
 
 ## 🛠️技术栈概览
 
@@ -75,7 +75,7 @@ FastapiAdmin/
 | 移动端框架 | UniApp / Vue3 / TypeScript | 跨平台移动应用开发。 |
 | UI 库    | ElementPlus (Web) / Wot Design Uni (移动端) | 企业级 UI 组件库。 |
 | CSS 框架 | UnoCSS / SCSS       | 原子化 CSS 和预处理器。 |
-| 数据库   | MySQL / PostgreSQL / SQLite | 关系型数据库支持。 |
+| 数据库   | MySQL 8.4 | Starter 当前开发与基线数据库。 |
 | 缓存     | Redis               | 强大的缓存数据库。 |
 | 文档     | Swagger / Redoc     | 自动生成 API 文档。 |
 | 部署     | Docker / Nginx / Docker Compose | 快速部署项目。 |
@@ -87,13 +87,15 @@ FastapiAdmin/
 
 | 模块名 | 子模块名 | 描述 |
 |--------|----------|------|
-| 仪表盘 | 工作台、分析页 | 系统概览和数据分析 |
+| 仪表盘 | 工作台 | 系统概览和运行状态 |
 | 系统管理 | 用户、角色、菜单、部门、岗位、字典、配置、公告 | 核心系统管理功能 |
 | 监控管理 | 在线用户、服务器监控、缓存监控 | 系统运行状态监控 |
 | 任务管理 | 定时任务 | 异步任务调度管理 |
 | 日志管理 | 操作日志 | 用户行为审计 |
-| 开发工具 | 代码生成、表单构建、接口文档 | 提升开发效率的工具 |
-| 文件管理 | 文件存储 | 统一文件管理 |
+| 开发工具 | 常规代码生成、接口文档 | 提升开发效率；Generator 不承诺完整低代码平台 |
+| 文件管理 | Storage Source、File | 统一文件与存储源管理；Transfer 不在 Starter 菜单基线中 |
+| App 认证 | 注册、密码登录、短信登录、密码重置 | App/H5 用户认证基础能力 |
+| SMS Foundation | Aliyun、Tencent 配置与发送记录 | 固定认证场景的双供应商基础，不是通用消息平台 |
 
 > 移动端模块详见 [移动端开发](./miniprogram)。
 

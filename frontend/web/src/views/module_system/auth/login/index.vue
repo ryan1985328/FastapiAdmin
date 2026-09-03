@@ -1,66 +1,41 @@
-<!-- 登录页：保留成熟的插画 / 表单布局，只提供 Admin 账号登录入口。 -->
+<!-- 登录页：全屏技术视觉 + Admin 登录工作区；认证流程由现有逻辑负责。 -->
 <template>
-  <div class="login-page-root flex h-screen w-full flex-col overflow-hidden" :style="loginBgStyle">
-    <FaLoginCenterBackdrop v-if="panelAlign === 'center'" viewport-fixed />
-    <FaAuthTopBar v-model:panel-align="panelAlign" />
+  <div class="login-page-root" :style="loginPageStyle">
+    <FaAuthTopBar />
 
-    <div
-      class="login-auth-split relative z-1 flex min-h-0 flex-1 overflow-hidden"
-      :class="`login-auth-split--${panelAlign}`"
-    >
-      <div
-        v-if="panelAlign !== 'center'"
-        class="login-auth-split__col login-auth-split__col--illustration"
-      >
-        <FaLoginLeftView hide-top-branding />
-      </div>
+    <div class="login-auth-split">
+      <section class="login-auth-split__col login-auth-split__col--illustration">
+        <FaLoginLeftView />
+      </section>
 
-      <div
-        class="login-auth-split__col login-auth-split__col--form login-page-panel relative flex min-h-0 min-w-0 flex-col"
-        :class="panelAlign === 'center' ? 'bg-transparent' : 'bg-(--el-bg-color-page)'"
-      >
-        <div
-          class="login-page-panel__main relative z-1 flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-2 pt-14 md:px-10 md:pt-18"
-        >
-          <ElScrollbar>
-            <div
-              class="login-page-panel__scroll pb-6"
-              :class="panelAlign === 'center' && 'login-page-panel__scroll--centered'"
-            >
-              <div
-                class="login-panel-align-row flex w-full items-center justify-center max-sm:min-h-0"
-                :class="
-                  panelAlign === 'center'
-                    ? 'min-h-0 flex-1 py-4'
-                    : 'min-h-[min(720px,calc(100vh-13rem))]'
-                "
-              >
-                <div class="auth-right-wrap">
-                  <div class="form">
-                    <div class="form-intro">
-                      <h3 class="title">{{ panelTitle }}</h3>
-                      <p class="sub-title">{{ panelSubTitle }}</p>
-                    </div>
-
-                    <FaLoginAccountForm
-                      ref="accountFormRef"
-                      v-model:is-passing="isPassing"
-                      v-model:is-click-pass="isClickPass"
-                      v-model:login-form="loginForm"
-                      :rules="rules"
-                      :form-key="formKey"
-                      :is-dark="isDark"
-                      :drag-verify-text-color="dragVerifyTextColor"
-                      :loading="loading"
-                      @submit="handleSubmit"
-                    />
-                  </div>
+      <main class="login-auth-split__col login-auth-split__col--form login-workspace">
+        <div class="login-workspace__scroll">
+          <div class="login-workspace__content">
+            <div class="auth-right-wrap">
+              <div class="form">
+                <div class="form-intro">
+                  <h1 class="title">{{ panelTitle }}</h1>
+                  <p class="sub-title">{{ panelSubTitle }}</p>
                 </div>
+
+                <FaLoginAccountForm
+                  ref="accountFormRef"
+                  v-model:is-passing="isPassing"
+                  v-model:is-click-pass="isClickPass"
+                  v-model:login-form="loginForm"
+                  :rules="rules"
+                  :form-key="formKey"
+                  :is-dark="isDark"
+                  :captcha-enabled="captchaEnabled"
+                  :drag-verify-text-color="dragVerifyTextColor"
+                  :loading="loading"
+                  @submit="handleSubmit"
+                />
               </div>
             </div>
-          </ElScrollbar>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   </div>
 </template>
@@ -68,12 +43,12 @@
 <script setup lang="ts">
 import type { LocationQuery, RouteLocationRaw } from "vue-router";
 import AuthAPI, { type LoginFormData } from "@/api/module_system/auth";
+import { CANONICAL_HOME_PATH } from "@/router/constants";
 
 import { useConfigStore, useAppStore, useSettingsStore, useUserStore } from "@stores";
 import { Auth, HttpError } from "@utils";
 import { ElMessage, ElNotification } from "element-plus";
 import type { FormRules } from "element-plus";
-import { useLoginPanelAlign } from "./components/composables/useLoginPanelAlign";
 import type FaLoginAccountForm from "./components/forms/FaLoginAccountForm.vue";
 
 defineOptions({ name: "Login" });
@@ -83,8 +58,6 @@ const settingStore = useSettingsStore();
 const appStore = useAppStore();
 const { isDark } = storeToRefs(settingStore);
 const { t, locale } = useI18n();
-
-const { panelAlign } = useLoginPanelAlign();
 
 const panelTitle = computed(() => t("login.title"));
 const panelSubTitle = computed(() => t("login.subTitle"));
@@ -131,9 +104,7 @@ async function tryConsumeOAuthCallback() {
   }
 }
 
-const dragVerifyTextColor = computed(() =>
-  isDark.value ? "rgba(255, 255, 255, 0.45)" : "var(--fa-gray-700)"
-);
+const dragVerifyTextColor = "var(--login-captcha-text-color)";
 const formKey = ref(0);
 
 watch(locale, () => {
@@ -146,6 +117,8 @@ const route = useRoute();
 const isPassing = ref(false);
 const isClickPass = ref(false);
 
+// 开发构建先隐藏滑块，最终仍以后端验证码开关返回值为准。
+const captchaEnabled = ref(!import.meta.env.DEV);
 const accountFormRef = ref<InstanceType<typeof FaLoginAccountForm> | null>(null);
 
 const loading = ref(false);
@@ -159,11 +132,9 @@ const loginForm = reactive<LoginFormData>({
 });
 
 // —— 登录页背景 ——
-const loginBgStyle = computed(() => {
+const loginPageStyle = computed<Record<string, string>>(() => {
   const bg = configStore.configData?.login_bg?.config_value?.trim();
-  return bg
-    ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: "center" }
-    : {};
+  return { "--login-configured-background": bg ? `url("${bg}")` : "none" };
 });
 
 const rules = computed<FormRules>(() => {
@@ -195,18 +166,22 @@ async function getCaptcha() {
   try {
     const response = await AuthAPI.getCaptcha();
     const data = response.data.data;
+    captchaEnabled.value = data.enable;
     loginForm.captcha_key = data.key;
     // 重置滑块状态
-    isPassing.value = false;
+    isPassing.value = !data.enable;
     isClickPass.value = false;
   } catch {
+    // 获取配置失败时保持安全默认值，避免错误地绕过生产环境验证码。
+    captchaEnabled.value = true;
+    isPassing.value = false;
     loginForm.captcha_key = "";
   }
 }
 
 /** 滑块验证完成后通知后端标记 */
 async function handleSliderPass(passed: boolean) {
-  if (!passed || !loginForm.captcha_key) return;
+  if (!captchaEnabled.value || !passed || !loginForm.captcha_key) return;
   try {
     await AuthAPI.sliderComplete(loginForm.captcha_key);
   } catch {
@@ -221,7 +196,7 @@ watch(isPassing, (val) => {
 });
 
 function resolveRedirectTarget(query: LocationQuery): RouteLocationRaw {
-  const defaultPath = "/";
+  const defaultPath = CANONICAL_HOME_PATH;
   const rawRedirect = (query.redirect as string) || defaultPath;
   try {
     const resolved = router.resolve(rawRedirect);
@@ -260,7 +235,7 @@ const handleSubmit = async () => {
     const valid = await accountFormRef.value.validate?.();
     if (!valid) return;
 
-    if (!isPassing.value) {
+    if (captchaEnabled.value && !isPassing.value) {
       isClickPass.value = true;
       return;
     }

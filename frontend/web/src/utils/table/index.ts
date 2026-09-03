@@ -554,6 +554,8 @@ export function renderTableOperationCell(
             type: a.artType,
             icon: iconForOperation(a),
             iconColor: iconColorForOperation(a),
+            label: a.label,
+            disabled: a.disabled,
             onClick: a.run,
           }),
         ]

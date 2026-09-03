@@ -39,12 +39,13 @@
  */
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { router } from "@/router";
+import { HOME_PAGE_PATH, router } from "@/router";
 import type { LocationQueryRaw, Router } from "vue-router";
 import type { WorkTab } from "@/types/store";
 
 import { useCommon } from "@/hooks/core/useCommon";
-import { ROUTE_PATH_LOGIN_ALT } from "@/router/routes";
+import { ROUTE_PATH_LOGIN_ALT, WORKPLACE_MENU_META } from "@/router/routes";
+import { LEGACY_HOME_PATH } from "@/router/constants";
 
 interface WorktabState {
   current: Partial<WorkTab>;
@@ -62,6 +63,73 @@ export const useWorktabStore = defineStore(
     const current = ref<Partial<WorkTab>>({});
     const opened = ref<WorkTab[]>([]);
     const keepAliveExclude = ref<string[]>([]);
+
+    const isLegacyHomeTab = (tab: Partial<WorkTab>): boolean =>
+      tab.path === LEGACY_HOME_PATH || tab.name === "Home";
+
+    const isCanonicalHomeTab = (tab: Partial<WorkTab>): boolean =>
+      tab.path === HOME_PAGE_PATH || isLegacyHomeTab(tab);
+
+    const normalizeHomeTab = (tab: Partial<WorkTab>, clearCustomTitle = false): WorkTab => ({
+      ...(tab as WorkTab),
+      ...(clearCustomTitle ? { customTitle: "" } : {}),
+      path: HOME_PAGE_PATH,
+      name: "DashboardWorkplace",
+      title: WORKPLACE_MENU_META.title,
+      icon: WORKPLACE_MENU_META.icon,
+      keepAlive: WORKPLACE_MENU_META.keepAlive !== false,
+      fixedTab: true,
+    });
+
+    /** 将历史 Home 标签迁移为唯一的 Workplace 固定标签，并合并重复项。 */
+    const normalizeHomeTabs = (): void => {
+      const normalized: WorkTab[] = [];
+      let changed = false;
+
+      for (const tab of opened.value) {
+        const nextTab = isCanonicalHomeTab(tab) ? normalizeHomeTab(tab, isLegacyHomeTab(tab)) : tab;
+        const existingIndex = normalized.findIndex((item) => item.path === HOME_PAGE_PATH);
+
+        if (nextTab.path === HOME_PAGE_PATH && existingIndex !== -1) {
+          normalized[existingIndex] = normalizeHomeTab({
+            ...normalized[existingIndex],
+            ...nextTab,
+          });
+          changed = true;
+          continue;
+        }
+
+        if (
+          nextTab.path !== tab.path ||
+          nextTab.name !== tab.name ||
+          nextTab.title !== tab.title ||
+          nextTab.fixedTab !== tab.fixedTab
+        ) {
+          changed = true;
+        }
+        normalized.push(nextTab);
+      }
+
+      const canonicalIndex = normalized.findIndex((tab) => tab.path === HOME_PAGE_PATH);
+      if (canonicalIndex !== -1) {
+        const [canonicalTab] = normalized.splice(canonicalIndex, 1);
+        const firstNonFixedIndex = normalized.findIndex((tab) => !tab.fixedTab);
+        const insertIndex = firstNonFixedIndex === -1 ? normalized.length : firstNonFixedIndex;
+        normalized.splice(insertIndex, 0, canonicalTab!);
+        if (canonicalIndex !== insertIndex) changed = true;
+      }
+
+      if (changed || normalized.length !== opened.value.length) {
+        opened.value = normalized;
+      }
+
+      if (isCanonicalHomeTab(current.value)) {
+        const canonical = normalized.find((tab) => tab.path === HOME_PAGE_PATH);
+        current.value = canonical
+          ? { ...canonical }
+          : normalizeHomeTab(current.value, isLegacyHomeTab(current.value));
+      }
+    };
 
     // 计算属性
     const hasOpenedTabs = computed(() => opened.value.length > 0);
@@ -132,20 +200,23 @@ export const useWorktabStore = defineStore(
         return;
       }
 
+      normalizeHomeTabs();
+      const nextTab = isCanonicalHomeTab(tab) ? normalizeHomeTab(tab) : tab;
+
       // 从 keepAlive 排除列表中移除
-      if (tab.name) {
-        removeKeepAliveExclude(tab.name);
+      if (nextTab.name) {
+        removeKeepAliveExclude(nextTab.name);
       }
 
       // 仅以 path 识别标签：同一 route_name（同一组件）可对不同 path 同时保留多条标签
-      const existingIndex = findTabIndex(tab.path);
+      const existingIndex = findTabIndex(nextTab.path);
 
       if (existingIndex === -1) {
         // 新增标签页
-        const insertIndex = tab.fixedTab ? findFixedTabInsertIndex() : opened.value.length;
-        const newTab = { ...tab };
+        const insertIndex = nextTab.fixedTab ? findFixedTabInsertIndex() : opened.value.length;
+        const newTab = { ...nextTab };
 
-        if (tab.fixedTab) {
+        if (nextTab.fixedTab) {
           opened.value.splice(insertIndex, 0, newTab);
         } else {
           opened.value.push(newTab);
@@ -158,14 +229,14 @@ export const useWorktabStore = defineStore(
 
         opened.value[existingIndex] = {
           ...existingTab,
-          path: tab.path,
-          params: tab.params,
-          query: tab.query,
-          title: tab.title || existingTab.title,
-          fixedTab: tab.fixedTab ?? existingTab.fixedTab,
-          keepAlive: tab.keepAlive ?? existingTab.keepAlive,
-          name: tab.name || existingTab.name,
-          icon: tab.icon || existingTab.icon,
+          path: nextTab.path,
+          params: nextTab.params,
+          query: nextTab.query,
+          title: nextTab.title || existingTab.title,
+          fixedTab: nextTab.fixedTab ?? existingTab.fixedTab,
+          keepAlive: nextTab.keepAlive ?? existingTab.keepAlive,
+          name: nextTab.name || existingTab.name,
+          icon: nextTab.icon || existingTab.icon,
         };
 
         current.value = opened.value[existingIndex]!;
@@ -465,6 +536,7 @@ export const useWorktabStore = defineStore(
      */
     const validateWorktabs = (routerInstance: Router): void => {
       try {
+        normalizeHomeTabs();
         const allRoutes = routerInstance.getRoutes(); // 只调用一次，避免在循环中重复拷贝
         // 动态路由校验：优先使用路由 name 判断有效性；否则用 resolve 匹配参数化路径
         const isTabRouteValid = (tab: Partial<WorkTab>): boolean => {

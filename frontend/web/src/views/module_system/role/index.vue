@@ -49,6 +49,8 @@
         :data="data"
         :columns="columns"
         :pagination="pagination"
+        :error="error"
+        @retry="getData"
         @selection-change="onTableSelectionChange"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
@@ -159,6 +161,7 @@ import {
   stripPaginationParams,
   cleanEmptyArrayParams,
   toCrudCols,
+  ENABLED_STATUS_MAP,
   type TableOperationAction,
 } from "@utils";
 import RoleAPI, {
@@ -392,9 +395,7 @@ const roleDetailItems: import("@/components/display/fa-descriptions/index.vue").
     {
       label: "状态",
       prop: "status",
-      tag: {
-        map: { 0: { type: "success", text: "启用" }, 1: { type: "danger", text: "停用" } },
-      },
+      tag: { map: ENABLED_STATUS_MAP },
     },
     { label: "创建时间", prop: "created_time" },
     { label: "更新时间", prop: "updated_time" },
@@ -536,6 +537,7 @@ const {
   columnChecks,
   data,
   loading,
+  error,
   pagination,
   searchParams,
   getData,
@@ -580,10 +582,7 @@ const {
         prop: "status",
         label: "状态",
         width: 80,
-        status: {
-          0: { type: "success", text: "启用" },
-          1: { type: "danger", text: "停用" },
-        },
+        status: ENABLED_STATUS_MAP,
       },
       { prop: "description", label: "描述", minWidth: 120, showOverflowTooltip: true },
       {

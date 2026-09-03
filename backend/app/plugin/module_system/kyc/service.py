@@ -3,44 +3,170 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import UploadFile
+from sqlalchemy import String, cast, false, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.base_schema import AuthSchema, BatchSetAvailable, PageResultSchema
 from app.core.exceptions import CustomException
 from app.core.logger import logger
+from app.core.permission import Permission
+from app.plugin.module_app.user.constants import AppUserKycStatus
+from app.plugin.module_app.user.model import AppUserModel
 from app.utils.common_util import search_to_dict
 from app.utils.excel_util import ExcelUtil
 
 from .crud import AppUserKycCRUD
+from .model import AppUserKycModel
 from .schema import (
     AppUserKycCreateSchema,
     AppUserKycOutSchema,
     AppUserKycQueryParam,
     AppUserKycReviewSchema,
     AppUserKycUpdateSchema,
+    AppUserKycUserSummarySchema,
 )
 
 
 class AppUserKycService:
     """用户实名认证模块服务层"""
 
+    _STATUS_BY_DICT_VALUE = {
+        AppUserKycStatus.PENDING: 0,
+        AppUserKycStatus.VERIFIED: 1,
+        AppUserKycStatus.REJECTED: 2,
+    }
+    _ORDERABLE_FIELDS = {"id", "real_name", "status", "created_time", "reviewed_at"}
+
     def __init__(self, auth: AuthSchema, db: AsyncSession) -> None:
         self.auth = auth
         self.db = db
+
+    @classmethod
+    def _order_columns(cls, order_by: list[dict[str, str]] | None) -> list[Any]:
+        """Use newest submissions by default while keeping explicit sort support."""
+
+        # PaginationQueryParam materializes an omitted order_by as id ASC. Treat
+        # that framework default as omitted for this review workspace.
+        if not order_by or order_by == [{"id": "asc"}]:
+            return [AppUserKycModel.created_time.desc(), AppUserKycModel.id.desc()]
+
+        columns: list[Any] = []
+        for item in order_by:
+            for field, direction in item.items():
+                if field not in cls._ORDERABLE_FIELDS:
+                    continue
+                column = getattr(AppUserKycModel, field)
+                columns.append(column.desc() if direction.lower() == "desc" else column.asc())
+        return columns or [AppUserKycModel.created_time.desc(), AppUserKycModel.id.desc()]
+
+    async def _conditions(self, search: AppUserKycQueryParam | None) -> list[Any]:
+        conditions: list[Any] = [AppUserKycModel.is_deleted.is_(False)]
+        permission_condition = await Permission(AppUserKycModel, self.auth, self.db)._permission_condition()
+        if permission_condition is not None:
+            conditions.append(permission_condition)
+
+        values = search_to_dict(search, {}) or {}
+        for key, condition in values.items():
+            if not isinstance(condition, tuple):
+                continue
+            operator, value = condition
+            if value is None or value == "":
+                continue
+
+            if key == "keyword":
+                term = f"%{str(value).strip()}%"
+                conditions.append(
+                    or_(
+                        cast(AppUserKycModel.app_user_id, String).like(term),
+                        AppUserModel.username.like(term),
+                        AppUserModel.nickname.like(term),
+                        AppUserModel.mobile.like(term),
+                        AppUserKycModel.real_name.like(term),
+                        AppUserKycModel.id_card_no.like(term),
+                    )
+                )
+            elif key == "kyc_status":
+                status = AppUserKycStatus(value)
+                if status == AppUserKycStatus.UNVERIFIED:
+                    # Unverified users have no row in app_user_kyc, so they are
+                    # intentionally absent from this submission review list.
+                    conditions.append(false())
+                else:
+                    conditions.append(AppUserKycModel.status == self._STATUS_BY_DICT_VALUE[status])
+            elif key == "app_user_id":
+                conditions.append(AppUserKycModel.app_user_id == value)
+            elif key in {"real_name", "id_card_no", "review_remark"} and operator == "like":
+                conditions.append(getattr(AppUserKycModel, key).like(f"%{value}%"))
+            elif key in {"id_card_front", "id_card_back"} and operator == "like":
+                conditions.append(getattr(AppUserKycModel, key).like(f"%{value}%"))
+            elif key in {"created_time", "updated_time", "reviewed_at"}:
+                column = getattr(AppUserKycModel, key)
+                if operator == "between" and isinstance(value, (list, tuple)) and len(value) == 2:
+                    conditions.append(column.between(value[0], value[1]))
+                elif operator == "eq":
+                    conditions.append(column == value)
+
+        return conditions
+
+    async def _user_for(self, obj: AppUserKycModel) -> AppUserModel | None:
+        return await self.db.scalar(
+            select(AppUserModel).where(
+                AppUserModel.id == obj.app_user_id,
+                AppUserModel.is_deleted.is_(False),
+            )
+        )
+
+    @staticmethod
+    def _serialize(obj: AppUserKycModel, user: AppUserModel | None = None) -> AppUserKycOutSchema:
+        payload = AppUserKycOutSchema.model_validate(obj).model_dump()
+        payload["app_user"] = (
+            AppUserKycUserSummarySchema.model_validate(user).model_dump() if user is not None else None
+        )
+        return AppUserKycOutSchema.model_validate(payload)
+
+    async def _fetch_rows(
+        self,
+        search: AppUserKycQueryParam | None = None,
+        order_by: list[dict[str, str]] | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
+    ) -> tuple[int, list[tuple[AppUserKycModel, AppUserModel | None]]]:
+        conditions = await self._conditions(search)
+        from_clause = AppUserKycModel.__table__.outerjoin(
+            AppUserModel.__table__, AppUserKycModel.app_user_id == AppUserModel.id
+        )
+
+        count_result = await self.db.execute(
+            select(func.count(AppUserKycModel.id)).select_from(from_clause).where(*conditions)
+        )
+        total = int(count_result.scalar() or 0)
+
+        query = (
+            select(AppUserKycModel, AppUserModel)
+            .select_from(from_clause)
+            .where(*conditions)
+            .order_by(*self._order_columns(order_by))
+        )
+        if offset is not None:
+            query = query.offset(offset)
+        if limit is not None:
+            query = query.limit(limit)
+        result = await self.db.execute(query)
+        return total, result.all()
 
     async def detail(self, id: int) -> AppUserKycOutSchema:
         obj = await AppUserKycCRUD(self.auth, self.db).get(id=id)
         if not obj:
             raise CustomException(msg="该数据不存在")
-        return AppUserKycOutSchema.model_validate(obj)
+        return self._serialize(obj, await self._user_for(obj))
 
     async def get_list(
         self,
         search: AppUserKycQueryParam | None = None,
         order_by: list[dict[str, str]] | None = None,
     ) -> list[AppUserKycOutSchema]:
-        obj_list = await AppUserKycCRUD(self.auth, self.db).get_list(search=search_to_dict(search), order_by=order_by)
-        return [AppUserKycOutSchema.model_validate(obj) for obj in obj_list]
+        _, rows = await self._fetch_rows(search=search, order_by=order_by)
+        return [self._serialize(obj, user) for obj, user in rows]
 
     async def page(
         self,
@@ -50,17 +176,24 @@ class AppUserKycService:
         order_by: list[dict[str, str]] | None = None,
     ) -> PageResultSchema[AppUserKycOutSchema]:
         offset = (page_no - 1) * page_size
-        return await AppUserKycCRUD(self.auth, self.db).page(
+        total, rows = await self._fetch_rows(
+            search=search,
+            order_by=order_by,
             offset=offset,
             limit=page_size,
-            order_by=order_by or [{"id": "asc"}],
-            search=search_to_dict(search, {}),
-            out_schema=AppUserKycOutSchema,
+        )
+        items = [self._serialize(obj, user) for obj, user in rows]
+        return PageResultSchema(
+            page_no=page_no,
+            page_size=page_size,
+            total=total,
+            has_next=offset + page_size < total,
+            items=items,
         )
 
     async def create(self, data: AppUserKycCreateSchema) -> AppUserKycOutSchema:
         obj = await AppUserKycCRUD(self.auth, self.db).create(data=data)
-        return AppUserKycOutSchema.model_validate(obj)
+        return self._serialize(obj, await self._user_for(obj))
 
     async def update(self, id: int, data: AppUserKycUpdateSchema) -> AppUserKycOutSchema:
         obj = await AppUserKycCRUD(self.auth, self.db).get(id=id)
@@ -69,7 +202,7 @@ class AppUserKycService:
 
 
         obj = await AppUserKycCRUD(self.auth, self.db).update(id=id, data=data)
-        return AppUserKycOutSchema.model_validate(obj)
+        return self._serialize(obj, await self._user_for(obj))
 
     async def review(self, id: int, data: AppUserKycReviewSchema) -> AppUserKycOutSchema:
         obj = await AppUserKycCRUD(self.auth, self.db).get(id=id)
@@ -86,7 +219,7 @@ class AppUserKycService:
         obj.reviewed_at = datetime.now(UTC)
         await self.db.flush()
         await self.db.refresh(obj)
-        return AppUserKycOutSchema.model_validate(obj)
+        return self._serialize(obj, await self._user_for(obj))
 
     async def delete(self, ids: list[int]) -> None:
         if not ids:

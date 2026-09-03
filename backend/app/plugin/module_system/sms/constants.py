@@ -9,6 +9,8 @@ from app.config.setting import settings
 from app.core.exceptions import CustomException
 
 SMS_PROVIDER_ALIYUN = "aliyun"
+SMS_PROVIDER_TENCENT = "tencent"
+SMS_PROVIDERS = frozenset({SMS_PROVIDER_ALIYUN, SMS_PROVIDER_TENCENT})
 SMS_SCENES = frozenset({"register_code", "login_code", "reset_password_code"})
 SMS_CODE_TTL = 300
 SMS_RESEND_INTERVAL = 60

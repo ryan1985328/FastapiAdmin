@@ -1,10 +1,10 @@
-<!-- Admin 登录页顶栏：左上 Logo / 标题与右上外观操作保持 upstream shell。 -->
+<!-- Admin 登录页顶栏：左上品牌，右上保留轻量主题与语言工具。 -->
 <template>
   <header
     class="auth-top-bar pointer-events-none fixed left-0 right-0 top-0 z-100 flex items-center justify-between gap-3 bg-transparent px-5 py-4.5 md:gap-4 md:px-10"
   >
     <div class="pointer-events-auto flex min-w-0 flex-1 items-center gap-3">
-      <FaLogo class="icon shrink-0" size="46" :src="webLogoSrc" />
+      <FaLogo class="icon shrink-0" size="42" :src="resolvedAdminLogo" :fallback-src="systemLogo" />
       <div class="min-w-0 flex-1">
         <h1 class="auth-top-bar__site-title">{{ siteTitle }}</h1>
       </div>
@@ -17,65 +17,42 @@
         <div
           class="color-dots absolute right-0 rounded-full flex items-center gap-2 rounded-5 px-2.5 py-2 pr-9 pl-2.5 opacity-0"
         >
-          <div
+          <button
+            type="button"
             v-for="(_color, index) in mainColors"
             :key="_color"
             class="color-dot relative size-5 cursor-pointer flex items-center justify-center rounded-full opacity-0"
             :class="{ active: _color === systemThemeColor }"
             :style="{ background: _color, '--index': index }"
+            :aria-label="`${$t('login.themeToggle')}: ${_color}`"
             @click="changeThemeColor(_color)"
           >
             <FaSvgIcon v-if="_color === systemThemeColor" icon="ri:check-fill" class="text-white" />
-          </div>
+          </button>
         </div>
-        <div
+        <button
+          type="button"
           class="btn palette-btn auth-top-bar__action relative z-2 h-8 w-8 cursor-pointer flex items-center justify-center transition duration-300"
+          :aria-label="$t('login.themeToggle')"
         >
           <FaSvgIcon icon="ri:palette-line" class="text-xl transition-colors duration-300" />
-        </div>
+        </button>
       </div>
-      <ElDropdown
-        v-if="panelAlign != null"
-        @command="onPanelAlign"
-        popper-class="langDropDownStyle"
-      >
-        <div
-          class="btn layout-align-btn auth-top-bar__action h-8 w-8 cursor-pointer flex items-center justify-center transition duration-300"
-          :title="$t('login.panelAlign.label')"
-        >
-          <FaSvgIcon
-            :icon="panelAlignTriggerIcon"
-            class="text-xl text-g-800 transition-colors duration-300"
-          />
-        </div>
-        <template #dropdown>
-          <ElDropdownMenu>
-            <div v-for="opt in layoutAlignOptions" :key="opt.value" class="lang-btn-item">
-              <ElDropdownItem
-                :command="opt.value"
-                :class="{ 'is-selected': panelAlign === opt.value }"
-              >
-                <FaSvgIcon :icon="opt.icon" class="mr-2 text-base" />
-                <span class="menu-txt">{{ $t(opt.labelKey) }}</span>
-                <FaSvgIcon icon="ri:check-fill" class="text-base" v-if="panelAlign === opt.value" />
-              </ElDropdownItem>
-            </div>
-          </ElDropdownMenu>
-        </template>
-      </ElDropdown>
       <ElDropdown
         v-if="shouldShowLanguage"
         @command="changeLanguage"
         popper-class="langDropDownStyle"
       >
-        <div
+        <button
+          type="button"
           class="btn language-btn auth-top-bar__action h-8 w-8 cursor-pointer flex items-center justify-center transition duration-300"
+          :aria-label="$t('login.languageToggle')"
         >
           <FaSvgIcon
             icon="ri:translate-2"
             class="text-[19px] text-g-800 transition-colors duration-300"
           />
-        </div>
+        </button>
         <template #dropdown>
           <ElDropdownMenu>
             <div v-for="lang in languageOptions" :key="lang.value" class="lang-btn-item">
@@ -90,71 +67,36 @@
           </ElDropdownMenu>
         </template>
       </ElDropdown>
-      <div
+      <button
+        type="button"
         v-if="shouldShowThemeToggle"
         class="btn theme-btn auth-top-bar__action h-8 w-8 cursor-pointer flex items-center justify-center transition duration-300"
+        :aria-label="$t('login.themeToggle')"
         @click="themeAnimation"
       >
         <FaSvgIcon
           :icon="isDark ? 'ri:sun-fill' : 'ri:moon-line'"
           class="text-xl text-g-800 transition-colors duration-300"
         />
-      </div>
+      </button>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
 import { LanguageEnum } from "@/enums/appEnum";
+import AppConfig from "@/config";
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
-import { useSettingsStore, useUserStore, useConfigStore } from "@stores";
+import { useSettingsStore, useUserStore } from "@stores";
 import { useHeaderBar } from "@/hooks/core/useHeaderBar";
+import { useAdminBranding } from "@/hooks/core/useAdminBranding";
 import { themeAnimation } from "@utils";
 import { languageOptions } from "@/locales";
 
-import AppConfig from "@/config";
-import { LoginPanelAlign } from "../composables/useLoginPanelAlign";
-
 defineOptions({ name: "AuthTopBar" });
 
-interface Props {
-  /** 登录区表单水平对齐；未传入时不展示布局切换 */
-  panelAlign?: LoginPanelAlign | null;
-}
-
-const props = withDefaults(defineProps<Props>(), {});
-
-interface Emits {
-  "update:panelAlign": [value: LoginPanelAlign];
-}
-
-const emit = defineEmits<Emits>();
-
-const layoutAlignOptions: {
-  value: LoginPanelAlign;
-  icon: string;
-  labelKey: string;
-}[] = [
-  { value: "left", icon: "ri:layout-left-2-line", labelKey: "login.panelAlign.left" },
-  { value: "center", icon: "ri:layout-column-line", labelKey: "login.panelAlign.center" },
-  { value: "right", icon: "ri:layout-right-2-line", labelKey: "login.panelAlign.right" },
-];
-
-/** 与当前选中项同一套 icon，避免触发器与菜单不一致 */
-const panelAlignTriggerIcon = computed(() => {
-  const opt = layoutAlignOptions.find((o) => o.value === props.panelAlign);
-  return opt?.icon ?? "ri:layout-column-line";
-});
-
-function onPanelAlign(cmd: string) {
-  if (cmd === "left" || cmd === "center" || cmd === "right") {
-    emit("update:panelAlign", cmd);
-  }
-}
-
-const configStore = useConfigStore();
 const settingStore = useSettingsStore();
 const userStore = useUserStore();
 const { isDark, systemThemeColor } = storeToRefs(settingStore);
@@ -165,11 +107,7 @@ const mainColors = AppConfig.systemMainColor;
 /** 与 Element 主题主色同步，供调色盘图标与展开态使用 */
 const themeColorForCss = computed(() => systemThemeColor.value);
 
-const webLogoSrc = computed(
-  () => configStore.configData.logo_url?.config_value?.trim() || undefined
-);
-
-const siteTitle = computed(() => AppConfig.systemInfo.name);
+const { resolvedAdminName: siteTitle, resolvedAdminLogo, systemLogo } = useAdminBranding();
 
 const changeLanguage = (lang: LanguageEnum) => {
   if (locale.value === lang) return;
@@ -185,6 +123,10 @@ const changeThemeColor = (color: string) => {
 </script>
 
 <style scoped>
+.auth-top-bar {
+  box-sizing: border-box;
+}
+
 .auth-top-bar__site-title {
   max-width: min(52vw, 28rem);
   margin: 0;
@@ -193,31 +135,32 @@ const changeThemeColor = (color: string) => {
   font-size: clamp(1rem, 2.2vw, 1.25rem);
   font-weight: 600;
   line-height: 1.35;
-  color: var(--el-text-color-primary);
+  color: #f2f6ff;
   letter-spacing: -0.02em;
   white-space: nowrap;
+  text-shadow: 0 2px 12px rgb(2 8 28 / 45%);
 }
 
-/* 右上角操作的整体衬底 */
 .auth-top-bar-actions-panel {
-  background-color: var(--el-fill-color-blank);
-  border: 1px solid var(--el-border-color-lighter);
-
-  /* 胶囊形：左右两端为半圆弧 */
-  border-radius: 9999px;
-  box-shadow: 0 2px 12px rgb(0 0 0 / 6%);
-  backdrop-filter: blur(10px);
+  background-color: color-mix(in srgb, var(--el-bg-color) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 42%, transparent);
+  border-radius: 0.95rem;
+  box-shadow: 0 8px 24px rgb(20 43 88 / 7%);
+  backdrop-filter: blur(16px);
 }
 
 .dark .auth-top-bar-actions-panel {
-  background-color: rgb(255 255 255 / 8%);
-  border-color: rgb(255 255 255 / 12%);
-  box-shadow: 0 4px 20px rgb(0 0 0 / 35%);
+  background-color: rgb(12 21 49 / 68%);
+  border-color: rgb(206 222 255 / 13%);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 24%);
 }
 
-/* 右上角三个操作按钮：悬浮抬升 + 浅底 + 图标随主色 */
 .auth-top-bar__action {
-  border-radius: 10px;
+  color: var(--el-text-color-secondary);
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0.65rem;
   transition:
     background-color 0.22s ease,
     transform 0.22s ease,
@@ -226,8 +169,7 @@ const changeThemeColor = (color: string) => {
 
 .auth-top-bar__action:hover {
   background-color: var(--el-fill-color-light);
-  box-shadow: 0 4px 14px rgb(0 0 0 / 8%);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 6%);
 }
 
 .auth-top-bar__action:hover :deep(.fa-svg-icon) {
@@ -235,34 +177,46 @@ const changeThemeColor = (color: string) => {
 }
 
 .auth-top-bar__action:active {
-  box-shadow: 0 2px 6px rgb(0 0 0 / 6%);
+  box-shadow: none;
   transform: translateY(0);
   transition-duration: 0.12s;
 }
 
+.auth-top-bar__action:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
 .dark .auth-top-bar__action:hover {
   background-color: rgb(255 255 255 / 10%);
-  box-shadow: 0 4px 18px rgb(0 0 0 / 45%);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 22%);
 }
 
 .color-dots {
+  top: 50%;
+  padding: 0.4rem 2.45rem 0.4rem 0.45rem;
   pointer-events: none;
-  box-shadow: 0 2px 12px var(--fa-gray-300);
-  backdrop-filter: blur(10px);
-  transform: translateX(10px);
+  background-color: color-mix(in srgb, var(--el-bg-color) 88%, transparent);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 24px rgb(24 47 94 / 13%);
+  backdrop-filter: blur(14px);
+  transform: translate(0.5rem, -50%);
   transition:
     opacity 0.3s ease,
     transform 0.3s ease;
 }
 
 .color-dot {
+  padding: 0;
+  appearance: none;
+  border: 0;
   box-shadow: 0 2px 4px rgb(0 0 0 / 15%);
   transform: translateX(20px) scale(0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transition-delay: calc(var(--index) * 0.05s);
 }
 
-/* 仅展开调色条后，单颗色块悬浮：描边 + 略放大 */
 .color-picker-expandable:hover .color-dot:hover {
   z-index: 1;
   box-shadow:
@@ -283,11 +237,11 @@ const changeThemeColor = (color: string) => {
 }
 
 .dark .color-dots {
-  background-color: var(--fa-gray-200);
-  box-shadow: none;
+  background-color: rgb(14 25 57 / 94%);
+  border-color: rgb(205 222 255 / 16%);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 28%);
 }
 
-/* 调色盘：图标颜色与当前主题主色一致（含单独悬浮、整块调色区悬浮） */
 .palette-btn :deep(.fa-svg-icon) {
   color: v-bind("themeColorForCss");
 }
@@ -298,5 +252,28 @@ const changeThemeColor = (color: string) => {
 
 .color-picker-expandable:hover .palette-btn :deep(.fa-svg-icon) {
   color: v-bind("themeColorForCss");
+}
+
+@media only screen and (width <= 767px) {
+  .auth-top-bar {
+    padding: 1.15rem 1rem;
+  }
+
+  .auth-top-bar__site-title {
+    max-width: 58vw;
+    font-size: 1rem;
+    color: var(--el-text-color-primary);
+    text-shadow: none;
+  }
+
+  .auth-top-bar-actions-panel {
+    gap: 0.15rem;
+    padding: 0.3rem;
+  }
+
+  .auth-top-bar__action {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
 }
 </style>

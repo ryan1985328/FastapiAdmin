@@ -33,6 +33,18 @@ import type { ColumnOption, StatusColumnConfig } from "@/types/component";
 /** ElTag 支持的 type */
 export type StatusType = "primary" | "success" | "warning" | "danger" | "info";
 
+/** 通用启用 / 停用状态（0 = 启用，1 = 停用）。 */
+export const ENABLED_STATUS_MAP = {
+  0: { type: "success", text: "启用" },
+  1: { type: "danger", text: "停用" },
+} satisfies StatusMap;
+
+/** 通用成功 / 失败状态（1 = 成功，0 = 失败）。 */
+export const LOGIN_RESULT_STATUS_MAP = {
+  1: { type: "success", text: "成功" },
+  0: { type: "danger", text: "失败" },
+} satisfies StatusMap;
+
 /** 单个状态配置 */
 export interface StatusItem {
   /** ElTag 类型 */

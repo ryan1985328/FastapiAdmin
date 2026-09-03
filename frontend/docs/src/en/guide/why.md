@@ -15,7 +15,7 @@ If you're evaluating a foundation for admin/dashboard systems, this page explain
 | **Frontend** | Vue3 + TypeScript + Element Plus, ready-to-use | Jinja templates | Vue3 + Element Plus |
 | **Mobile** | UniApp multi-platform (H5/Mini Program/App) | None | None |
 | **Code Generator** | Built-in, DB table → full CRUD | Extra plugins needed | None |
-| **Deployment** | Docker Compose one-click, Nginx + SSL included | Manual setup | Manual setup |
+| **Deployment** | Docker Compose + Nginx/SSL scaffolding; explicit production configuration and review required | Manual setup | Manual setup |
 | **Architecture** | Vertical slice by domain, auto plugin registration | Layer-first | Layer-first |
 | **Database** | MySQL (Alembic migrations) | Django ORM migrations | None |
 

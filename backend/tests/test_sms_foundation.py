@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from app.api.v1.module_storage.core.encrypt import decrypt_password
+from app.api.v1.module_system.params.model import ParamsModel
 from app.api.v1.module_system.user.model import UserModel
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
@@ -77,12 +78,19 @@ class ScriptedFakeRedis(aioredis.FakeRedis):
 async def sms_context():
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", poolclass=StaticPool)
     async with engine.begin() as connection:
-        for table in (UserModel.__table__, SmsChannelModel.__table__, SmsTemplateModel.__table__, SmsLogModel.__table__):
+        for table in (UserModel.__table__, ParamsModel.__table__, SmsChannelModel.__table__, SmsTemplateModel.__table__, SmsLogModel.__table__):
             await connection.run_sync(table.create)
 
     session_factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     redis = ScriptedFakeRedis(decode_responses=True)
     async with session_factory() as db:
+        db.add_all(
+            [
+                ParamsModel(config_name="短信服务启用", config_key="sms_enabled", config_value="on", config_type=True, status=0),
+                ParamsModel(config_name="短信当前供应商", config_key="sms_active_provider", config_value="aliyun", config_type=True, status=0),
+            ],
+        )
+        await db.flush()
         yield db, redis
     await redis.aclose()
     await engine.dispose()
@@ -281,12 +289,13 @@ async def test_admin_services_encrypt_secret_enforce_default_and_mask_logs(sms_c
         SmsChannelModel.__table__.update().values(status=0, is_default=True).where(SmsChannelModel.id == second.id),
     )
     await db.flush()
+    await db.refresh(second_row)
     service = SmsService(db, redis, admin, provider_factory=lambda _channel: provider)
-    await service.test_send(mobile="13800138003", scene="register_code", params={"code": "123456"})
+    await service.test_send(mobile="13800138003", scene="register_code", params={"code": "123456"}, channel_id=second.id)
     log_page = await SmsLogService(admin, db).page(1, 10)
     assert log_page.items[0].mobile == "138****8003"
     log_detail = await SmsLogService(admin, db).detail(log_page.items[0].id)
-    assert log_detail.mobile == "13800138003"
+    assert log_detail.mobile == "138****8003"
 
 
 def test_sms_admin_route_surface_is_read_only_for_logs(test_client, auth_headers):

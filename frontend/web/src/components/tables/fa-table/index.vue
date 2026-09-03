@@ -30,6 +30,15 @@
         </ElSkeleton>
       </div>
       <!-- 数据表格 -->
+      <div
+        v-else-if="error"
+        class="fa-table-state fa-table-error"
+        role="alert"
+        aria-live="assertive"
+      >
+        <span class="fa-table-state__message">{{ errorText }}</span>
+        <ElButton type="primary" link @click="emit('retry')">{{ retryText }}</ElButton>
+      </div>
       <template v-else>
         <VueDraggable
           class="fa-table__drag-wrap"
@@ -213,6 +222,12 @@ interface Props extends TableProps<Record<string, any>> {
   emptyHeight?: string;
   /** 空数据时显示的文本 */
   emptyText?: string;
+  /** 列表请求错误；错误态优先于空态显示 */
+  error?: unknown | null;
+  /** 请求失败时的提示文本 */
+  errorText?: string;
+  /** 请求失败时的重试文本 */
+  retryText?: string;
   /** 是否开启 FaTableHeader，解决表格高度自适应问题 */
   showTableHeader?: boolean;
   /** 为 true 时关闭行拖拽（忽略工具栏「行拖拽」开关） */
@@ -228,6 +243,8 @@ const props = withDefaults(defineProps<Props>(), {
   size: undefined,
   emptyHeight: "100%",
   emptyText: "暂无数据",
+  errorText: "加载失败，请重试",
+  retryText: "重试",
   showTableHeader: true,
   disableRowDrag: false,
 });
@@ -400,8 +417,17 @@ const headerCellStyle = computed(() => ({
 }));
 
 const mergedTableProps = computed(() => {
-  const { expandRowKeys: _ignored, ...restProps } = props;
+  const {
+    expandRowKeys: _ignored,
+    error: _error,
+    errorText: _errorText,
+    retryText: _retryText,
+    ...restProps
+  } = props;
   void _ignored;
+  void _error;
+  void _errorText;
+  void _retryText;
   return {
     ...attrs,
     ...restProps,
@@ -422,6 +448,7 @@ interface Emits {
   (e: "selection-change", val: any[]): void;
   (e: "pagination:size-change", val: number): void;
   (e: "pagination:current-change", val: number): void;
+  (e: "retry"): void;
   (e: "update:data", val: Record<string, unknown>[]): void;
   (e: "row-order-change", val: Record<string, unknown>[]): void;
 }
@@ -610,8 +637,9 @@ const cleanBodyColumnProps = (col: ColumnOption) => {
   if (isPersonFilterColumn(col)) {
     columnProps.filters = getColumnFilterOptions(col);
     columnProps.filterMethod = (value: any, row: any) =>
-      toFilterText(getPathValue(row as Record<string, any>, getPersonNamePath(col.prop as string))) ===
-      String(value);
+      toFilterText(
+        getPathValue(row as Record<string, any>, getPersonNamePath(col.prop as string))
+      ) === String(value);
   }
   return columnProps;
 };
@@ -751,6 +779,23 @@ defineExpose({
     .sk-c-6 {
       grid-column: 6;
     }
+  }
+
+  /* ── 列表请求错误态：保持紧凑，不把表格错误升级为整页错误 ── */
+  .fa-table-state {
+    display: flex;
+    flex: 1;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    padding: 24px;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .fa-table-state__message {
+    color: var(--el-text-color-secondary);
   }
 
   .el-table {

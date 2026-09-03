@@ -168,7 +168,6 @@
             "navigationBarTitleText": "我的银行卡"
           }
         },
-        // #ifdef H5
         {
           "path": "module_system/kyc/index",
           "type": "page",
@@ -186,7 +185,6 @@
             "enablePullDownRefresh": true
           }
         }
-        // #endif
       ]
     }
   ],

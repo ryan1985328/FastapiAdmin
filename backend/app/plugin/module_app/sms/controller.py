@@ -35,7 +35,10 @@ async def send_code(
         if exc.status_code != 502:
             raise
         return ErrorResponse(msg=exc.msg, code=exc.code, status_code=exc.status_code, data=exc.data)
-    return SuccessResponse(data=SmsSendCodeOutSchema(**result), msg="验证码发送成功")
+    message = "验证码发送成功"
+    if result.get("debug_code"):
+        message = "开发环境固定验证码已生成（未调用短信供应商）"
+    return SuccessResponse(data=SmsSendCodeOutSchema(**result), msg=message)
 
 
 __all__ = ["AppSmsRouter"]

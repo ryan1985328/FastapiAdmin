@@ -46,6 +46,8 @@
             :data="opData"
             :columns="opColumns"
             :pagination="opPagination"
+            :error="opError"
+            @retry="opGetData"
             @selection-change="onOpTableSelectionChange"
             @pagination:size-change="opHandleSizeChange"
             @pagination:current-change="opHandleCurrentChange"
@@ -69,14 +71,16 @@
             max-height="70vh"
           >
             <template #request_method="{ row }">
-              <ElTag :type="getMethodType(row?.request_method as string)">{{
-                row?.request_method
-              }}</ElTag>
+              <FaStatusTag
+                :type="getMethodType(row?.request_method as string)"
+                :label="String(row?.request_method ?? '')"
+              />
             </template>
             <template #response_code="{ row }">
-              <ElTag :type="getStatusCodeType(row?.response_code as number)">{{
-                row?.response_code
-              }}</ElTag>
+              <FaStatusTag
+                :type="getStatusCodeType(row?.response_code as number)"
+                :label="String(row?.response_code ?? '')"
+              />
             </template>
             <template #request_payload="{ row }">
               <FaJsonPretty
@@ -144,6 +148,8 @@
             :data="loginData"
             :columns="loginColumns"
             :pagination="loginPagination"
+            :error="loginError"
+            @retry="loginGetData"
             @selection-change="onLoginTableSelectionChange"
             @pagination:size-change="loginHandleSizeChange"
             @pagination:current-change="loginHandleCurrentChange"
@@ -166,11 +172,6 @@
             label-width="120px"
             max-height="70vh"
           >
-            <template #status="{ row }">
-              <ElTag :type="row?.status === 1 ? 'success' : 'danger'">{{
-                row?.status === 1 ? "成功" : "失败"
-              }}</ElTag>
-            </template>
           </FaDescriptions>
         </FaDialog>
       </ElTabPane>
@@ -193,6 +194,7 @@ import {
   stripPaginationParams,
   cleanEmptyArrayParams,
   toCrudCols,
+  LOGIN_RESULT_STATUS_MAP,
   type TableOperationAction,
   type StatusType,
 } from "@utils";
@@ -281,6 +283,7 @@ const {
   columnChecks: opColumnChecks,
   data: opData,
   loading: opLoading,
+  error: opError,
   pagination: opPagination,
   searchParams: opSearchParams,
   getData: opGetData,
@@ -556,6 +559,7 @@ const {
   columnChecks: loginColumnChecks,
   data: loginData,
   loading: loginLoading,
+  error: loginError,
   pagination: loginPagination,
   getData: loginGetData,
   replaceSearchParams: loginReplaceSearchParams,
@@ -575,10 +579,7 @@ const {
         prop: "status",
         label: "登录状态",
         width: 88,
-        status: {
-          1: { type: "success", text: "成功" },
-          0: { type: "danger", text: "失败" },
-        },
+        status: LOGIN_RESULT_STATUS_MAP,
       },
       { prop: "username", label: "用户名", minWidth: 120, showOverflowTooltip: true },
       {
@@ -627,7 +628,7 @@ const {
 const loginFormData = ref<LoginLogTable>({} as LoginLogTable);
 
 const loginDetailItems = [
-  { label: "登录状态", prop: "status", slot: "status" },
+  { label: "登录状态", prop: "status", tag: { map: LOGIN_RESULT_STATUS_MAP } },
   { label: "用户名", prop: "username" },
   { label: "登录IP", prop: "login_ip" },
   { label: "登录地点", prop: "login_location" },

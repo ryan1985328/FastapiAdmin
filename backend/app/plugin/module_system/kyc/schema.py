@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.base_schema import BaseQueryParam, BaseSchema, UserByQueryParam, UserBySchema
 from app.core.validator import DateTimeStr
+from app.plugin.module_app.user.constants import AppUserKycStatus
 
 
 class AppUserKycCreateSchema(BaseModel):
@@ -37,22 +38,40 @@ class AppUserKycUpdateSchema(BaseModel):
     reviewed_at: DateTimeStr | None = Field(default=None, description='审核时间')
 
 
+class AppUserKycUserSummarySchema(BaseModel):
+    """The small user projection needed by the KYC review workspace."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(description='用户ID')
+    username: str = Field(description='用户名')
+    nickname: str = Field(description='昵称')
+    mobile: str | None = Field(default=None, description='手机号')
+
+
 class AppUserKycOutSchema(AppUserKycCreateSchema, BaseSchema, UserBySchema):
     """
     用户实名认证响应模型
     """
+    app_user: AppUserKycUserSummarySchema | None = Field(default=None, description='用户摘要')
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class AppUserKycQueryParam(BaseQueryParam, UserByQueryParam):
     """用户实名认证查询参数"""
 
+    keyword: str | None = Field(
+        None,
+        description='审核关键词（用户ID、用户名、昵称、手机号、真实姓名或证件号码）',
+        json_schema_extra={'q': 'like'},
+    )
+    kyc_status: AppUserKycStatus | None = Field(None, description='实名状态字典值', json_schema_extra={'q': 'eq'})
     app_user_id: int | None = Field(None, description="用户端用户ID", json_schema_extra={"q": "eq"})
     real_name: str | None = Field(None, description="真实姓名", json_schema_extra={"q": "like"})
     id_card_no: str | None = Field(None, description="证件号码", json_schema_extra={"q": "like"})
     id_card_front: str | None = Field(None, description="证件正面地址", json_schema_extra={"q": "like"})
     id_card_back: str | None = Field(None, description="证件反面地址", json_schema_extra={"q": "like"})
-    status: int | None = Field(None, description="状态(0待审核 1通过 2拒绝)", json_schema_extra={"q": "eq"})
     review_remark: str | None = Field(None, description="审核备注", json_schema_extra={"q": "like"})
     reviewed_at: datetime | None = Field(None, description="审核时间", json_schema_extra={"q": "eq"})
 

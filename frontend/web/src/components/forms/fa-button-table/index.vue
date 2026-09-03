@@ -1,18 +1,24 @@
 <!-- 表格按钮 -->
 <template>
-  <div
+  <button
+    type="button"
     :class="[
-      'inline-flex items-center justify-center min-w-8 h-8 px-2.5 mr-2.5 text-sm cursor-pointer rounded-md align-middle transition-all duration-200 hover-btn',
+      'inline-flex items-center justify-center min-w-8 h-8 px-2.5 mr-2.5 text-sm cursor-pointer rounded-md align-middle transition-all duration-200 hover-btn border-0 appearance-none',
+      { 'opacity-40 cursor-not-allowed pointer-events-none': disabled },
       buttonClass,
     ]"
-    :style="{ backgroundColor: buttonBgColor, color: iconColor }"
+    :style="{ backgroundColor: buttonBgColor, color: iconColor, border: '0', font: 'inherit' }"
+    :aria-label="label || '表格操作'"
+    :disabled="disabled"
     @click="handleClick"
   >
     <FaSvgIcon :icon="iconContent" />
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 defineOptions({ name: "FaButtonTable" });
 
 interface Props {
@@ -26,6 +32,10 @@ interface Props {
   iconColor?: string;
   /** 按钮背景色 */
   buttonBgColor?: string;
+  /** 无障碍名称 */
+  label?: string;
+  /** 是否禁用 */
+  disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {});

@@ -116,6 +116,56 @@
     "copySuccess": "Copy successfully",
     "copyFailed": "Copy failed"
   },
+  "dashboardOverview": {
+    "operatorFallback": "Administrator",
+    "welcome": "Welcome back, {name}",
+    "description": "A concise view of the Starter's real runtime status and usage.",
+    "lastLogin": "Last login: {time}",
+    "lastLoginNotAvailable": "Last login: Not recorded",
+    "refresh": "Refresh data",
+    "lastUpdated": "Updated {time}",
+    "loading": "Loading Dashboard data…",
+    "notAvailable": "Unavailable",
+    "metricUnavailable": "Data unavailable",
+    "permissionDenied": "Dashboard data permission is not available",
+    "statsRequestFailed": "Usage data is unavailable. Refresh to try again.",
+    "metrics": {
+      "onlineAdmins": "Online Admins",
+      "onlineAdminsHint": "Current active admin sessions",
+      "businessUsers": "Business Users",
+      "businessUsersHint": "{count} added in the last 7 days",
+      "todayLogins": "Today's Logins",
+      "todayLoginsHint": "Successful logins · unique users: {count}"
+    },
+    "activity": {
+      "title": "Usage activity",
+      "subtitle": "Successful logins over the last 7 days",
+      "total": "{count} total",
+      "noTrend": "No successful logins recorded in the last 7 days",
+      "recentTitle": "Recent logins",
+      "recentSubtitle": "From the login log",
+      "success": "Success",
+      "failed": "Failed",
+      "noRecent": "No login records",
+      "unknown": "Unknown user",
+      "locationUnknown": "Location unavailable"
+    },
+    "health": {
+      "title": "System health",
+      "subtitle": "From the readiness check",
+      "database": "Database",
+      "disk": "Disk",
+      "normal": "Healthy",
+      "abnormal": "Unavailable",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "attention": "Attention",
+      "latency": "{value} ms",
+      "diskUsage": "{value}% used",
+      "notAvailable": "Status unavailable",
+      "requestFailed": "Health check is temporarily unavailable"
+    }
+  },
   "search": {
     "placeholder": "Search page",
     "historyTitle": "Search history",
@@ -335,11 +385,11 @@
   },
   "login": {
     "leftView": {
-      "title": "A backend system of beauty and efficiency",
-      "subTitle": "Provide secure, efficient, and scalable management solutions to help enterprises digitalize and grow their businesses."
+      "title": "AI-first Business Application Foundation",
+      "subTitle": "A dependable core for data, APIs, and infrastructure."
     },
-    "title": "Welcome back 👋",
-    "subTitle": "Enter your account details to start managing your project",
+    "title": "Welcome back",
+    "subTitle": "Enter your account details to access the admin workspace.",
     "versionLabel": "Version",
     "quickSelectAccount": "Quick select account",
     "mobileLogin": "Mobile login",
@@ -369,6 +419,11 @@
       "password": "Please enter password",
       "email": "Please enter email",
       "slider": "Please slide to verify"
+    },
+    "fields": {
+      "username": "Username",
+      "password": "Password",
+      "captcha": "Security check"
     },
     "email": {
       "required": "Please enter email",
@@ -543,9 +598,6 @@
     "outside": {
       "title": "Outside"
     },
-    "home": {
-      "title": "Home"
-    },
     "workplace": {
       "title": "Workbench"
     },
@@ -553,10 +605,7 @@
       "title": "Release notes"
     },
     "dashboard": {
-      "title": "Dashboard",
-      "workplace": "Workplace",
-      "analysis": "Analysis",
-      "visualization": "3D Visualization"
+      "workplace": "Workplace"
     },
     "article": {
       "title": "Article",

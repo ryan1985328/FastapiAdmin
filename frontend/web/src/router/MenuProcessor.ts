@@ -6,8 +6,6 @@ import { useUserStore } from "@stores";
 import { useAppMode } from "@/hooks/core/useAppMode";
 
 import {
-  HOME_MENU_META,
-  DASHBOARD_PARENT_META,
   dashboardLayoutChildren,
   ROUTE_COMPONENT_LAYOUT,
   ROUTE_COMPONENT_NESTED_PARENT,
@@ -285,15 +283,6 @@ function stripRouteRecordForShell(route: AppRouteRecordRaw): AppRouteRecord {
   } as AppRouteRecord;
 }
 
-function getDashboardMenuTreeForMerge(): AppRouteRecord {
-  return {
-    name: "Dashboard",
-    path: "/dashboard",
-    meta: DASHBOARD_PARENT_META,
-    children: dashboardLayoutChildren.map(stripRouteRecordForShell),
-  };
-}
-
 function normalizeMenuPath(path?: string): string {
   if (!path || !path.trim()) return "";
   const p = path.trim();
@@ -322,7 +311,7 @@ function dashboardRoutesToShellMenu(route: AppRouteRecord, parentAbs = ""): AppR
   return { ...route, path: fullPath, meta, children, component: undefined, redirect: undefined };
 }
 
-/** 将壳层路由（/home、/dashboard）合并到菜单列表 */
+/** 将唯一的 Workplace 壳层路由合并为顶级菜单项 */
 export function mergeShellRoutesIntoMenu(menuList: AppRouteRecord[]): AppRouteRecord[] {
   const paths = new Set<string>();
   const names = new Set<string>();
@@ -341,15 +330,9 @@ export function mergeShellRoutesIntoMenu(menuList: AppRouteRecord[]): AppRouteRe
     }
   };
 
-  const mergeShellHomeMenu: AppRouteRecord = {
-    path: "/home",
-    name: "Home",
-    meta: { ...HOME_MENU_META, shellRoute: true },
-  };
-
-  tryPush(mergeShellHomeMenu);
-  if (!paths.has("/dashboard")) {
-    tryPush(dashboardRoutesToShellMenu(getDashboardMenuTreeForMerge()));
+  for (const route of dashboardLayoutChildren) {
+    const workplaceMenu = dashboardRoutesToShellMenu(stripRouteRecordForShell(route));
+    tryPush(workplaceMenu);
   }
 
   if (additions.length === 0) return menuList;

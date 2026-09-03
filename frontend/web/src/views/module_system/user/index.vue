@@ -73,6 +73,8 @@
               :data="data"
               :columns="columns"
               :pagination="pagination"
+              :error="error"
+              @retry="getData"
               @selection-change="onTableSelectionChange"
               @pagination:size-change="handleSizeChange"
               @pagination:current-change="handleCurrentChange"
@@ -217,6 +219,7 @@ import {
   stripPaginationParams,
   cleanEmptyArrayParams,
   toCrudCols,
+  ENABLED_STATUS_MAP,
   type TableOperationAction,
 } from "@utils";
 import PositionAPI from "@/api/module_system/position";
@@ -392,9 +395,7 @@ const userDetailItems: DescriptionsItem[] = [
   {
     label: "状态",
     prop: "status",
-    tag: {
-      map: { 0: { type: "success", text: "启用" }, 1: { type: "danger", text: "停用" } },
-    },
+    tag: { map: ENABLED_STATUS_MAP },
   },
   { label: "上次登录时间", prop: "last_login" },
   { label: "创建人", prop: "created_by.name" },
@@ -578,6 +579,7 @@ const {
   columnChecks,
   data,
   loading,
+  error,
   pagination,
   searchParams,
   getData,
@@ -620,10 +622,7 @@ const {
         prop: "status",
         label: "状态",
         width: 88,
-        status: {
-          0: { type: "success", text: "启用" },
-          1: { type: "danger", text: "停用" },
-        },
+        status: ENABLED_STATUS_MAP,
       },
       {
         prop: "dept",
