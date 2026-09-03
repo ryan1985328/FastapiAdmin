@@ -21,6 +21,7 @@ import {
   MapChart,
   CandlestickChart,
   GaugeChart,
+  TreeChart,
 } from "echarts/charts";
 
 // 导入组件（按需引入，仅导入项目中实际使用的）
@@ -47,6 +48,7 @@ echarts.use([
   MapChart,
   CandlestickChart,
   GaugeChart,
+  TreeChart,
 
   // 组件（仅保留实际使用的）
   TooltipComponent,

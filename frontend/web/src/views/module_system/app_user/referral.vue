@@ -133,64 +133,110 @@
       <div class="referral-card__heading">
         <div>
           <div class="referral-card__eyebrow">关系浏览</div>
-          <h2 class="referral-card__title">推荐树</h2>
+          <h2 class="referral-card__title">推荐关系</h2>
           <p class="referral-card__description">
-            按层加载直属下级，每次最多加载 {{ TREE_PAGE_SIZE }} 个节点；点击节点可切换中心用户。
+            保留层级树的逐层浏览，并增加关系画布用于理解推荐层级；所有视图均为只读。
           </p>
         </div>
       </div>
 
-      <ElEmpty
-        v-if="summary.direct_count === 0"
-        :image-size="96"
-        description="该用户暂无直属下级"
-        class="referral-tree-empty"
-      />
-      <ElTree
-        v-else
-        :key="treeRenderKey"
-        ref="treeRef"
-        node-key="user_id"
-        lazy
-        :data="treeData"
-        :props="treeProps"
-        :load="loadTreeNode"
-        :expand-on-click-node="false"
-        :default-expanded-keys="[summary.user_id]"
-        class="referral-tree"
+      <ElTabs
+        v-model="activeReferralView"
+        class="referral-view-tabs"
+        @tab-change="handleReferralViewChange"
       >
-        <template #default="{ data }">
-          <div class="referral-tree-node">
-            <div class="referral-tree-node__identity">
-              <strong>{{ formatUserIdentity(data) }}</strong>
-              <span class="referral-tree-node__meta">
-                ID {{ data.user_id }} · {{ data.mobile || "未填写手机号" }} · 推荐码
-                {{ data.referral_code }}
-              </span>
-            </div>
-            <div class="referral-tree-node__details">
-              <FaStatusTag v-bind="dictTagProps(USER_STATUS_DICT, data.status)" size="small" />
-              <FaStatusTag v-bind="dictTagProps(KYC_STATUS_DICT, data.kyc_status)" size="small" />
-              <span class="referral-tree-node__count">直属 {{ data.direct_count }}</span>
-              <span v-if="data.referrer_bound_at" class="referral-tree-node__bound-time">
-                绑定 {{ formatDateTime(data.referrer_bound_at) }}
-              </span>
-              <ElButton link type="primary" size="small" @click.stop="focusUser(data.user_id)">
-                以此为中心
-              </ElButton>
-              <ElButton
-                v-if="canViewUser"
-                link
-                type="primary"
-                size="small"
-                @click.stop="viewUser(data.user_id)"
-              >
-                查看用户
-              </ElButton>
-            </div>
+        <ElTabPane label="层级树" name="hierarchy">
+          <ElEmpty
+            v-if="summary.direct_count === 0"
+            :image-size="96"
+            description="该用户暂无直属下级"
+            class="referral-tree-empty"
+          />
+          <ElTree
+            v-else
+            :key="treeRenderKey"
+            ref="treeRef"
+            node-key="user_id"
+            lazy
+            :data="treeData"
+            :props="treeProps"
+            :load="loadTreeNode"
+            :expand-on-click-node="false"
+            :default-expanded-keys="[summary.user_id]"
+            class="referral-tree"
+          >
+            <template #default="{ data }">
+              <div class="referral-tree-node">
+                <div class="referral-tree-node__identity">
+                  <strong>{{ formatUserIdentity(data) }}</strong>
+                  <span class="referral-tree-node__meta">
+                    ID {{ data.user_id }} · {{ data.mobile || "未填写手机号" }} · 推荐码
+                    {{ data.referral_code }}
+                  </span>
+                </div>
+                <div class="referral-tree-node__details">
+                  <FaStatusTag v-bind="dictTagProps(USER_STATUS_DICT, data.status)" size="small" />
+                  <FaStatusTag
+                    v-bind="dictTagProps(KYC_STATUS_DICT, data.kyc_status)"
+                    size="small"
+                  />
+                  <span class="referral-tree-node__count">直属 {{ data.direct_count }}</span>
+                  <span v-if="data.referrer_bound_at" class="referral-tree-node__bound-time">
+                    绑定 {{ formatDateTime(data.referrer_bound_at) }}
+                  </span>
+                  <ElButton link type="primary" size="small" @click.stop="focusUser(data.user_id)">
+                    以此为中心
+                  </ElButton>
+                  <ElButton
+                    v-if="canViewUser"
+                    link
+                    type="primary"
+                    size="small"
+                    @click.stop="viewUser(data.user_id)"
+                  >
+                    查看用户
+                  </ElButton>
+                </div>
+              </div>
+            </template>
+          </ElTree>
+        </ElTabPane>
+
+        <ElTabPane label="关系画布" name="canvas" lazy>
+          <ElEmpty
+            v-if="summary.direct_count === 0"
+            :image-size="96"
+            description="该用户暂无直属下级"
+            class="referral-tree-empty"
+          />
+          <div v-else-if="canvasLoading" class="referral-canvas-state" role="status">
+            正在加载关系画布…
           </div>
-        </template>
-      </ElTree>
+          <div v-else-if="canvasError" class="referral-canvas-error" role="alert">
+            <span>{{ canvasError }}</span>
+            <ElButton type="primary" plain size="small" @click="loadCanvasTree">重试</ElButton>
+          </div>
+          <AppUserReferralCanvas
+            v-else-if="canvasTree"
+            :tree="canvasTree"
+            :loaded-count="canvasLoadedCount"
+            :max-depth="REFERRAL_CANVAS_MAX_DEPTH"
+            :node-budget="REFERRAL_CANVAS_NODE_BUDGET"
+            :truncated="canvasTruncated"
+            :skipped-count="canvasSkippedCount"
+            :can-view-user="canViewUser"
+            :maximized="canvasMaximized"
+            @node-detail="viewUser"
+            @toggle-maximize="toggleCanvasMaximize"
+          />
+          <ElEmpty
+            v-else
+            :image-size="96"
+            description="切换到关系画布后加载当前用户关系"
+            class="referral-tree-empty"
+          />
+        </ElTabPane>
+      </ElTabs>
     </ElCard>
 
     <ElEmpty
@@ -210,11 +256,19 @@ import FaDescriptions, {
   type DescriptionsItem,
 } from "@/components/display/fa-descriptions/index.vue";
 import FaStatusTag from "@/components/display/fa-status-tag/index.vue";
+import AppUserReferralCanvas from "@/components/charts/fa-referral-tree/index.vue";
 import AppUserAPI, {
   type AppUserKycStatus,
   type AppUserReferralNode,
   type AppUserReferralSummary,
 } from "@/api/module_system/app_user";
+import {
+  loadReferralCanvasTree,
+  REFERRAL_CANVAS_MAX_DEPTH,
+  REFERRAL_CANVAS_NODE_BUDGET,
+  REFERRAL_CANVAS_PAGE_SIZE,
+  type ReferralCanvasNode,
+} from "@/utils/app-user-referral-tree";
 import { checkPerm } from "@/utils/checkPerm";
 import { useDictStore } from "@stores";
 import { computed, nextTick, onMounted, ref } from "vue";
@@ -257,6 +311,15 @@ const summary = ref<AppUserReferralSummary | null>(null);
 const treeData = ref<ReferralTreeNode[]>([]);
 const treeRenderKey = ref(0);
 const treeRef = ref<TreeInstance>();
+const activeReferralView = ref<"hierarchy" | "canvas">("hierarchy");
+const canvasTree = ref<ReferralCanvasNode | null>(null);
+const canvasLoading = ref(false);
+const canvasError = ref("");
+const canvasLoadedCount = ref(0);
+const canvasTruncated = ref(false);
+const canvasSkippedCount = ref(0);
+const canvasMaximized = ref(false);
+let canvasRequestSequence = 0;
 
 const summaryItems: DescriptionsItem[] = [
   { label: "用户 ID", prop: "user_id" },
@@ -320,6 +383,75 @@ function toTreeNode(user: AppUserReferralNode, ancestorUserIds: number[] = []): 
   };
 }
 
+function clearCanvasState() {
+  canvasRequestSequence += 1;
+  canvasLoading.value = false;
+  canvasError.value = "";
+  canvasTree.value = null;
+  canvasLoadedCount.value = 0;
+  canvasTruncated.value = false;
+  canvasSkippedCount.value = 0;
+  canvasMaximized.value = false;
+}
+
+async function loadCanvasTree() {
+  const root = summary.value;
+  if (!root || root.direct_count === 0) {
+    clearCanvasState();
+    return;
+  }
+
+  const requestSequence = ++canvasRequestSequence;
+  canvasLoading.value = true;
+  canvasError.value = "";
+  canvasTree.value = null;
+  canvasLoadedCount.value = 0;
+  canvasTruncated.value = false;
+  canvasSkippedCount.value = 0;
+
+  try {
+    const result = await loadReferralCanvasTree(
+      root,
+      async (userId, pageNo, pageSize) => {
+        const response = await AppUserAPI.getReferralChildren(userId, {
+          page_no: pageNo,
+          page_size: pageSize,
+        });
+        return response.data.data;
+      },
+      {
+        maxDepth: REFERRAL_CANVAS_MAX_DEPTH,
+        nodeBudget: REFERRAL_CANVAS_NODE_BUDGET,
+        pageSize: REFERRAL_CANVAS_PAGE_SIZE,
+        shouldCancel: () => requestSequence !== canvasRequestSequence,
+      }
+    );
+
+    if (requestSequence !== canvasRequestSequence || result.cancelled) return;
+    canvasTree.value = result.tree;
+    canvasLoadedCount.value = result.loadedCount;
+    canvasTruncated.value = result.truncated;
+    canvasSkippedCount.value = result.skippedCount;
+  } catch {
+    if (requestSequence === canvasRequestSequence) {
+      canvasTree.value = null;
+      canvasError.value = "关系画布加载失败，请重试。";
+    }
+  } finally {
+    if (requestSequence === canvasRequestSequence) canvasLoading.value = false;
+  }
+}
+
+function handleReferralViewChange(view: string | number) {
+  if (String(view) !== "canvas" || !summary.value) return;
+  if (canvasTree.value?.user_id === summary.value.user_id && !canvasError.value) return;
+  void loadCanvasTree();
+}
+
+function toggleCanvasMaximize() {
+  canvasMaximized.value = !canvasMaximized.value;
+}
+
 async function searchUsers() {
   const value = keyword.value.trim();
   if (!value) {
@@ -345,16 +477,19 @@ async function searchUsers() {
     } else if (!page.total) {
       summary.value = null;
       treeData.value = [];
+      clearCanvasState();
     }
   } catch {
     summary.value = null;
     treeData.value = [];
+    clearCanvasState();
   } finally {
     searchLoading.value = false;
   }
 }
 
 async function selectUser(userId: number) {
+  clearCanvasState();
   summaryLoading.value = true;
   try {
     const response = await AppUserAPI.getReferralSummary(userId);
@@ -363,9 +498,11 @@ async function selectUser(userId: number) {
     treeRenderKey.value += 1;
     await nextTick();
     treeRef.value?.getNode(userId)?.expand();
+    if (activeReferralView.value === "canvas") void loadCanvasTree();
   } catch {
     summary.value = null;
     treeData.value = [];
+    clearCanvasState();
   } finally {
     summaryLoading.value = false;
   }
@@ -381,24 +518,37 @@ const loadTreeNode: LoadFunction = async (node, resolve) => {
   }
 
   const parent = node.data as ReferralTreeNode;
+  const ancestorUserIds = [...parent.ancestor_user_ids, parent.user_id];
+  const seenUserIds = new Set(ancestorUserIds);
+  const children: ReferralTreeNode[] = [];
+  let skippedCount = 0;
+  let pageNo = 1;
   try {
-    const response = await AppUserAPI.getReferralChildren(parent.user_id, {
-      page_no: 1,
-      page_size: TREE_PAGE_SIZE,
-    });
-    const page = response.data.data;
-    const ancestorUserIds = [...parent.ancestor_user_ids, parent.user_id];
-    const children = page.items
-      .filter((user) => !ancestorUserIds.includes(user.user_id))
-      .map((user) => toTreeNode(user, ancestorUserIds));
+    while (true) {
+      const response = await AppUserAPI.getReferralChildren(parent.user_id, {
+        page_no: pageNo,
+        page_size: TREE_PAGE_SIZE,
+      });
+      const page = response.data.data;
+      for (const user of page.items) {
+        if (seenUserIds.has(user.user_id)) {
+          skippedCount += 1;
+          continue;
+        }
+        seenUserIds.add(user.user_id);
+        children.push(toTreeNode(user, ancestorUserIds));
+      }
 
-    if (children.length !== page.items.length) {
-      ElMessage.warning("发现异常推荐关系，已停止循环节点展开");
+      if (!page.has_next || page.items.length === 0) break;
+      pageNo += 1;
     }
+
+    if (skippedCount > 0) ElMessage.warning("发现异常或重复推荐关系，已忽略异常节点");
     if (!children.length) parent.is_leaf = true;
     resolve(children);
   } catch {
-    resolve([]);
+    // Preserve any successfully loaded pages if a later page fails.
+    resolve(children);
   }
 };
 
@@ -407,6 +557,7 @@ function focusUser(userId: number) {
 }
 
 function viewUser(userId: number) {
+  if (!canViewUser.value) return;
   void router.push({
     name: "AppUserUsers",
     query: { user_id: String(userId) },
@@ -612,6 +763,23 @@ onMounted(() => {
 
   padding-top: 8px;
   border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.referral-canvas-state,
+.referral-canvas-error {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-height: 460px;
+  padding: 24px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+}
+
+.referral-canvas-error {
+  flex-direction: column;
+  color: var(--el-color-danger);
 }
 
 .referral-tree-node {
