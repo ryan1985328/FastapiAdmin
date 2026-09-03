@@ -9,7 +9,7 @@
         <span class="referral-canvas__direction"
           >上级推荐人 <span aria-hidden="true">↓</span> 被推荐会员</span
         >
-        <span>点击节点展开/收起并查看用户；拖动浏览，Ctrl/Cmd+滚轮缩放。</span>
+        <span>点击节点查看用户；Shift+点击展开/收起；拖动浏览，Ctrl/Cmd+滚轮缩放。</span>
         <span>已展示 {{ props.loadedCount }} 个节点</span>
       </div>
       <div class="referral-canvas__actions">
@@ -452,11 +452,17 @@ function handleNodeClick(params: ECElementEvent): void {
   const node = getChartNode(params.data);
   if (!node) return;
   selectedNode.value = node;
+  const nativeEvent = params.event as unknown as {
+    shiftKey?: boolean;
+    event?: { shiftKey?: boolean };
+  };
+  const expansionOnly = Boolean(nativeEvent?.shiftKey || nativeEvent?.event?.shiftKey);
   if (node.hasLoadedChildren) {
     if (expandedNodes.has(node.user_id)) expandedNodes.delete(node.user_id);
     else expandedNodes.add(node.user_id);
     renderOption(true);
   }
+  if (expansionOnly) return;
   emit("node-detail", node.user_id);
 }
 
