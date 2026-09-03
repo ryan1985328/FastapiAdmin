@@ -11,6 +11,7 @@ import {
   WATERMARK_KEY,
 } from '@/constants'
 import { useConfigStore } from '@/store/configStore'
+import { useUserStore } from '@/store/userStore'
 import { Storage } from '@/utils/storage'
 
 definePage({
@@ -26,6 +27,7 @@ const { t, locale } = useI18n()
 const router = useRouter()
 const globalDialog = useGlobalDialog()
 const configStore = useConfigStore()
+const userStore = useUserStore()
 // 拉取系统参数（品牌介绍/相关链接/版本/水印开关），幂等 + 本地持久化缓存
 configStore.getConfig()
 
@@ -54,6 +56,7 @@ const brandTitle = computed(() => configStore.configData?.sys_name?.config_value
 const brandDesc = computed(() => configStore.configData?.login_subtitle?.config_value?.trim() || t('setting.brandDesc'))
 const helpDoc = computed(() => configStore.configData?.help_doc?.config_value?.trim() || '')
 const gitCode = computed(() => configStore.configData?.git_code?.config_value?.trim() || '')
+const hasConfiguredLinks = computed(() => Boolean(helpDoc.value || gitCode.value))
 
 /** 当前系统版本（后端 version 参数） */
 const version = computed(() => configStore.configData?.version?.config_value?.trim() || '')
@@ -85,6 +88,7 @@ onShow(() => {
 function clearLocalCache() {
   ;[ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, REMEMBER_ME_KEY, DICT_CACHE_KEY, 'appUserInfo', 'appConfig']
     .forEach(key => Storage.remove(key))
+  userStore.clearAll()
   cacheSize.value = Storage.getSize()
   uni.reLaunch({ url: '/pages/login/index' })
 }
@@ -197,13 +201,13 @@ function handleNavigate(url: string) {
       </wd-cell-group>
     </view>
 
-    <view class="mx-3">
+    <view v-if="hasConfiguredLinks" class="mx-3">
       <view class="wot-text-text-main mb-2 px-1 text-3.5 font-bold">
         {{ t('setting.links') }}
       </view>
       <wd-cell-group border custom-class="rounded-2! overflow-hidden">
-        <wd-cell :title="t('common.docs')" is-link @click="handleNavigate(helpDoc)" />
-        <wd-cell :title="t('common.github')" is-link @click="handleNavigate(gitCode)" />
+        <wd-cell v-if="helpDoc" :title="t('common.docs')" is-link @click="handleNavigate(helpDoc)" />
+        <wd-cell v-if="gitCode" :title="t('common.github')" is-link @click="handleNavigate(gitCode)" />
       </wd-cell-group>
     </view>
 

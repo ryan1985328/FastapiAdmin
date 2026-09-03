@@ -121,7 +121,7 @@ onLoad((options) => {
 <template>
   <view class="page-wraper py-3">
     <wd-loading v-if="loading" class="mx-auto my-8 block" />
-    <view v-else class="bank-account-form-card mx-3 rounded-2 p-4">
+    <view v-else class="bank-account-form-card wot-bg-filled-oppo mx-3 rounded-2 p-4">
       <wd-form ref="formRef" :model="form" :schema="bankAccountSchema">
         <wd-form-item prop="account_name" :label="t('bankAccount.accountName')" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
           <wd-input v-model="form.account_name" :placeholder="t('bankAccount.accountNamePlaceholder')" clearable :compact="false" prefix-icon="user" />
@@ -148,7 +148,4 @@ onLoad((options) => {
 </template>
 
 <style lang="scss" scoped>
-.bank-account-form-card {
-  background: var(--wot-color-white, #fff);
-}
 </style>

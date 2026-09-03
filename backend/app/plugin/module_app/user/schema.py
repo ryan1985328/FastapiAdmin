@@ -26,6 +26,20 @@ class AppUserCreateSchema(BaseModel):
         return normalize_referral_code(value) if value is not None else None
 
 
+class AppUserProfileUpdateSchema(BaseModel):
+    """Fields an App user may edit for their own profile."""
+
+    nickname: str = Field(..., min_length=1, max_length=128, description="昵称")
+
+    @field_validator("nickname")
+    @classmethod
+    def validate_nickname(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("昵称不能为空")
+        return normalized
+
+
 class AppLoginSchema(BaseModel):
     """Legacy App username/password login payload."""
 
@@ -133,6 +147,7 @@ __all__ = [
     "AppUserBindReferrerSchema",
     "AppUserCreateSchema",
     "AppUserOutSchema",
+    "AppUserProfileUpdateSchema",
     "AppUserReferrerSummarySchema",
     "AppUserStatusActionSchema",
 ]

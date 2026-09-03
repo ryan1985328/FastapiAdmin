@@ -130,7 +130,7 @@ onLoad((options) => {
 <template>
   <view class="page-wraper py-3">
     <wd-loading v-if="loading" class="mx-auto my-8 block" />
-    <view v-else class="address-form-card mx-3 rounded-2 p-4">
+    <view v-else class="address-form-card wot-bg-filled-oppo mx-3 rounded-2 p-4">
       <wd-form ref="formRef" :model="form" :schema="addressSchema">
         <wd-form-item prop="receiver_name" :label="t('address.receiverName')" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
           <wd-input v-model="form.receiver_name" :placeholder="t('address.receiverNamePlaceholder')" clearable :compact="false" prefix-icon="user" />
@@ -165,7 +165,4 @@ onLoad((options) => {
 </template>
 
 <style lang="scss" scoped>
-.address-form-card {
-  background: var(--wot-color-white, #fff);
-}
 </style>

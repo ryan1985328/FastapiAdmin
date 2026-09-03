@@ -2,6 +2,7 @@
 import { createRouter } from '@wot-ui/router'
 import { pages, subPackages } from 'virtual:uni-pages'
 import { useUserStore } from '@/store/userStore'
+import { AUTH_ROUTE_NAMES, isAuthRoute, isProtectedRoute, normalizeInternalRedirect } from './access'
 
 function generateRoutes() {
   const routes = pages.map((page) => {
@@ -24,35 +25,86 @@ const router = createRouter({
   routes: generateRoutes(),
 })
 
-// App 采用公共访问优先：只有明确标记为用户私有的页面才要求登录。
-// 注意：wot-ui router 重定向会沿用原导航类型（如 pushTab），
-// 因此必须通过 navType 显式指定跳转方式，否则会对非 tabBar 页执行 switchTab 而报错。
-const protectedRouteNames = new Set(['profile', 'kyc', 'account', 'addresses', 'address-form', 'bank-accounts', 'bank-account-form'])
-
-router.beforeEach((to, from, next) => {
-  const userStore = useUserStore()
-  const isAuthPage = to.name === 'login' || to.name === 'register'
-  if (protectedRouteNames.has(String(to.name)) && !userStore.isLoggedIn()) {
-    next({
+function loginLocation(redirect?: string) {
+  const safeTarget = normalizeInternalRedirect(redirect)
+  if (safeTarget) {
+    return {
       path: '/pages/login/index',
-      navType: 'replace',
-      query: to.fullPath && to.fullPath !== '/' ? { redirect: to.fullPath } : {},
-    })
-    return
+      navType: 'replace' as const,
+      query: { redirect: safeTarget },
+    }
   }
+  return {
+    path: '/pages/login/index',
+    navType: 'replace' as const,
+  }
+}
+
+// App 采用公共访问优先：只有明确标记为用户私有的页面才要求登录。
+// 使用 promise guard 统一等待会话恢复，避免只在点击时保护页面。
+router.beforeEach(async (to) => {
+  const userStore = useUserStore()
+  const authenticated = await userStore.restoreSession()
+  if (isProtectedRoute(to) && !authenticated)
+    return loginLocation(to.fullPath)
   // 已登录访问登录/注册页 → 回到首页
-  if (isAuthPage && userStore.isLoggedIn()) {
-    next({ path: '/pages/index/index', navType: 'pushTab' })
-    return
-  }
-  next()
+  if (AUTH_ROUTE_NAMES.has(String(to.name)) && authenticated)
+    return { path: '/pages/index/index', navType: 'pushTab' as const }
+  return true
 })
 
-// 导航完成钩子：预留页面切换记录 / 埋点上报 / 动态标题等能力，按需启用
+let initialRouteChecking = false
+
+/**
+ * @wot-ui/router 的页面 onLoad 同步只更新 currentRoute，不执行 beforeEach。
+ * afterEach 作为初始直达/刷新页面的兜底，配合 App 根部的恢复遮罩防止私有页面先可用。
+ */
+async function enforceLoadedRoute(to: typeof router.currentRoute.value) {
+  if (initialRouteChecking)
+    return
+  if (to.name === 'not-found')
+    return
+
+  initialRouteChecking = true
+  try {
+    if (!to.name) {
+      await router.replace({ path: '/pages/error/index', navType: 'replace' })
+      return
+    }
+
+    const userStore = useUserStore()
+    const authenticated = await userStore.restoreSession()
+    if (isProtectedRoute(to) && !authenticated) {
+      if (router.currentRoute.value.name !== 'login')
+        await router.replace(loginLocation(to.fullPath))
+      return
+    }
+    if (isAuthRoute(to) && authenticated)
+      await router.replace({ path: '/pages/index/index', navType: 'pushTab' })
+  }
+  catch (error) {
+    // @wot-ui/router rejects a redirect that has already been superseded by
+    // the guard's replacement navigation. That is an expected deep-link
+    // outcome, not an application error worth surfacing in the console.
+    const message = typeof error === 'object' && error !== null && 'message' in error
+      ? String((error as { message?: unknown }).message)
+      : String(error)
+    if (!/Navigation (?:cancelled|aborted)|redirectTo:fail/.test(message))
+      console.error('App 路由访问校验失败', error)
+  }
+  finally {
+    initialRouteChecking = false
+  }
+}
+
+// 导航完成钩子：同步路由状态，并兜底检查初始直达页面。
 router.afterEach((to, from) => {
   if (to.path && from.path && to.path !== from.path) {
     console.log(`📍 页面切换: ${from.path} → ${to.path}`)
   }
+  if (!to.name || isProtectedRoute(to) || isAuthRoute(to))
+    void enforceLoadedRoute(to)
 })
 
+export { isAuthRoute, isProtectedRoute }
 export default router

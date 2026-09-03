@@ -8,9 +8,18 @@ const AppUserAPI = {
   getProfile(): Promise<AppUserInfo> {
     return http.Get(`${USER_BASE_URL}/profile`)
   },
+
+  /** Update the minimal App self-service profile field. */
+  updateProfile(body: AppUserProfileUpdateForm): Promise<AppUserInfo> {
+    return http.Put(`${USER_BASE_URL}/profile`, body)
+  },
 }
 
 export default AppUserAPI
+
+export interface AppUserProfileUpdateForm {
+  nickname: string
+}
 
 export interface AppUserInfo {
   id: number

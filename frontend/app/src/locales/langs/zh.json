@@ -53,7 +53,8 @@
     "subscribeTitle": "开启消息通知",
     "subscribeContent": "您已关闭消息通知，是否前往设置开启？",
     "subscribeGoSetting": "去设置",
-    "tab": { "home": "首页", "discover": "发现", "mine": "我的" },
+    "retry": "重试",
+    "tab": { "home": "首页", "mine": "我的" },
     "nav": {
       "notices": "通知公告"
     },
@@ -371,41 +372,20 @@
     "notice": "通知",
     "announce": "公告"
   },
+  "notFound": {
+    "navTitle": "页面不存在",
+    "title": "页面不存在",
+    "description": "你访问的页面不存在或已被移除",
+    "home": "返回首页"
+  },
   "index": {
     "navTitle": "首页",
-    "shareTitle": "{greeting}，欢迎使用 FastAPI Admin Starter",
-    "welcomeDefault": "欢迎来到你的应用",
-    "welcomeTag": "欢迎",
+    "shareTitle": "欢迎，{name}",
     "welcomeTitle": "你好，{name}",
-    "welcomeDescription": "从这里开始探索你的应用",
-    "explore": "去发现",
-    "extensionTag": "可扩展",
-    "extensionTitle": "为业务预留的空间",
-    "extensionSubtitle": "保持轻量，按需扩展",
-    "extensionDescription": "在这个 Starter 上添加你的内容和功能",
-    "discover": "查看发现",
     "guestName": "访客",
-    "contentTitle": "准备好开始了吗？",
-    "contentDescription": "这里保留了公告、快捷入口和可扩展内容区域，方便接入具体项目。",
-    "contentAction": "查看发现",
-    "night": "夜深了",
-    "morning": "早上好",
-    "forenoon": "上午好",
-    "noon": "中午好",
-    "afternoon": "下午好",
-    "evening": "晚上好",
+    "noticeEntryDescription": "查看最新通知和公告",
+    "aboutEntryDescription": "了解当前应用基础信息",
     "latestNotice": "最新公告"
-  },
-  "discover": {
-    "navTitle": "发现",
-    "shareTitle": "发现更多内容",
-    "heroTitle": "发现",
-    "heroDescription": "这里是预留的业务入口，按项目需要继续扩展。",
-    "publicSection": "公开内容",
-    "noticesDescription": "查看最新通知和公告",
-    "aboutDescription": "了解当前应用基础",
-    "placeholderTitle": "功能持续扩展",
-    "placeholderDescription": "未来项目可以在这里接入自己的页面、内容或业务入口。"
   },
   "theme": {
     "colors": {

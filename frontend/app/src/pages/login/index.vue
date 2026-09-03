@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 import AppAuthAPI from '@/api/module_app/auth'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { REMEMBER_ME_KEY } from '@/constants'
+import { normalizeInternalRedirect } from '@/router/access'
 import { useConfigStore } from '@/store/configStore'
 import { useUserStore } from '@/store/userStore'
 import { Storage } from '@/utils/storage'
@@ -110,8 +111,8 @@ async function sendLoginCode() {
 }
 
 onLoad((options) => {
-  const from = options?.redirect ? decodeURIComponent(options.redirect) : ''
-  if (from && from !== '/pages/login/index' && from.startsWith('/pages/'))
+  const from = normalizeInternalRedirect(options?.redirect)
+  if (from)
     redirect.value = from
   restoreRememberedUser()
   configStore.getConfig()

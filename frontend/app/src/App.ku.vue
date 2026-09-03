@@ -1,5 +1,20 @@
 <script setup lang="ts">
+import { isAuthRoute, isProtectedRoute } from '@/router/access'
+import { useUserStore } from '@/store/userStore'
+
 const { themeVars, theme, currentThemeColor } = useTheme()
+const route = useRoute()
+const userStore = useUserStore()
+
+// 每个页面壳都等待一次共享的启动恢复，避免私有页面在 /me 完成前短暂可操作。
+void userStore.restoreSession()
+const authGateVisible = computed(() => {
+  if (userStore.isSessionRestoring())
+    return true
+  if (isProtectedRoute(route) && !userStore.isLoggedIn())
+    return true
+  return isAuthRoute(route) && userStore.isLoggedIn()
+})
 
 /** 根节点类名：page-wraper + 主题模式 + 主题色（供全局水滴渐变按主题色换肤，如 theme-blue） */
 const rootClass = computed(() => `page-wraper ${theme.value} theme-${currentThemeColor.value.value}`)
@@ -32,6 +47,9 @@ watch(() => [theme.value, currentThemeColor.value.value], syncPageBackground, { 
 <template>
   <wd-config-provider :theme-vars="themeVars" :theme="theme" :custom-class="rootClass">
     <ku-root-view />
+    <view v-if="authGateVisible" class="app-auth-gate">
+      <wd-loading />
+    </view>
     <wd-notify />
     <wd-dialog />
     <wd-toast />
@@ -44,3 +62,15 @@ watch(() => [theme.value, currentThemeColor.value.value], syncPageBackground, { 
     <!-- #endif -->
   </wd-config-provider>
 </template>
+
+<style lang="scss">
+.app-auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--drop-bg, var(--wot-filled-bottom, #F8FAFC));
+}
+</style>

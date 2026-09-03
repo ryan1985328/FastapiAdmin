@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { FormSchema } from '@wot-ui/ui/components/wd-form/types'
+import type { AppKycInfo, AppKycSubmission } from '@/api/module_app/kyc'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import AppKycAPI, { type AppKycInfo, type AppKycSubmission } from '@/api/module_app/kyc'
+import AppKycAPI from '@/api/module_app/kyc'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 
 definePage({ name: 'kyc', style: { navigationBarTitleText: '实名认证' } })
@@ -13,6 +14,7 @@ const { t } = useI18n()
 const toast = useToast()
 const formRef = ref()
 const loading = ref(false)
+const loadError = ref(false)
 const submitting = ref(false)
 const uploadingSide = ref<'front' | 'back' | null>(null)
 const kyc = ref<AppKycInfo | null>(null)
@@ -34,6 +36,15 @@ const statusText = computed(() => {
 
 const isEditable = computed(() => !kyc.value || kyc.value.status === 2)
 const isResubmit = computed(() => kyc.value?.status === 2)
+
+function maskIdCard(value: string | null | undefined) {
+  const normalized = String(value || '').trim()
+  if (!normalized)
+    return t('profile.notSet')
+  if (normalized.length <= 4)
+    return '•'.repeat(normalized.length)
+  return `${normalized.slice(0, 2)}${'•'.repeat(Math.max(2, normalized.length - 4))}${normalized.slice(-2)}`
+}
 
 const kycSchema: FormSchema = {
   validate: (model) => {
@@ -61,12 +72,14 @@ function resetForm() {
 
 async function loadKyc() {
   loading.value = true
+  loadError.value = false
   try {
     kyc.value = await AppKycAPI.getMine()
     resetForm()
   }
   catch {
-    // http 层已统一提示
+    if (!kyc.value)
+      loadError.value = true
   }
   finally {
     loading.value = false
@@ -148,6 +161,14 @@ onShow(loadKyc)
 <template>
   <view class="page-wraper py-3">
     <SkeletonPage v-if="loading && !kyc" :rows="5" />
+    <template v-else-if="loadError">
+      <wd-empty :tip="t('common.loadFailed')" />
+      <view class="mt-3 flex justify-center">
+        <wd-button size="small" plain @click="loadKyc">
+          {{ t('common.retry') }}
+        </wd-button>
+      </view>
+    </template>
     <template v-else>
       <view class="mx-3 mb-3 rounded-2 p-4" :class="kyc?.status === 1 ? 'wot-bg-green-1' : 'wot-bg-filled-oppo'">
         <view class="flex items-center justify-between gap-3">
@@ -165,12 +186,12 @@ onShow(loadKyc)
       <view v-if="kyc && !isEditable" class="mx-3 mb-3">
         <wd-cell-group border custom-class="rounded-2! overflow-hidden">
           <wd-cell :title="t('kyc.realName')" :value="kyc.real_name || t('profile.notSet')" />
-          <wd-cell :title="t('kyc.idCard')" :value="kyc.id_card_no" />
+          <wd-cell :title="t('kyc.idCard')" :value="maskIdCard(kyc.id_card_no)" />
           <wd-cell :title="t('kyc.documents')" :value="t('kyc.documentsUploaded')" />
         </wd-cell-group>
       </view>
 
-      <view v-if="isEditable" class="mx-3 rounded-2 p-4" style="background: var(--wot-color-white, #fff);">
+      <view v-if="isEditable" class="wot-bg-filled-oppo mx-3 rounded-2 p-4">
         <wd-form ref="formRef" :model="form" :schema="kycSchema">
           <wd-form-item prop="real_name" custom-style="margin-bottom: 14rpx; padding-left: 0; padding-right: 0;">
             <wd-input v-model="form.real_name" :placeholder="t('kyc.realNamePlaceholder')" clearable :compact="false" prefix-icon="user" />

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AppNoticeDetail, AppNoticeListItem } from '@/api/module_app/notice'
 import { onLoad, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppNoticeAPI from '@/api/module_app/notice'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
@@ -10,9 +10,9 @@ definePage({ name: 'notices', style: { navigationBarTitleText: '通知公告', e
 useI18nNavTitle('notices.title')
 
 const { t } = useI18n()
-const searchTitle = ref('')
 const list = ref<AppNoticeListItem[]>([])
 const loading = ref(false)
+const loadError = ref(false)
 const loadingMore = ref(false)
 const pageNo = ref(1)
 const total = ref(0)
@@ -20,13 +20,6 @@ const hasNext = ref(false)
 const selectedNotice = ref<AppNoticeDetail | null>(null)
 const showDetail = ref(false)
 const detailLoading = ref(false)
-
-const filteredList = computed(() => {
-  const keyword = searchTitle.value.trim().toLowerCase()
-  if (!keyword)
-    return list.value
-  return list.value.filter(item => `${item.notice_title || ''} ${item.description || ''}`.toLowerCase().includes(keyword))
-})
 
 function noticeTypeLabel(type?: string) {
   return type === '2' ? t('notices.announce') : t('notices.notice')
@@ -36,6 +29,7 @@ async function loadData(reset = true) {
   if (reset) {
     loading.value = true
     pageNo.value = 1
+    loadError.value = false
   }
   else {
     if (loadingMore.value || !hasNext.value)
@@ -60,6 +54,7 @@ async function loadData(reset = true) {
       list.value = []
       total.value = 0
       hasNext.value = false
+      loadError.value = true
     }
     uni.showToast({ title: t('common.loadFailed'), icon: 'none' })
   }
@@ -104,25 +99,24 @@ onReachBottom(() => loadData(false))
 
 <template>
   <view class="page-wraper">
-    <wd-search
-      v-model="searchTitle"
-      :placeholder="t('notices.searchPlaceholder')"
-      hide-cancel
-    />
-
     <view class="mx-3 mb-2 mt-3 flex items-center justify-between px-1">
-      <wd-text class="wot-text-text-secondary text-3" :text="t('notices.count', { count: total || filteredList.length })" />
+      <wd-text class="wot-text-text-secondary text-3" :text="t('notices.count', { count: total })" />
     </view>
 
     <wd-loading v-if="loading && list.length === 0" class="mx-auto my-5 block" />
-    <wd-empty
-      v-else-if="filteredList.length === 0"
-      :tip="searchTitle ? t('notices.emptyWithFilter') : t('notices.empty')"
-    />
+    <template v-else-if="loadError">
+      <wd-empty :tip="t('common.loadFailed')" />
+      <view class="mt-3 flex justify-center">
+        <wd-button size="small" plain @click="loadData(true)">
+          {{ t('common.retry') }}
+        </wd-button>
+      </view>
+    </template>
+    <wd-empty v-else-if="list.length === 0" :tip="t('notices.empty')" />
     <view v-else class="mx-3">
       <wd-cell-group border custom-class="rounded-2! overflow-hidden">
         <wd-cell
-          v-for="item in filteredList"
+          v-for="item in list"
           :key="item.id"
           center
           is-link
@@ -173,7 +167,7 @@ onReachBottom(() => loadData(false))
               v-if="selectedNotice.notice_content"
               :content="selectedNotice.notice_content"
               :selectable="true"
-              :container-style="'padding: 32rpx;'"
+              container-style="padding: 32rpx;"
             />
             <wd-text v-else class="wot-text-text-secondary block p-8 text-3 leading-relaxed" :text="t('notices.noContent')" />
           </scroll-view>

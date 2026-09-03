@@ -9,7 +9,7 @@ from app.utils.password_util import PwdUtil
 from .crud import AppUserCRUD
 from .referral import generate_referral_code
 from .referral_service import AppUserReferralService
-from .schema import AppUserCreateSchema, AppUserOutSchema
+from .schema import AppUserCreateSchema, AppUserOutSchema, AppUserProfileUpdateSchema
 from .summary import get_app_user_out
 
 
@@ -95,6 +95,12 @@ class AppUserService:
         """Return a safe user response with referral/KYC projections."""
 
         return await get_app_user_out(self.db, user)
+
+    async def update_profile(self, user, data: AppUserProfileUpdateSchema) -> AppUserOutSchema:
+        """Update only the fields explicitly allowed in App self-service."""
+
+        updated = await self.crud.update(id=user.id, data={"nickname": data.nickname})
+        return await self.to_out(updated)
 
 
 __all__ = ["AppUserService"]

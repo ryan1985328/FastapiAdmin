@@ -20,9 +20,18 @@ function getErrorMessage(statusCode: number, rawData: any): string {
 }
 
 /** 登录态失效：清空凭据与用户信息后回登录页（不调用后端注销接口，避免 token 失效后再触发 401） */
+function currentPagePath(): string | undefined {
+  const pages = getCurrentPages()
+  const current = pages[pages.length - 1]
+  return current?.route ? `/${current.route}` : undefined
+}
+
 function handleAuthExpired(userStore: ReturnType<typeof useUserStore>) {
+  const restoring = userStore.isSessionRestoring()
   userStore.clearAll()
-  toLoginPage({ mode: 'reLaunch' })
+  // 启动恢复失败交给路由兜底处理，避免恢复请求本身触发登录重定向循环。
+  if (!restoring)
+    toLoginPage({ mode: 'reLaunch', redirect: currentPagePath() })
 }
 
 /** 未登录重定向防抖标记：并发请求只跳一次登录页 */
@@ -67,11 +76,18 @@ async function handleUnauthorized(method: Method, rawData: any): Promise<unknown
     throw new Error(message)
   if (role === 'login' || role === 'visitor')
     return throwApiError(message, config)
+  if (config.meta?.authRetry) {
+    handleAuthExpired(userStore)
+    throw new Error(message)
+  }
   if (method.url?.includes('/auth/logout')) {
     handleAuthExpired(userStore)
     throw new Error(message)
   }
 
+  // Each request may refresh at most once. This also prevents a refreshed
+  // request that still returns 401 from entering an endless refresh loop.
+  config.meta = { ...config.meta, authRetry: true }
   if (!isRefreshing) {
     isRefreshing = true
     try {

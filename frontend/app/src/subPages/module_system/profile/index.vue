@@ -17,8 +17,13 @@ useI18nNavTitle('profile.navTitle')
 const { t } = useI18n()
 const userStore = useUserStore()
 const router = useRouter()
+const toast = useToast()
 const loading = ref(false)
+const loadError = ref(false)
 const userProfile = ref<AppUserInfo | null>(null)
+const nicknameEditorVisible = ref(false)
+const nicknameDraft = ref('')
+const savingNickname = ref(false)
 
 const statusText = computed(() => {
   switch (userProfile.value?.status) {
@@ -51,15 +56,56 @@ const referrerAccount = computed(() => {
 
 async function loadUserProfile() {
   loading.value = true
+  loadError.value = false
   try {
     userProfile.value = await AppUserAPI.getProfile()
     userStore.setUserInfo(userProfile.value)
   }
   catch {
-    // http 层已统一错误提示
+    if (!userProfile.value)
+      loadError.value = true
   }
   finally {
     loading.value = false
+  }
+}
+
+function openNicknameEditor() {
+  nicknameDraft.value = userProfile.value?.nickname || ''
+  nicknameEditorVisible.value = true
+}
+
+function closeNicknameEditor() {
+  if (!savingNickname.value)
+    nicknameEditorVisible.value = false
+}
+
+async function saveNickname() {
+  const nickname = nicknameDraft.value.trim()
+  if (!nickname) {
+    toast.warning(t('profile.nicknameRequired'))
+    return
+  }
+  if (savingNickname.value)
+    return
+  if (nickname === userProfile.value?.nickname) {
+    nicknameEditorVisible.value = false
+    return
+  }
+
+  savingNickname.value = true
+  try {
+    const updated = await AppUserAPI.updateProfile({ nickname })
+    userProfile.value = updated
+    userStore.setUserInfo(updated)
+    nicknameEditorVisible.value = false
+    toast.success(t('common.updateSuccess'))
+  }
+  catch {
+    // http 层已统一提示
+  }
+  finally {
+    savingNickname.value = false
   }
 }
 
@@ -73,6 +119,15 @@ onShow(loadUserProfile)
 <template>
   <view class="page-wraper py-3">
     <SkeletonPage v-if="loading && !userProfile" :rows="5" />
+
+    <template v-else-if="loadError">
+      <wd-empty :tip="t('common.loadFailed')" />
+      <view class="mt-3 flex justify-center">
+        <wd-button size="small" plain @click="loadUserProfile">
+          {{ t('common.retry') }}
+        </wd-button>
+      </view>
+    </template>
 
     <template v-else-if="userProfile">
       <view class="mx-3 mb-3 flex flex-col items-center gap-2 py-4">
@@ -92,7 +147,12 @@ onShow(loadUserProfile)
         </view>
         <wd-cell-group border custom-class="rounded-2! overflow-hidden">
           <wd-cell :title="t('profile.avatar')" :value="userProfile.avatar ? t('profile.avatarSet') : t('profile.notSet')" />
-          <wd-cell :title="t('profile.nickname')" :value="userProfile.nickname || t('profile.notSet')" />
+          <wd-cell
+            :title="t('profile.nickname')"
+            :value="userProfile.nickname || t('profile.notSet')"
+            is-link
+            @click="openNicknameEditor"
+          />
           <wd-cell :title="t('profile.username')" :value="userProfile.username || t('profile.notSet')" />
           <wd-cell :title="t('profile.mobile')" :value="userProfile.mobile || t('profile.notBound')" />
         </wd-cell-group>
@@ -125,5 +185,30 @@ onShow(loadUserProfile)
         </wd-cell-group>
       </view>
     </template>
+
+    <wd-popup v-model="nicknameEditorVisible" position="bottom" round custom-style="padding-bottom: env(safe-area-inset-bottom);">
+      <view class="nickname-editor">
+        <wd-navbar :title="t('profile.editNickname')" left-arrow @click-left="closeNicknameEditor" />
+        <view class="px-4 py-4">
+          <wd-input
+            v-model="nicknameDraft"
+            :placeholder="t('common.form.nicknamePlaceholder')"
+            :maxlength="128"
+            clearable
+            confirm-type="done"
+            @confirm="saveNickname"
+          />
+          <wd-button class="mt-4" type="primary" round block :loading="savingNickname" @click="saveNickname">
+            {{ t('common.save') }}
+          </wd-button>
+        </view>
+      </view>
+    </wd-popup>
   </view>
 </template>
+
+<style lang="scss" scoped>
+.nickname-editor {
+  min-height: 260rpx;
+}
+</style>

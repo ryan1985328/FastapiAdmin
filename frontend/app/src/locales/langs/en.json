@@ -53,7 +53,8 @@
     "subscribeTitle": "Enable Message Notifications",
     "subscribeContent": "You have disabled message notifications. Go to settings to enable?",
     "subscribeGoSetting": "Go to Settings",
-    "tab": { "home": "Home", "discover": "Discover", "mine": "Me" },
+    "retry": "Retry",
+    "tab": { "home": "Home", "mine": "Me" },
     "nav": {
       "notices": "Notices"
     },
@@ -371,41 +372,20 @@
     "notice": "Notice",
     "announce": "Announcement"
   },
+  "notFound": {
+    "navTitle": "Page Not Found",
+    "title": "Page Not Found",
+    "description": "The page you requested does not exist or has been removed",
+    "home": "Back to Home"
+  },
   "index": {
     "navTitle": "Home",
-    "shareTitle": "{greeting}, welcome to FastAPI Admin Starter",
-    "welcomeDefault": "Welcome to your app",
-    "welcomeTag": "Welcome",
+    "shareTitle": "Welcome, {name}",
     "welcomeTitle": "Hello, {name}",
-    "welcomeDescription": "Start exploring your app from here",
-    "explore": "Explore",
-    "extensionTag": "Extensible",
-    "extensionTitle": "Space reserved for your business",
-    "extensionSubtitle": "Stay lean and extend as needed",
-    "extensionDescription": "Add your own content and features on this Starter",
-    "discover": "View Discover",
     "guestName": "Guest",
-    "contentTitle": "Ready to get started?",
-    "contentDescription": "Announcements, shortcuts and an extensible content area are ready for your project.",
-    "contentAction": "View Discover",
-    "night": "It's late",
-    "morning": "Good morning",
-    "forenoon": "Good morning",
-    "noon": "Good noon",
-    "afternoon": "Good afternoon",
-    "evening": "Good evening",
+    "noticeEntryDescription": "Read the latest notices and announcements",
+    "aboutEntryDescription": "View basic information about this app",
     "latestNotice": "Latest Notices"
-  },
-  "discover": {
-    "navTitle": "Discover",
-    "shareTitle": "Discover more content",
-    "heroTitle": "Discover",
-    "heroDescription": "A reserved business slot for project-specific extensions.",
-    "publicSection": "Public content",
-    "noticesDescription": "Read the latest notices and announcements",
-    "aboutDescription": "Learn about this app foundation",
-    "placeholderTitle": "More features coming",
-    "placeholderDescription": "Future projects can add their own pages, content or business entries here."
   },
   "theme": {
     "colors": {

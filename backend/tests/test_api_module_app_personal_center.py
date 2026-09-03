@@ -97,3 +97,42 @@ def test_authenticated_password_change_revokes_existing_sessions(test_client):
         json={"username": username, "password": new_password},
     )
     assert new_login.status_code == 200, new_login.text
+
+
+def test_app_user_can_update_only_their_nickname(test_client):
+    username = f"self_edit_{uuid4().hex[:12]}"
+    password = "Profile123!"
+    register = test_client.post(
+        "/app/auth/register",
+        json={"username": username, "password": password, "nickname": "Before"},
+    )
+    assert register.status_code == 200, register.text
+
+    login = test_client.post(
+        "/app/auth/login",
+        json={"username": username, "password": password},
+    )
+    assert login.status_code == 200, login.text
+    token = response_data(login)["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    updated = test_client.put(
+        "/app/user/profile",
+        headers=headers,
+        json={"nickname": "  After  ", "username": "should_not_change"},
+    )
+    assert updated.status_code == 200, updated.text
+    assert response_data(updated)["nickname"] == "After"
+
+    profile = test_client.get("/app/user/profile", headers=headers)
+    assert profile.status_code == 200, profile.text
+    profile_data = response_data(profile)
+    assert profile_data["nickname"] == "After"
+    assert profile_data["username"] == username
+
+    blank = test_client.put(
+        "/app/user/profile",
+        headers=headers,
+        json={"nickname": "   "},
+    )
+    assert blank.status_code == 422, blank.text

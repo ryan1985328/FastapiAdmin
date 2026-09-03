@@ -5,16 +5,23 @@ import AppAuthAPI from '@/api/module_app/auth'
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/constants'
 import { Storage } from '@/utils/storage'
 
+export type AppSessionStatus = 'unknown' | 'restoring' | 'authenticated' | 'guest'
+
+let sessionRestorePromise: Promise<boolean> | null = null
+let sessionHasBeenResolved = false
+
 export const useUserStore = defineStore('appUserInfo', {
   state: () => ({
     // userInfo 由 persist 插件自动持久化（存储 key 即 store id：appUserInfo），无需手动读写 Storage
     userInfo: null as AppUserInfo | null,
     isLoggingIn: false,
+    // sessionStatus 是运行时会话状态；启动时必须重新通过 /me 确认，不能只相信持久化资料。
+    sessionStatus: 'unknown' as AppSessionStatus,
   }),
 
   getters: {
-    /** 是否已登录（唯一口径：以用户信息为准） */
-    isLogin: state => !!state.userInfo,
+    /** 是否已登录：只有完成当前运行时会话校验且凭据、用户资料同时存在才算登录。 */
+    isLogin: state => state.sessionStatus === 'authenticated' && !!state.userInfo,
   },
 
   // 统一的登录处理方法
@@ -64,11 +71,78 @@ export const useUserStore = defineStore('appUserInfo', {
     clearAll(): void {
       this.clearTokens()
       this.clearUserInfo()
+      this.sessionStatus = 'guest'
+      sessionHasBeenResolved = true
     },
 
     /** 是否已登录（仅判断，不跳转；跳转由路由守卫与 HTTP 拦截器统一处理） */
     isLoggedIn(): boolean {
-      return !!(this.getAccessToken() && this.userInfo)
+      return this.sessionStatus === 'authenticated' && !!(this.getAccessToken() && this.userInfo)
+    },
+
+    /** 启动恢复期间隐藏页面，避免在认证结果确定前展示私有内容。 */
+    isSessionRestoring(): boolean {
+      return this.sessionStatus === 'unknown' || this.sessionStatus === 'restoring'
+    },
+
+    /**
+     * 恢复 App 会话：
+     * - 有效 access token 通过 /me 确认；
+     * - access token 失效时由现有 HTTP 刷新队列刷新一次并重试；
+     * - 只有 refresh token 而没有 access token 时，直接按既有 refresh 合约补发 token；
+     * - 无法恢复时清除 access/refresh/user，禁止残留半登录状态。
+     */
+    async restoreSession(): Promise<boolean> {
+      if (sessionRestorePromise)
+        return sessionRestorePromise
+
+      if (sessionHasBeenResolved && this.sessionStatus === 'authenticated' && this.isLoggedIn())
+        return true
+      if (sessionHasBeenResolved && this.sessionStatus === 'guest' && !this.getAccessToken() && !this.getRefreshToken())
+        return false
+
+      this.sessionStatus = 'restoring'
+      sessionRestorePromise = (async () => {
+        const accessToken = this.getAccessToken()
+        const refreshToken = this.getRefreshToken()
+
+        try {
+          if (!accessToken && !refreshToken) {
+            this.clearUserInfo()
+            this.sessionStatus = 'guest'
+            sessionHasBeenResolved = true
+            return false
+          }
+
+          if (!accessToken && refreshToken) {
+            const refreshed = await AppAuthAPI.refreshToken({ refresh_token: refreshToken })
+            if (!refreshed?.access_token)
+              throw new Error('登录已过期')
+            this.setAccessToken(refreshed.access_token)
+            if (refreshed.refresh_token)
+              this.setRefreshToken(refreshed.refresh_token)
+          }
+
+          const userInfo = await AppAuthAPI.getCurrentUser()
+          this.setUserInfo(userInfo)
+          this.sessionStatus = 'authenticated'
+          sessionHasBeenResolved = true
+          return true
+        }
+        catch (error) {
+          console.error('恢复 App 会话失败', error)
+          this.clearTokens()
+          this.clearUserInfo()
+          this.sessionStatus = 'guest'
+          sessionHasBeenResolved = true
+          return false
+        }
+        finally {
+          sessionRestorePromise = null
+        }
+      })()
+
+      return sessionRestorePromise
     },
 
     async handleLogin(loginFn: () => Promise<AppLoginResult>, loginType: string): Promise<AppLoginResult> {
@@ -81,8 +155,10 @@ export const useUserStore = defineStore('appUserInfo', {
         this.setAccessToken(result.access_token)
         this.setRefreshToken(result.refresh_token)
 
-        // 登录成功后获取用户信息
+        // 登录成功后获取用户信息；/me 失败时由 getInfo 清理半登录状态并让调用方展示失败。
         await this.getInfo()
+        this.sessionStatus = 'authenticated'
+        sessionHasBeenResolved = true
 
         return result
       }
@@ -119,7 +195,7 @@ export const useUserStore = defineStore('appUserInfo', {
     async wxPhoneLogin(_data: { code: string }): Promise<never> {
       throw new Error('App 用户手机号登录尚未接入')
     },
-    async getInfo(): Promise<AppUserInfo | null> {
+    async getInfo(): Promise<AppUserInfo> {
       try {
         const userInfoData = await AppAuthAPI.getCurrentUser()
         this.setUserInfo(userInfoData)
@@ -127,7 +203,8 @@ export const useUserStore = defineStore('appUserInfo', {
       }
       catch (error) {
         console.error('获取用户信息失败', error)
-        return null
+        this.clearAll()
+        throw error
       }
     },
 

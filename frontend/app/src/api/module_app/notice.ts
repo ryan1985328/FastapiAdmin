@@ -4,11 +4,16 @@ const APP_NOTICE_BASE_URL = '/app/notices'
 
 export const AppNoticeAPI = {
   list(params?: AppNoticePageParams): Promise<AppNoticePage> {
-    return http.Get(APP_NOTICE_BASE_URL, { params: params ?? {} })
+    return http.Get(APP_NOTICE_BASE_URL, {
+      params: params ?? {},
+      meta: { ignoreAuth: true, authRole: 'visitor' },
+    })
   },
 
   detail(id: number): Promise<AppNoticeDetail> {
-    return http.Get(`${APP_NOTICE_BASE_URL}/${id}`)
+    return http.Get(`${APP_NOTICE_BASE_URL}/${id}`, {
+      meta: { ignoreAuth: true, authRole: 'visitor' },
+    })
   },
 }
 

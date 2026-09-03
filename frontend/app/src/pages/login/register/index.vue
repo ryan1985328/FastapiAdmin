@@ -292,18 +292,19 @@ onBeforeUnmount(stopCountdown)
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* H5 下 100vh 包含导航栏，使用uni-app的可用视口高度变量避免溢出 */
+  /* 注册表单内容较长，允许页面自然增长并在小屏滚动完成。 */
   /* #ifdef H5 */
-  height: calc(100vh - 44px);
+  min-height: calc(100vh - 44px);
   /* #endif */
   /* #ifndef H5 */
-  height: 100vh;
+  min-height: 100vh;
   /* #endif */
-  padding: 0 64rpx;
-  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+  width: 100%;
+  padding: 0 32rpx calc(48rpx + env(safe-area-inset-bottom));
   /* 接入全局水滴渐变（--drop-bg 由 App.vue 按主题色定义，暗色回退纯色由下方规则接管） */
   background: var(--drop-bg, #F9F9F9);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
@@ -314,7 +315,8 @@ onBeforeUnmount(stopCountdown)
 
 .register-card {
   width: 100%;
-  margin-top: 120rpx;
+  max-width: 680rpx;
+  margin: 64rpx 0 48rpx;
   /* 亮色下默认带主题色最浅阶，避免一片纯白；--card-bg-color 可被外部覆盖 */
   background: var(--card-bg-color, var(--wot-primary-1, #FFFFFF));
   border-radius: var(--radius-xl, 32rpx);
@@ -322,6 +324,7 @@ onBeforeUnmount(stopCountdown)
   /* 边框跟随主题色浅阶，替代中性灰，让卡片更有主题感 */
   border: 2rpx solid var(--border-color, var(--wot-primary-2, #EAECF0));
   box-shadow: var(--shadow-md, 0 8rpx 32rpx rgba(15, 23, 42, 0.04));
+  box-sizing: border-box;
 
   .wot-theme-dark & {
     @apply wot-bg-filled-content;
@@ -399,6 +402,8 @@ onBeforeUnmount(stopCountdown)
 .register-agreement {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  row-gap: 8rpx;
   margin-bottom: 24rpx;
 
   :deep(.wd-checkbox__label) {
@@ -408,6 +413,7 @@ onBeforeUnmount(stopCountdown)
 
   &__link {
     font-size: var(--font-md, 28rpx);
+    margin-left: 8rpx;
   }
 }
 

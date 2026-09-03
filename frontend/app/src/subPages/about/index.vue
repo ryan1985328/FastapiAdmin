@@ -24,6 +24,7 @@ const loginSubtitle = computed(() => configStore.configData?.login_subtitle?.con
 const copyright = computed(() => configStore.configData?.copyright?.config_value?.trim() || '')
 const helpDoc = computed(() => configStore.configData?.help_doc?.config_value?.trim() || '')
 const gitCode = computed(() => configStore.configData?.git_code?.config_value?.trim() || '')
+const hasConfiguredLinks = computed(() => Boolean(helpDoc.value || gitCode.value))
 
 // 链接导航处理（H5 新窗口打开，非 H5 复制到剪贴板）
 function handleNavigate(url: string) {
@@ -66,13 +67,13 @@ function handleNavigate(url: string) {
     </view>
 
     <!-- 更多信息 -->
-    <view class="mx-3">
+    <view v-if="hasConfiguredLinks" class="mx-3">
       <view class="wot-text-text-main mb-2 px-1 text-3.5 font-bold">
         {{ t('about.moreInfo') }}
       </view>
       <wd-cell-group border custom-class="rounded-2! overflow-hidden">
-        <wd-cell :title="t('common.docs')" is-link @click="handleNavigate(helpDoc)" />
-        <wd-cell :title="t('common.github')" is-link @click="handleNavigate(gitCode)" />
+        <wd-cell v-if="helpDoc" :title="t('common.docs')" is-link @click="handleNavigate(helpDoc)" />
+        <wd-cell v-if="gitCode" :title="t('common.github')" is-link @click="handleNavigate(gitCode)" />
       </wd-cell-group>
     </view>
 

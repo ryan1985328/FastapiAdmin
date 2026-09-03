@@ -58,10 +58,6 @@ const settingsList = [
   { titleKey: 'mine.security', name: 'account' },
   { titleKey: 'common.aboutUs', name: 'about' },
 ]
-
-const quickLinks = [
-  { titleKey: 'common.nav.notices', name: 'notices', icon: 'notification', color: 'var(--wot-green-6)', soft: 'wot-bg-green-1' },
-]
 </script>
 
 <template>
@@ -77,11 +73,11 @@ const quickLinks = [
         />
       </wd-badge>
       <view class="min-w-0 flex-1">
-        <view class="text-4 text-white font-bold">
+        <view class="text-4 text-white truncate font-bold">
           {{ userInfo?.nickname || userInfo?.username || t('mine.accountFallback') }}
         </view>
         <view class="mt-1 truncate text-3" style="color: rgba(255, 255, 255, 0.75);">
-          {{ userInfo?.username || userInfo?.mobile || t('mine.accountFallback') }}
+          {{ userInfo?.mobile || userInfo?.username || t('mine.accountFallback') }}
         </view>
       </view>
       <!-- 设置入口（纯 icon，打开设置页：内含主题设置） -->
@@ -116,25 +112,15 @@ const quickLinks = [
       </view>
     </view>
 
-    <!-- 快捷入口 -->
-    <view class="wot-bg-filled-oppo mx-3 mb-3 rounded-2 p-2">
-      <wd-grid :column="4" :border="false" clickable>
-        <wd-grid-item
-          v-for="item in quickLinks"
-          :key="item.name"
-          @click="navigateTo(item.name)"
-        >
-          <view
-            class="h-11 w-11 flex items-center justify-center rounded-xl"
-            :class="item.soft"
-          >
-            <wd-icon :name="item.icon" size="20px" :color="item.color" />
-          </view>
-          <view class="wot-text-text-secondary mt-1 text-2.5">
-            {{ t(item.titleKey) }}
-          </view>
-        </wd-grid-item>
-      </wd-grid>
+    <!-- 公告作为个人中心之外的通用入口，使用列表行避免稀疏的仪表盘式宫格。 -->
+    <view class="mx-3 mb-3">
+      <wd-cell-group border custom-class="rounded-2! overflow-hidden">
+        <wd-cell :title="t('common.nav.notices')" is-link @click="navigateTo('notices')">
+          <template #icon>
+            <wd-icon name="notification" size="20px" color="var(--wot-green-6)" />
+          </template>
+        </wd-cell>
+      </wd-cell-group>
     </view>
 
     <!-- 设置列表 -->
