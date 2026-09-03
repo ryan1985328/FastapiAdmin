@@ -1,11 +1,10 @@
-from datetime import datetime
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_system.position.crud import PositionCRUD
 from app.api.v1.module_system.role.crud import RoleCRUD
 from app.core.base_crud import CRUDBase
 from app.core.base_schema import AuthSchema
+from app.utils.time_util import application_now
 
 from .model import UserModel
 from .schema import UserCreateSchema, UserUpdateSchema
@@ -34,7 +33,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         参数:
         - id (int): 用户ID
         """
-        await self.set([id], last_login=datetime.now())
+        await self.set([id], last_login=application_now())
 
     async def set_user_roles(self, user_ids: list[int], role_ids: list[int]) -> None:
         """批量设置用户角色"""

@@ -1,10 +1,11 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column, relationship
 
 from app.utils.common_util import uuid4_str
+from app.utils.time_util import application_now
 
 
 class MappedBase(AsyncAttrs, DeclarativeBase):
@@ -88,15 +89,15 @@ class ModelMixin(MappedBase):
     )
     created_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
+        default=application_now,
         nullable=False,
         comment="创建时间",
         index=True,
     )
     updated_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
+        default=application_now,
+        onupdate=application_now,
         nullable=False,
         comment="更新时间",
     )

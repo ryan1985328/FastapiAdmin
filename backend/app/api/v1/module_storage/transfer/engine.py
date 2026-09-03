@@ -22,6 +22,7 @@ from app.api.v1.module_storage.transfer.registry import transfer_task_registry
 from app.api.v1.module_storage.transfer.ws_manager import transfer_ws_manager
 from app.core.database import async_db_session
 from app.core.logger import logger
+from app.utils.time_util import application_now
 
 from .model import StorageTransferStepModel, StorageTransferTaskModel
 
@@ -116,7 +117,7 @@ async def _run_step(db: AsyncSession, task: StorageTransferTaskModel, step: Stor
     """执行单个传输步骤，成功返回 True。"""
     started_at = datetime.now(UTC)
     step.status = "running"
-    step.started_at = started_at
+    step.started_at = application_now()
     step.progress = _STEP_RUNNING_PROGRESS
     await db.commit()
     await _broadcast(task, await _load_steps(db, task.id))
@@ -154,7 +155,7 @@ async def _run_step(db: AsyncSession, task: StorageTransferTaskModel, step: Stor
         step.speed = speed
         step.status = "success"
         step.progress = 100
-        step.finished_at = datetime.now(UTC)
+        step.finished_at = application_now()
         task.transferred_size += size
         task.speed = speed
         if task.total_size > 0:
@@ -166,10 +167,10 @@ async def _run_step(db: AsyncSession, task: StorageTransferTaskModel, step: Stor
         msg = str(e) or e.__class__.__name__
         step.status = "failed"
         step.error_msg = msg
-        step.finished_at = datetime.now(UTC)
+        step.finished_at = application_now()
         task.status = "failed"
         task.error_msg = msg
-        task.finished_at = datetime.now(UTC)
+        task.finished_at = application_now()
         await db.commit()
         await _broadcast(task, await _load_steps(db, task.id))
         logger.warning("传输任务 {}(步骤 {}) 失败: {}", task.id, step.step_order, msg)
@@ -200,7 +201,7 @@ async def execute_transfer_task(task_id: int) -> None:
         if not steps:
             task.status = "failed"
             task.error_msg = "任务没有可执行的步骤"
-            task.finished_at = datetime.now(UTC)
+            task.finished_at = application_now()
             await db.commit()
             return
 
@@ -212,7 +213,7 @@ async def execute_transfer_task(task_id: int) -> None:
             if config is None:
                 task.status = "failed"
                 task.error_msg = f"源存储源 {task.source_id} 不存在或已停用"
-                task.finished_at = datetime.now(UTC)
+                task.finished_at = application_now()
                 await db.commit()
                 await _broadcast(task, steps)
                 return
@@ -224,7 +225,7 @@ async def execute_transfer_task(task_id: int) -> None:
         # 总字节 = 源大小 × 步骤数（每步传输一次源文件，parallel 与 chain 相同）
         task.total_size = (task.source_size or 0) * len(steps)
         task.status = "running"
-        task.started_at = datetime.now(UTC)
+        task.started_at = application_now()
         await db.commit()
         await _broadcast(task, steps)
 
@@ -245,11 +246,11 @@ async def execute_transfer_task(task_id: int) -> None:
             for step in steps:
                 if step.status == "pending":
                     step.status = "canceled"
-                    step.finished_at = datetime.now(UTC)
+                    step.finished_at = application_now()
         elif completed == len(steps):
             task.status = "success"
             task.progress = 100
-        task.finished_at = datetime.now(UTC)
+        task.finished_at = application_now()
         transfer_task_registry.clear(task_id)
         await db.commit()
         await _broadcast(task, steps)

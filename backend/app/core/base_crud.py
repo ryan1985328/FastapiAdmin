@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any, TypeVar, cast
 
 from pydantic import BaseModel
@@ -13,6 +13,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from app.core.base_model import ModelMixin
 from app.core.base_schema import AuthSchema, PageResultSchema
 from app.core.exceptions import CustomException
+from app.utils.time_util import application_now
 
 OutSchemaType = TypeVar("OutSchemaType", bound=BaseModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -61,7 +62,7 @@ class CRUDBase[ModelType: ModelMixin, CreateSchemaType, UpdateSchemaType]:
 
     def _soft_delete_values(self) -> dict[str, Any]:
         """返回 UPDATE 设置软删除字段所需的 values 字典。"""
-        data: dict[str, Any] = {"is_deleted": True, "deleted_time": datetime.now(UTC)}
+        data: dict[str, Any] = {"is_deleted": True, "deleted_time": application_now()}
         if self.auth.user.id:
             data["deleted_id"] = self.auth.user.id
         return data

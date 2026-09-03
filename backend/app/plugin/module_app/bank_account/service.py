@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select, update
@@ -6,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_storage.core.encrypt import encrypt_password
 from app.core.exceptions import CustomException
+from app.utils.time_util import application_now
 
 from ..user.model import AppUserModel
 from .constants import AppUserBankAccountStatus
@@ -206,7 +206,7 @@ class AppUserBankAccountService:
         account = await self._get_owned(user_id, account_id, lock=True)
         was_default = bool(account.is_default)
         account.is_deleted = True
-        account.deleted_time = datetime.now(UTC)
+        account.deleted_time = application_now()
         account.is_default = False
 
         if was_default:

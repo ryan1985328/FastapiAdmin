@@ -1,5 +1,4 @@
 
-from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import UploadFile
@@ -14,6 +13,7 @@ from app.plugin.module_app.user.constants import AppUserKycStatus
 from app.plugin.module_app.user.model import AppUserModel
 from app.utils.common_util import search_to_dict
 from app.utils.excel_util import ExcelUtil
+from app.utils.time_util import application_now
 
 from .crud import AppUserKycCRUD
 from .model import AppUserKycModel
@@ -216,7 +216,7 @@ class AppUserKycService:
 
         obj.status = data.status
         obj.review_remark = review_remark if data.status == 2 else None
-        obj.reviewed_at = datetime.now(UTC)
+        obj.reviewed_at = application_now()
         await self.db.flush()
         await self.db.refresh(obj)
         return self._serialize(obj, await self._user_for(obj))

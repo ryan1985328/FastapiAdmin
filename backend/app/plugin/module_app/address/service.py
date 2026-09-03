@@ -1,10 +1,10 @@
-from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import CustomException
+from app.utils.time_util import application_now
 
 from ..user.model import AppUserModel
 from .model import AppUserAddressModel
@@ -130,7 +130,7 @@ class AppUserAddressService:
         address = await self._get_owned(user_id, address_id, lock=True)
         was_default = bool(address.is_default)
         address.is_deleted = True
-        address.deleted_time = datetime.now(UTC)
+        address.deleted_time = application_now()
         address.is_default = False
 
         if was_default:

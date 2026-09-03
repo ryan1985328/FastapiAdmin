@@ -2,7 +2,6 @@
 
 import secrets
 from collections.abc import Callable, Mapping
-from datetime import UTC, datetime
 from typing import Any
 
 from redis.asyncio.client import Redis
@@ -12,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.module_storage.core.encrypt import decrypt_password
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
+from app.utils.time_util import application_now
 
 from ..sms_channel.model import SmsChannelModel
 from ..sms_log.model import SmsLogModel
@@ -244,7 +244,7 @@ class SmsService:
             provider_request_id=result.request_id,
             provider_code=result.code,
             provider_message=result.message,
-            sent_at=datetime.now(UTC),
+            sent_at=application_now(),
             created_id=user_id,
             updated_id=user_id,
         )

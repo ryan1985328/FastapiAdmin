@@ -3,8 +3,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote_plus
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.common.enums import EnvironmentEnum
@@ -33,6 +34,9 @@ class Settings(BaseSettings):
     # ================================================= #
     SERVER_HOST: str = "0.0.0.0"  # 允许访问的IP地址
     SERVER_PORT: int = 8001  # 服务端口
+
+    # 应用业务时间：保留与现有 MySQL DATETIME 兼容的本地 naive wall-clock 语义
+    APPLICATION_TIMEZONE: str = "Asia/Shanghai"
 
     # ================================================= #
     # ******************* API文档配置 ****************** #
@@ -242,6 +246,18 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT == EnvironmentEnum.PROD and self.PROD_CORS_ORIGINS:
             return [origin.strip() for origin in self.PROD_CORS_ORIGINS.split(",") if origin.strip()]
         return ["*"]
+
+    @field_validator("APPLICATION_TIMEZONE")
+    @classmethod
+    def validate_application_timezone(cls, value: str) -> str:
+        timezone_name = value.strip()
+        if not timezone_name:
+            raise ValueError("APPLICATION_TIMEZONE 不能为空")
+        try:
+            ZoneInfo(timezone_name)
+        except ZoneInfoNotFoundError as exc:
+            raise ValueError(f"APPLICATION_TIMEZONE 无效: {timezone_name}") from exc
+        return timezone_name
 
     @model_validator(mode="after")
     def validate_production_safety(self) -> "Settings":

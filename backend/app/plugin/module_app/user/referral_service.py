@@ -1,11 +1,10 @@
 """Shared direct-referrer rules for App registration and Admin binding."""
 
-from datetime import UTC, datetime
-
 from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import CustomException
+from app.utils.time_util import application_now
 
 from .model import AppUserModel
 from .referral import normalize_referral_code
@@ -134,7 +133,7 @@ class AppUserReferralService:
 
         await cls.ensure_no_cycle(db, user_id=user_id, referrer_id=referrer.id)
         user.referrer_id = referrer.id
-        user.referrer_bound_at = datetime.now(UTC)
+        user.referrer_bound_at = application_now()
         await db.flush()
         await db.refresh(user)
         return user

@@ -1,7 +1,6 @@
 import asyncio
 import os
 import tempfile
-from datetime import UTC, datetime
 
 import aiofiles
 from fastapi import UploadFile
@@ -14,6 +13,7 @@ from app.api.v1.module_storage.transfer.registry import transfer_task_registry
 from app.core.base_schema import AuthSchema, PageResultSchema
 from app.core.exceptions import CustomException
 from app.utils.common_util import search_to_dict
+from app.utils.time_util import application_now
 
 from .crud import StorageTransferTaskCRUD
 from .model import StorageTransferStepModel
@@ -170,7 +170,7 @@ class StorageTransferService:
         task = await self._crud().get_or_404(id=task_id)
         if task.status == "pending":
             task.status = "canceled"
-            task.finished_at = datetime.now(UTC)
+            task.finished_at = application_now()
             await self.db.flush()
         elif task.status == "running":
             transfer_task_registry.mark_cancel(task_id)

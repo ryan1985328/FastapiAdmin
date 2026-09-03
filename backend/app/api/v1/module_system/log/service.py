@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import delete
@@ -11,6 +11,7 @@ from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.utils.common_util import search_to_dict
 from app.utils.excel_util import ExcelUtil
+from app.utils.time_util import application_now
 
 from .crud import LoginLogCRUD, OperationLogCRUD
 from .model import OperationLogModel
@@ -76,7 +77,7 @@ class OperationLogService:
 
         retention_days = settings.OPERATION_LOG_RETENTION_DAYS
 
-        cutoff = datetime.now() - timedelta(days=retention_days)
+        cutoff = application_now() - timedelta(days=retention_days)
         async with async_db_session() as session:
             op_stmt = delete(OperationLogModel).where(OperationLogModel.created_time < cutoff)
             op_result: Any = await session.execute(op_stmt)
