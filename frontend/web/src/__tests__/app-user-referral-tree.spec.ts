@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AppUserReferralNode } from "@/api/module_system/app_user";
-import { loadReferralCanvasTree } from "@/utils/app-user-referral-tree";
+import {
+  countVisibleReferralCanvasNodes,
+  loadReferralCanvasTree,
+  resolveReferralCanvasClickAction,
+  type ReferralCanvasNode,
+} from "@/utils/app-user-referral-tree";
 
 function node(userId: number, hasChildren = false): AppUserReferralNode {
   return {
@@ -17,6 +22,15 @@ function node(userId: number, hasChildren = false): AppUserReferralNode {
   };
 }
 
+function canvasNode(userId: number, children: ReferralCanvasNode[] = []): ReferralCanvasNode {
+  return {
+    ...node(userId, children.length > 0),
+    children,
+    level: 0,
+    is_truncated: false,
+  };
+}
+
 type Page = { items: AppUserReferralNode[]; has_next?: boolean };
 
 function loaderFrom(pages: Record<string, Page>) {
@@ -26,6 +40,27 @@ function loaderFrom(pages: Record<string, Page>) {
 }
 
 describe("App User referral canvas loader", () => {
+  it("counts only currently visible nodes for each expansion state", () => {
+    const root = canvasNode(1, [canvasNode(2, [canvasNode(3)]), canvasNode(4, [canvasNode(5)])]);
+
+    expect(countVisibleReferralCanvasNodes(root, new Set())).toBe(1);
+    expect(countVisibleReferralCanvasNodes(root, new Set([1]))).toBe(3);
+    expect(countVisibleReferralCanvasNodes(root, new Set([1, 2]))).toBe(4);
+    expect(countVisibleReferralCanvasNodes(root, new Set([1, 2, 4]))).toBe(5);
+  });
+
+  it("separates node detail clicks from explicit and Shift expansion clicks", () => {
+    expect(resolveReferralCanvasClickAction({ expansionControl: false, shiftKey: false })).toBe(
+      "detail"
+    );
+    expect(resolveReferralCanvasClickAction({ expansionControl: true, shiftKey: false })).toBe(
+      "toggle"
+    );
+    expect(resolveReferralCanvasClickAction({ expansionControl: false, shiftKey: true })).toBe(
+      "toggle"
+    );
+  });
+
   it("builds a normal bounded hierarchy without mutating API nodes", async () => {
     const root = node(1, true);
     const child = node(2, true);

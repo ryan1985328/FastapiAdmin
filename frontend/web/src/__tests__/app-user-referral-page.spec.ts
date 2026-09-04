@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SetupContext } from "vue";
+import { h, type SetupContext } from "vue";
 import type { AppUserReferralNode, AppUserReferralSummary } from "@/api/module_system/app_user";
 
 const {
@@ -8,14 +8,12 @@ const {
   mockGetReferralChildren,
   mockGetAppUserDetail,
   mockGetReferralSummary,
-  mockRouterPush,
   mockSearchReferralUsers,
 } = vi.hoisted(() => ({
   mockGetDict: vi.fn(),
   mockGetAppUserDetail: vi.fn(),
   mockGetReferralChildren: vi.fn(),
   mockGetReferralSummary: vi.fn(),
-  mockRouterPush: vi.fn(),
   mockSearchReferralUsers: vi.fn(),
 }));
 
@@ -46,9 +44,9 @@ vi.mock("@/api/module_system/app_user", () => ({
 vi.mock("@/components/charts/fa-referral-tree/index.vue", () => ({
   default: {
     name: "AppUserReferralCanvas",
-    emits: ["node-detail", "navigate-user"],
+    emits: ["node-detail"],
     template:
-      '<div data-test="canvas-stub"><button type="button" data-test="canvas-node" @click="$emit(\'node-detail\', 9)">节点 ID 9</button><button type="button" data-test="canvas-navigate" @click="$emit(\'navigate-user\', 9)">画布查看用户</button></div>',
+      '<div data-test="canvas-stub"><button type="button" data-test="canvas-node" @click="$emit(\'node-detail\', 9)">节点 ID 9</button><button type="button" data-test="canvas-selected" @click="$emit(\'node-detail\', 9)">选中节点查看用户</button></div>',
   },
 }));
 
@@ -84,10 +82,6 @@ vi.mock("@/components/display/fa-status-tag/index.vue", () => ({
   },
 }));
 
-vi.mock("vue-router", () => ({
-  useRouter: () => ({ push: mockRouterPush }),
-}));
-
 import ReferralPage from "@/views/module_system/app_user/referral.vue";
 
 const ElCardStub = {
@@ -98,7 +92,7 @@ const ElCardStub = {
 const ElButtonStub = {
   name: "ElButton",
   emits: ["click"],
-  template: '<button type="button" @click="$emit(\'click\')"><slot /></button>',
+  template: '<button type="button" @click="$emit(\'click\', $event)"><slot /></button>',
 };
 
 const ElInputStub = {
@@ -144,11 +138,24 @@ const ElTabPaneStub = {
 
 const ElTreeStub = {
   name: "ElTree",
-  setup(_props: unknown, { expose }: SetupContext) {
+  props: {
+    data: {
+      type: Array,
+      default: () => [],
+    },
+  },
+  setup(props: { data?: Array<{ user_id: number }> }, { expose, slots }: SetupContext) {
     expose({
       getNode: () => ({ expand: vi.fn() }),
     });
-    return () => null;
+    return () =>
+      h(
+        "div",
+        {},
+        (props.data || []).map((item) =>
+          h("div", { key: item.user_id }, slots.default?.({ data: item }) || [])
+        )
+      );
   },
 };
 
@@ -286,17 +293,34 @@ describe("Referral page density state", () => {
     expect(wrapper.find(".referral-search-results").exists()).toBe(false);
 
     await wrapper.get(".referral-view-user").trigger("click");
-    expect(mockRouterPush).toHaveBeenCalledWith({
-      name: "AppUserUsers",
-      query: { user_id: "3" },
-    });
+    await flushPromises();
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true);
+    expect(wrapper.find("[data-test=detail-content]").text()).toContain("用户 ID 9");
+    expect(wrapper.find(".referral-search-results").exists()).toBe(false);
+
+    await wrapper.get('[role="dialog"] button').trigger("click");
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
   });
 
-  it("opens node details in place while keeping the explicit canvas action navigable", async () => {
+  it("keeps Referral-local canvas and hierarchy inspection in the local detail dialog", async () => {
     mockSearchReferralUsers.mockResolvedValueOnce(page([referralNode(8, "根用户", 2)]));
     const wrapper = mount(ReferralPage, { global: globalOptions });
 
     await search(wrapper, "根用户");
+
+    const hierarchyViewButton = wrapper
+      .findAll(".referral-tree-node button")
+      .find((button) => button.text() === "查看用户");
+    expect(hierarchyViewButton).toBeDefined();
+    await hierarchyViewButton?.trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true);
+    expect(wrapper.find("[data-test=detail-content]").text()).toContain("用户 ID 9");
+    expect(wrapper.find(".referral-search-results").exists()).toBe(false);
+
+    await wrapper.get('[role="dialog"] button').trigger("click");
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
+
     await wrapper.get("[data-test=activate-canvas]").trigger("click");
     await flushPromises();
 
@@ -305,15 +329,13 @@ describe("Referral page density state", () => {
 
     expect(wrapper.find('[role="dialog"]').exists()).toBe(true);
     expect(wrapper.find("[data-test=detail-content]").text()).toContain("用户 ID 9");
-    expect(mockRouterPush).not.toHaveBeenCalled();
 
     await wrapper.get('[role="dialog"] button').trigger("click");
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
 
-    await wrapper.get("[data-test=canvas-navigate]").trigger("click");
-    expect(mockRouterPush).toHaveBeenCalledWith({
-      name: "AppUserUsers",
-      query: { user_id: "9" },
-    });
+    await wrapper.get("[data-test=canvas-selected]").trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true);
+    expect(wrapper.find("[data-test=detail-content]").text()).toContain("用户 ID 9");
   });
 });

@@ -9,8 +9,8 @@
         <span class="referral-canvas__direction"
           >上级推荐人 <span aria-hidden="true">↓</span> 被推荐会员</span
         >
-        <span>点击节点查看用户；Shift+点击展开/收起；拖动浏览，Ctrl/Cmd+滚轮缩放。</span>
-        <span>已展示 {{ props.loadedCount }} 个节点</span>
+        <span>点击节点查看用户；点击 +/− 展开/收起；拖动浏览，Ctrl/Cmd+滚轮缩放。</span>
+        <span>已展示 {{ visibleNodeCount }} 个节点</span>
       </div>
       <div class="referral-canvas__actions">
         <ElButton
@@ -72,7 +72,7 @@
         当前画布为受限只读视图：自动加载最多第 {{ props.maxDepth }} 层、{{
           props.nodeBudget
         }}
-        个节点。 已展示 {{ props.loadedCount }} 个节点，不代表完整关系网络。
+        个节点。 已展示 {{ visibleNodeCount }} 个节点，不代表完整关系网络。
         <template v-if="props.skippedCount"
           >已忽略 {{ props.skippedCount }} 条异常或重复关系。</template
         >
@@ -90,7 +90,7 @@
         type="primary"
         size="small"
         title="打开用户详情"
-        @click="emit('navigate-user', selectedNode.user_id)"
+        @click="emit('node-detail', selectedNode.user_id)"
       >
         查看用户
       </ElButton>
@@ -105,10 +105,14 @@ import type {
   TooltipComponentFormatterCallbackParams,
   TreeSeriesOption,
 } from "echarts";
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useChart } from "@/hooks/core/useChart";
 import { getCssVar } from "@utils";
-import type { ReferralCanvasNode } from "@/utils/app-user-referral-tree";
+import {
+  countVisibleReferralCanvasNodes,
+  resolveReferralCanvasClickAction,
+  type ReferralCanvasNode,
+} from "@/utils/app-user-referral-tree";
 
 defineOptions({ name: "FaReferralTreeCanvas" });
 
@@ -132,7 +136,6 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   "node-detail": [userId: number];
-  "navigate-user": [userId: number];
   "toggle-maximize": [];
 }>();
 
@@ -168,7 +171,7 @@ const chartReady = ref(false);
 const selectedNode = ref<CanvasChartNode | null>(null);
 const zoomScale = ref(1);
 const wheelAttached = ref(false);
-const expandedNodes = new Set<number>();
+const expandedNodes = reactive(new Set<number>());
 
 const cssColor = (name: string, fallback: string): string => getCssVar(name).trim() || fallback;
 
@@ -199,6 +202,7 @@ const chartHeight = computed(() =>
   Math.min(720, Math.max(460, Math.min(props.maxDepth, 3) * 108 + 180))
 );
 const zoomLabel = computed(() => `${Math.round(clampZoom(zoomScale.value) * 100)}%`);
+const visibleNodeCount = computed(() => countVisibleReferralCanvasNodes(props.tree, expandedNodes));
 
 function clampZoom(value: number): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
@@ -268,7 +272,8 @@ function mapNode(
 ): CanvasChartNode {
   const displayName = formatIdentity(node);
   const isCollapsed = node.children.length > 0 && !expandedNodes.has(node.user_id);
-  const childHint = node.is_truncated ? "下级未完整载入" : isCollapsed ? "+ 展开下级" : "";
+  const childHint = node.children.length > 0 ? (isCollapsed ? "+ 展开下级" : "− 收起下级") : "";
+  const truncationHint = node.is_truncated ? "下级未完整载入" : "";
   const compactIdentity = node.mobile?.trim()
     ? `${truncateLabel(displayName, 14)} · ${node.mobile.trim()}`
     : `${truncateLabel(displayName, 14)} · ID ${node.user_id}`;
@@ -277,14 +282,17 @@ function mapNode(
         "当前 Root",
         `${truncateLabel(displayName, 18)} · ID ${node.user_id}`,
         `直属 ${node.direct_count}`,
-      ]
+        childHint,
+        truncationHint,
+      ].filter(Boolean)
     : profile.compact
-      ? [compactIdentity, childHint].filter(Boolean).join("\n")
+      ? [compactIdentity, childHint, truncationHint].filter(Boolean).join("\n")
       : [
           truncateLabel(displayName, 19),
           `ID ${node.user_id}`,
           `直属 ${node.direct_count}`,
           childHint,
+          truncationHint,
         ]
           .filter(Boolean)
           .join("\n");
@@ -452,18 +460,30 @@ function handleChartVisible(): void {
 function handleNodeClick(params: ECElementEvent): void {
   const node = getChartNode(params.data);
   if (!node) return;
-  selectedNode.value = node;
   const nativeEvent = params.event as unknown as {
     shiftKey?: boolean;
     event?: { shiftKey?: boolean };
   };
-  const expansionOnly = Boolean(nativeEvent?.shiftKey || nativeEvent?.event?.shiftKey);
-  if (node.hasLoadedChildren) {
+  const eventTarget = params.event?.target as unknown as
+    | { type?: string; style?: { text?: unknown } }
+    | undefined;
+  const expansionControl =
+    eventTarget?.type === "tspan" &&
+    (eventTarget.style?.text === "+ 展开下级" || eventTarget.style?.text === "− 收起下级");
+  const action = resolveReferralCanvasClickAction({
+    expansionControl,
+    shiftKey: Boolean(nativeEvent?.shiftKey || nativeEvent?.event?.shiftKey),
+  });
+  if (action === "toggle") {
+    params.event?.stop();
+  }
+  if (action === "toggle" && node.hasLoadedChildren) {
     if (expandedNodes.has(node.user_id)) expandedNodes.delete(node.user_id);
     else expandedNodes.add(node.user_id);
     renderOption(true);
   }
-  if (expansionOnly) return;
+  if (action === "toggle") return;
+  selectedNode.value = node;
   emit("node-detail", node.user_id);
 }
 

@@ -121,7 +121,7 @@
             plain
             size="small"
             class="referral-view-user"
-            @click="viewUser(summary.user_id)"
+            @click="openUserDetail(summary.user_id)"
           >
             查看用户
           </ElButton>
@@ -192,7 +192,7 @@
                     link
                     type="primary"
                     size="small"
-                    @click.stop="viewUser(data.user_id)"
+                    @click.stop="openUserDetail(data.user_id)"
                   >
                     查看用户
                   </ElButton>
@@ -227,7 +227,6 @@
             :can-view-user="canViewUser"
             :maximized="canvasMaximized"
             @node-detail="openUserDetail"
-            @navigate-user="viewUser"
             @toggle-maximize="toggleCanvasMaximize"
           />
           <ElEmpty
@@ -289,7 +288,6 @@ import {
 import { checkPerm } from "@/utils/checkPerm";
 import { useDictStore } from "@stores";
 import { computed, nextTick, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
 
 defineOptions({
   name: "AppUserReferralTree",
@@ -316,7 +314,6 @@ const treeProps = {
 };
 
 const dictStore = useDictStore();
-const router = useRouter();
 const canViewUser = computed(() => checkPerm("module_system:app_user:detail"));
 const keyword = ref("");
 const searchLoading = ref(false);
@@ -594,14 +591,6 @@ const loadTreeNode: LoadFunction = async (node, resolve) => {
 
 function focusUser(userId: number) {
   void selectUser(userId);
-}
-
-function viewUser(userId: number) {
-  if (!canViewUser.value) return;
-  void router.push({
-    name: "AppUserUsers",
-    query: { user_id: String(userId) },
-  });
 }
 
 onMounted(() => {

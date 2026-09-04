@@ -37,6 +37,38 @@ export interface ReferralCanvasTreeResult {
   cancelled: boolean;
 }
 
+export type ReferralCanvasClickAction = "detail" | "toggle";
+
+export function resolveReferralCanvasClickAction(options: {
+  expansionControl: boolean;
+  shiftKey: boolean;
+}): ReferralCanvasClickAction {
+  return options.expansionControl || options.shiftKey ? "toggle" : "detail";
+}
+
+/**
+ * Count only the nodes that the canvas currently renders for the given
+ * expansion state. Nodes below a collapsed branch remain loaded in memory,
+ * but are intentionally excluded from this count.
+ */
+export function countVisibleReferralCanvasNodes(
+  root: ReferralCanvasNode,
+  expandedUserIds: ReadonlySet<number>
+): number {
+  let count = 1;
+
+  const visit = (node: ReferralCanvasNode) => {
+    if (!expandedUserIds.has(node.user_id)) return;
+    node.children.forEach((child) => {
+      count += 1;
+      visit(child);
+    });
+  };
+
+  visit(root);
+  return count;
+}
+
 interface PendingReferralCanvasNode {
   node: ReferralCanvasNode;
   ancestorIds: Set<number>;
