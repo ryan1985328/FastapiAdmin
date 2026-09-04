@@ -8,6 +8,7 @@ import AppProductAPI from '@/api/module_app/product'
 import { useI18nNavTitle } from '@/composables/useI18nNavTitle'
 import { useUserStore } from '@/store/userStore'
 import { toLoginPage } from '@/utils/toLoginPage'
+import { MARKDOWN_TAG_STYLE } from '@/constants/markdown.constant'
 
 definePage({ name: 'product-detail', style: { navigationBarTitleText: '商品详情' } })
 useI18nNavTitle('mall.detailTitle')
@@ -107,7 +108,17 @@ onLoad((options) => {
       <view class="mx-3 mt-3 rounded-3 wot-bg-filled-oppo p-4">
         <view class="wot-text-text-main text-4 font-medium">{{ t('mall.description') }}</view>
         <view class="wot-text-text-secondary product-description mt-3 text-3.5 leading-relaxed">
-          {{ product.description || t('mall.noDescription') }}
+          <mp-html
+            v-if="product.description"
+            :content="product.description"
+            :tag-style="MARKDOWN_TAG_STYLE"
+            :selectable="true"
+            :preview-img="true"
+            :scroll-table="true"
+            :set-title="false"
+            container-style="width: 100%; overflow-wrap: anywhere;"
+          />
+          <view v-else>{{ t('mall.noDescription') }}</view>
         </view>
       </view>
 
@@ -143,8 +154,13 @@ onLoad((options) => {
 }
 
 .product-description {
-  white-space: pre-wrap;
+  min-width: 0;
   word-break: break-word;
+
+  :deep(img) {
+    max-width: 100% !important;
+    height: auto !important;
+  }
 }
 
 .qty-input {

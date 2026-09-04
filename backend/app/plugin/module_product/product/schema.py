@@ -4,6 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.base_schema import BaseQueryParam, BaseSchema, UserByQueryParam, UserBySchema
+from app.utils.xss_util import sanitize_html
 
 from .constants import ProductStatus
 
@@ -13,7 +14,7 @@ class ProductCreateSchema(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=128, description='名称')
     code: str = Field(..., min_length=1, max_length=64, description='编码')
-    description: str | None = Field(default=None, max_length=2000, description='描述')
+    description: str | None = Field(default=None, max_length=65535, description='商品详情HTML')
     image_url: str | None = Field(default=None, max_length=512, description='图片或存储标识')
     price: Decimal = Field(default=Decimal('0.00'), ge=Decimal('0'), max_digits=12, decimal_places=2, description='价格')
     stock: int = Field(default=0, ge=0, description='库存')
@@ -29,13 +30,18 @@ class ProductCreateSchema(BaseModel):
             raise ValueError('名称和编码不能为空')
         return value
 
+    @field_validator('description')
+    @classmethod
+    def sanitize_description(cls, value: str | None) -> str | None:
+        return sanitize_html(value) if value is not None else None
+
 
 class ProductUpdateSchema(BaseModel):
     """Product reference record partial update payload."""
 
     name: str | None = Field(default=None, min_length=1, max_length=128, description='名称')
     code: str | None = Field(default=None, min_length=1, max_length=64, description='编码')
-    description: str | None = Field(default=None, max_length=2000, description='描述')
+    description: str | None = Field(default=None, max_length=65535, description='商品详情HTML')
     image_url: str | None = Field(default=None, max_length=512, description='图片或存储标识')
     price: Decimal | None = Field(default=None, ge=Decimal('0'), max_digits=12, decimal_places=2, description='价格')
     stock: int | None = Field(default=None, ge=0, description='库存')
@@ -52,6 +58,11 @@ class ProductUpdateSchema(BaseModel):
         if not value:
             raise ValueError('名称和编码不能为空')
         return value
+
+    @field_validator('description')
+    @classmethod
+    def sanitize_description(cls, value: str | None) -> str | None:
+        return sanitize_html(value) if value is not None else None
 
 
 class ProductOutSchema(ProductCreateSchema, BaseSchema, UserBySchema):

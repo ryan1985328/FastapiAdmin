@@ -188,3 +188,66 @@ def test_product_crud_and_storage_reference(
                 headers=auth_headers,
                 json=[source_id],
             )
+
+
+def test_product_rich_description_is_sanitized_on_create_and_update(
+    test_client: TestClient,
+    auth_headers: dict[str, str],
+) -> None:
+    code = f"rich-{uuid4().hex[:12]}"
+    product_id = None
+    create_description = (
+        '<h2>商品亮点</h2><p><strong>安全正文</strong> 与 <em>排版</em></p>'
+        '<ul><li>第一项</li><li>第二项</li></ul>'
+        '<p><a href="https://example.com" onclick="alert(1)">了解更多</a></p>'
+        '<img src="https://example.com/product.png" onerror="alert(1)">'
+        '<script>alert("xss")</script>'
+    )
+
+    try:
+        created_response = test_client.post(
+            f"{PRODUCT_PATH}/create",
+            headers=auth_headers,
+            json={
+                "name": "Rich Product",
+                "code": code,
+                "description": create_description,
+                "price": "19.90",
+                "stock": 2,
+                "status": 0,
+            },
+        )
+        assert created_response.status_code == 200, created_response.text
+        created = response_data(created_response)
+        product_id = created["id"]
+        sanitized = created["description"]
+        assert "<h2>商品亮点</h2>" in sanitized
+        assert "<strong>安全正文</strong>" in sanitized
+        assert "<ul>" in sanitized and "<li>第一项</li>" in sanitized
+        assert "<img src=\"https://example.com/product.png\">" in sanitized
+        assert "<script" not in sanitized
+        assert "onclick" not in sanitized
+        assert "onerror" not in sanitized
+
+        update_description = '<h3>更新后的详情</h3><p style="color: red" onmouseover="evil()">更新正文</p><script>evil()</script>'
+        updated_response = test_client.put(
+            f"{PRODUCT_PATH}/update/{product_id}",
+            headers=auth_headers,
+            json={"description": update_description},
+        )
+        assert updated_response.status_code == 200, updated_response.text
+        updated = response_data(updated_response)
+        assert "<h3>更新后的详情</h3>" in updated["description"]
+        assert "更新正文" in updated["description"]
+        assert "onmouseover" not in updated["description"]
+        assert "<script" not in updated["description"]
+
+        app_detail = test_client.get(f"/app/product/{product_id}")
+        assert app_detail.status_code == 200, app_detail.text
+        app_description = response_data(app_detail)["description"]
+        assert "<h3>更新后的详情</h3>" in app_description
+        assert "<script" not in app_description
+        assert "onmouseover" not in app_description
+    finally:
+        if product_id is not None:
+            test_client.request("DELETE", f"{PRODUCT_PATH}/delete", headers=auth_headers, json=[product_id])

@@ -98,24 +98,24 @@ export interface ProductPageQuery extends PageQuery, UserByQueryParams {
 export interface ProductTable extends BaseType {
   name?: string;
   code?: string;
-  description?: string;
-  image_url?: string;
+  description?: string | null;
+  image_url?: string | null;
   price?: string;
   stock?: number;
   status?: number;
   sort?: number;
-  remark?: string;
+  remark?: string | null;
 }
 
 /** 新增/修改表单参数 */
 export interface ProductForm extends BaseFormType {
   name?: string;
   code?: string;
-  description?: string;
-  image_url?: string;
+  description?: string | null;
+  image_url?: string | null;
   price?: string;
   stock?: number;
   status?: number;
   sort?: number;
-  remark?: string;
+  remark?: string | null;
 }
