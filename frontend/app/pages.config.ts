@@ -48,6 +48,8 @@ export default defineUniPages({
     list: [{
       pagePath: 'pages/index/index',
     }, {
+      pagePath: 'pages/mall/index',
+    }, {
       pagePath: 'pages/mine/index',
     }],
   },

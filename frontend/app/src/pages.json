@@ -223,6 +223,9 @@
         "pagePath": "pages/index/index"
       },
       {
+        "pagePath": "pages/mall/index"
+      },
+      {
         "pagePath": "pages/mine/index"
       }
     ]
