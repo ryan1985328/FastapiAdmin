@@ -28,7 +28,10 @@
         </ElButton>
       </div>
 
-      <div v-if="searchPerformed && !searchLoading" class="referral-search-results">
+      <div
+        v-if="searchPerformed && !searchLoading && searchResultsExpanded"
+        class="referral-search-results"
+      >
         <div class="referral-search-results__header">
           <span>匹配用户</span>
           <span class="text-g-500">共 {{ searchTotal }} 条</span>
@@ -61,70 +64,67 @@
       </div>
     </ElCard>
 
-    <ElCard v-if="summary" v-loading="summaryLoading" shadow="never" class="referral-card">
-      <div class="referral-card__heading referral-summary-heading">
-        <div>
+    <ElCard
+      v-if="summary"
+      v-loading="summaryLoading"
+      shadow="never"
+      class="referral-card referral-summary-card"
+    >
+      <div class="referral-summary">
+        <div class="referral-summary__identity">
           <div class="referral-card__eyebrow">当前用户</div>
           <h2 class="referral-card__title">{{ formatUserIdentity(summary) }}</h2>
-          <p class="referral-card__description">用户 ID {{ summary.user_id }}</p>
+          <div class="referral-summary__meta">
+            <span>ID {{ summary.user_id }}</span>
+            <span>{{ summary.mobile || "未填写手机号" }}</span>
+            <span v-if="summary.referral_code">推荐码 {{ summary.referral_code }}</span>
+          </div>
         </div>
-        <div class="referral-card__actions">
+
+        <div class="referral-summary__relationship">
+          <div class="referral-summary__fact">
+            <span>直属下级</span>
+            <strong>{{ summary.direct_count }}</strong>
+          </div>
+          <div class="referral-summary__fact">
+            <span>团队人数</span>
+            <strong>{{ summary.total_descendant_count }}</strong>
+          </div>
+          <div class="referral-summary__referrer">
+            <span>推荐人</span>
+            <ElButton
+              v-if="summary.referrer"
+              link
+              type="primary"
+              class="referral-inline-link"
+              @click="selectUser(summary.referrer.user_id)"
+            >
+              {{ formatUserIdentity(summary.referrer) }}
+            </ElButton>
+            <span v-else-if="summary.referrer_id">关联用户不可用</span>
+            <span v-else>无 / 顶级用户</span>
+          </div>
+        </div>
+
+        <div class="referral-summary__statuses">
+          <FaStatusTag v-bind="dictTagProps(USER_STATUS_DICT, summary.status)" />
+          <FaStatusTag v-bind="dictTagProps(KYC_STATUS_DICT, summary.kyc_status)" />
+        </div>
+
+        <div class="referral-summary__actions">
+          <ElButton plain size="small" class="referral-switch-user" @click="switchUser">
+            切换用户
+          </ElButton>
           <ElButton
             v-if="canViewUser"
             type="primary"
             plain
             size="small"
+            class="referral-view-user"
             @click="viewUser(summary.user_id)"
           >
             查看用户
           </ElButton>
-        </div>
-      </div>
-
-      <FaDescriptions
-        :column="2"
-        :border="true"
-        :data="summary"
-        :items="summaryItems"
-        :scrollbar="false"
-      >
-        <template #mobile="{ value }">
-          <span>{{ value || "—" }}</span>
-        </template>
-        <template #status="{ value }">
-          <FaStatusTag v-bind="dictTagProps(USER_STATUS_DICT, value)" />
-        </template>
-        <template #kyc_status="{ value }">
-          <FaStatusTag v-bind="dictTagProps(KYC_STATUS_DICT, value)" />
-        </template>
-        <template #referrer>
-          <ElButton
-            v-if="summary.referrer"
-            link
-            type="primary"
-            class="referral-inline-link"
-            @click="selectUser(summary.referrer.user_id)"
-          >
-            {{ formatUserIdentity(summary.referrer) }}
-          </ElButton>
-          <span v-else-if="summary.referrer_id">关联用户不可用</span>
-          <span v-else>无 / 顶级用户</span>
-        </template>
-        <template #referrer_bound_at>
-          <span>{{ formatDateTime(summary.referrer_bound_at) }}</span>
-        </template>
-      </FaDescriptions>
-
-      <div class="referral-metrics">
-        <div class="referral-metric">
-          <span class="referral-metric__label">直属下级</span>
-          <strong class="referral-metric__value">{{ summary.direct_count }}</strong>
-          <span class="referral-metric__hint">直接推荐用户</span>
-        </div>
-        <div class="referral-metric">
-          <span class="referral-metric__label">团队总人数</span>
-          <strong class="referral-metric__value">{{ summary.total_descendant_count }}</strong>
-          <span class="referral-metric__hint">所有层级后代</span>
         </div>
       </div>
     </ElCard>
@@ -226,7 +226,8 @@
             :skipped-count="canvasSkippedCount"
             :can-view-user="canViewUser"
             :maximized="canvasMaximized"
-            @node-detail="viewUser"
+            @node-detail="openUserDetail"
+            @navigate-user="viewUser"
             @toggle-maximize="toggleCanvasMaximize"
           />
           <ElEmpty
@@ -244,6 +245,22 @@
       :image-size="120"
       description="搜索并选择一个用户开始查看"
     />
+
+    <FaDialog
+      v-if="nodeDetailVisible"
+      v-model="nodeDetailVisible"
+      title="用户端用户详情"
+      width="720px"
+      dialog-class="crud-embed-dialog"
+      modal-class="crud-embed-dialog"
+      form-mode="detail"
+      @close="closeNodeDetail"
+    >
+      <div v-if="nodeDetailLoading" class="referral-detail-state" role="status">
+        正在加载用户详情…
+      </div>
+      <AppUserDetailContent v-else :data="nodeDetail" />
+    </FaDialog>
   </div>
 </template>
 
@@ -252,15 +269,15 @@ import { Search } from "@element-plus/icons-vue";
 import type { LoadFunction, TreeInstance } from "element-plus";
 import { ElMessage } from "element-plus";
 import { formatToDateTime } from "@utils";
-import FaDescriptions, {
-  type DescriptionsItem,
-} from "@/components/display/fa-descriptions/index.vue";
+import FaDialog from "@/components/modal/fa-dialog/index.vue";
+import AppUserDetailContent from "./AppUserDetailContent.vue";
 import FaStatusTag from "@/components/display/fa-status-tag/index.vue";
 import AppUserReferralCanvas from "@/components/charts/fa-referral-tree/index.vue";
 import AppUserAPI, {
   type AppUserKycStatus,
   type AppUserReferralNode,
   type AppUserReferralSummary,
+  type AppUserTable,
 } from "@/api/module_system/app_user";
 import {
   loadReferralCanvasTree,
@@ -306,8 +323,12 @@ const searchLoading = ref(false);
 const searchPerformed = ref(false);
 const searchTotal = ref(0);
 const searchResults = ref<AppUserReferralNode[]>([]);
+const searchResultsExpanded = ref(false);
 const summaryLoading = ref(false);
 const summary = ref<AppUserReferralSummary | null>(null);
+const nodeDetailVisible = ref(false);
+const nodeDetailLoading = ref(false);
+const nodeDetail = ref<Partial<AppUserTable>>({});
 const treeData = ref<ReferralTreeNode[]>([]);
 const treeRenderKey = ref(0);
 const treeRef = ref<TreeInstance>();
@@ -320,16 +341,7 @@ const canvasTruncated = ref(false);
 const canvasSkippedCount = ref(0);
 const canvasMaximized = ref(false);
 let canvasRequestSequence = 0;
-
-const summaryItems: DescriptionsItem[] = [
-  { label: "用户 ID", prop: "user_id" },
-  { label: "手机号", prop: "mobile" },
-  { label: "推荐码", prop: "referral_code" },
-  { label: "账号状态", prop: "status" },
-  { label: "实名状态", prop: "kyc_status" },
-  { label: "推荐人", prop: "referrer" },
-  { label: "推荐绑定时间", prop: "referrer_bound_at" },
-];
+let nodeDetailRequestSequence = 0;
 
 const USER_STATUS_FALLBACK: Record<string, string> = {
   "0": "正常",
@@ -461,6 +473,7 @@ async function searchUsers() {
 
   searchLoading.value = true;
   searchPerformed.value = true;
+  searchResultsExpanded.value = true;
   searchResults.value = [];
   searchTotal.value = 0;
   try {
@@ -474,15 +487,9 @@ async function searchUsers() {
     searchTotal.value = page.total;
     if (page.total === 1 && page.items[0]) {
       await selectUser(page.items[0].user_id);
-    } else if (!page.total) {
-      summary.value = null;
-      treeData.value = [];
-      clearCanvasState();
     }
   } catch {
-    summary.value = null;
-    treeData.value = [];
-    clearCanvasState();
+    // Keep the current relationship center while a replacement search fails.
   } finally {
     searchLoading.value = false;
   }
@@ -494,6 +501,7 @@ async function selectUser(userId: number) {
   try {
     const response = await AppUserAPI.getReferralSummary(userId);
     summary.value = response.data.data;
+    searchResultsExpanded.value = false;
     treeData.value = [toTreeNode(summary.value)];
     treeRenderKey.value += 1;
     await nextTick();
@@ -506,6 +514,38 @@ async function selectUser(userId: number) {
   } finally {
     summaryLoading.value = false;
   }
+}
+
+function switchUser() {
+  searchResultsExpanded.value = true;
+}
+
+async function openUserDetail(userId: number) {
+  if (!canViewUser.value) return;
+
+  const requestSequence = ++nodeDetailRequestSequence;
+  nodeDetail.value = {};
+  nodeDetailLoading.value = true;
+  nodeDetailVisible.value = true;
+
+  try {
+    const response = await AppUserAPI.getAppUserDetail(userId);
+    if (requestSequence !== nodeDetailRequestSequence) return;
+    nodeDetail.value = response.data.data ?? {};
+  } catch {
+    if (requestSequence === nodeDetailRequestSequence) {
+      nodeDetailVisible.value = false;
+      ElMessage.error("用户详情加载失败，请重试。");
+    }
+  } finally {
+    if (requestSequence === nodeDetailRequestSequence) nodeDetailLoading.value = false;
+  }
+}
+
+function closeNodeDetail() {
+  nodeDetailRequestSequence += 1;
+  nodeDetailLoading.value = false;
+  nodeDetailVisible.value = false;
 }
 
 const loadTreeNode: LoadFunction = async (node, resolve) => {
@@ -576,6 +616,7 @@ onMounted(() => {
 }
 
 .referral-card {
+  flex-shrink: 0;
   margin-bottom: 12px;
 }
 
@@ -590,10 +631,6 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 18px;
-}
-
-.referral-summary-heading {
-  align-items: center;
 }
 
 .referral-card__eyebrow {
@@ -618,9 +655,69 @@ onMounted(() => {
   color: var(--el-text-color-secondary);
 }
 
-.referral-card__actions {
+.referral-summary {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.1fr) minmax(280px, 1.5fr) auto auto;
+  gap: 18px 24px;
+  align-items: center;
+}
+
+.referral-summary__identity,
+.referral-summary__relationship {
+  min-width: 0;
+}
+
+.referral-summary__meta {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.referral-summary__relationship {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  align-items: center;
+}
+
+.referral-summary__fact,
+.referral-summary__referrer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 56px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.referral-summary__fact strong {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--el-text-color-primary);
+}
+
+.referral-summary__referrer {
+  min-width: 128px;
+  max-width: 220px;
+}
+
+.referral-summary__referrer .referral-inline-link {
+  justify-content: flex-start;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.referral-summary__statuses,
+.referral-summary__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
 }
 
@@ -717,39 +814,6 @@ onMounted(() => {
   padding: 0;
 }
 
-.referral-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.referral-metric {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 14px 16px;
-  background: var(--el-fill-color-lighter);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-}
-
-.referral-metric__label {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.referral-metric__value {
-  font-size: 26px;
-  line-height: 1.2;
-  color: var(--el-text-color-primary);
-}
-
-.referral-metric__hint {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-}
-
 .referral-tree-card {
   min-height: 260px;
 }
@@ -766,7 +830,8 @@ onMounted(() => {
 }
 
 .referral-canvas-state,
-.referral-canvas-error {
+.referral-canvas-error,
+.referral-detail-state {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -775,6 +840,10 @@ onMounted(() => {
   padding: 24px;
   color: var(--el-text-color-secondary);
   text-align: center;
+}
+
+.referral-detail-state {
+  min-height: 220px;
 }
 
 .referral-canvas-error {
@@ -831,6 +900,15 @@ onMounted(() => {
 }
 
 @media (width <= 900px) {
+  .referral-summary {
+    grid-template-columns: minmax(190px, 1fr) minmax(240px, 1.2fr) auto;
+  }
+
+  .referral-summary__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
   .referral-tree-node {
     flex-direction: column;
     gap: 6px;
@@ -843,8 +921,7 @@ onMounted(() => {
 }
 
 @media (width <= 560px) {
-  .referral-search-form,
-  .referral-summary-heading {
+  .referral-search-form {
     flex-direction: column;
     align-items: stretch;
   }
@@ -853,8 +930,14 @@ onMounted(() => {
     width: 100%;
   }
 
-  .referral-metrics {
+  .referral-summary {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .referral-summary__actions {
+    grid-column: auto;
+    justify-content: flex-start;
   }
 
   .referral-search-results__list {

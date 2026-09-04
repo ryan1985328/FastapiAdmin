@@ -90,7 +90,7 @@
         type="primary"
         size="small"
         title="打开用户详情"
-        @click="emit('node-detail', selectedNode.user_id)"
+        @click="emit('navigate-user', selectedNode.user_id)"
       >
         查看用户
       </ElButton>
@@ -132,6 +132,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   "node-detail": [userId: number];
+  "navigate-user": [userId: number];
   "toggle-maximize": [];
 }>();
 

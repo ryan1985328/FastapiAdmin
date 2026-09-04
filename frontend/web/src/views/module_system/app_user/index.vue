@@ -56,28 +56,11 @@
       @confirm="handleSubmit"
     >
       <template v-if="dialogVisible.type === 'detail'">
-        <FaDescriptions :column="2" :data="detailFormData" :items="detailItems" max-height="70vh">
-          <template #referrer>
-            <span v-if="detailFormData.referrer">
-              {{ formatUserSummary(detailFormData.referrer) }}
-            </span>
-            <span v-else class="text-g-400">—</span>
-          </template>
-          <template #status="{ value }">
-            <FaStatusTag v-bind="dictTagProps(USER_STATUS_DICT, value)" />
-          </template>
-          <template #kyc_status="{ value }">
-            <FaStatusTag v-bind="dictTagProps(KYC_STATUS_DICT, value)" />
-          </template>
-          <template #has_referrer="{ value }">
-            <FaStatusTag :type="value ? 'success' : 'info'" :label="value ? '已绑定' : '未绑定'" />
-          </template>
-        </FaDescriptions>
-        <div v-if="!detailFormData.has_referrer && canBindReferrer" class="mt-4 flex justify-end">
-          <ElButton type="primary" plain @click="handleBindReferrer(detailFormData)">
-            绑定推荐人
-          </ElButton>
-        </div>
+        <AppUserDetailContent
+          :data="detailFormData"
+          :can-bind-referrer="canBindReferrer"
+          @bind-referrer="handleBindReferrer(detailFormData)"
+        />
       </template>
       <FaForm
         v-else
@@ -106,9 +89,8 @@ import { useCrudForm } from "@/hooks/core/useCrudForm";
 import { confirmAction } from "@/hooks/core/useConfirm";
 import type { FormItem } from "@/components/forms/fa-form/index.vue";
 import type { ColumnOption } from "@/types/component";
-import FaDescriptions from "@/components/display/fa-descriptions/index.vue";
-import type { DescriptionsItem } from "@/components/display/fa-descriptions/index.vue";
 import FaStatusTag from "@/components/display/fa-status-tag/index.vue";
+import AppUserDetailContent from "./AppUserDetailContent.vue";
 import FaForm from "@/components/forms/fa-form/index.vue";
 import FaTableHeader from "@/components/tables/fa-table-header/index.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -389,22 +371,6 @@ const detailFormData = ref<AppUserTable>({});
 const formData = ref<AppUserForm>(createInitialFormData());
 const formRenderKey = ref(0);
 const dataFormRef = ref<InstanceType<typeof FaForm> | null>(null);
-
-const detailItems: DescriptionsItem[] = [
-  { label: "ID", prop: "id" },
-  { label: "登录账号", prop: "username" },
-  { label: "手机号", prop: "mobile" },
-  { label: "昵称", prop: "nickname" },
-  { label: "头像", prop: "avatar" },
-  { label: "账号状态", prop: "status" },
-  { label: "注册时间", prop: "created_time" },
-  { label: "推荐码", prop: "referral_code" },
-  { label: "推荐人", prop: "referrer" },
-  { label: "推荐绑定状态", prop: "has_referrer" },
-  { label: "推荐绑定时间", prop: "referrer_bound_at" },
-  { label: "实名状态", prop: "kyc_status" },
-  { label: "实名审核时间", prop: "kyc_reviewed_at" },
-];
 
 const rules = reactive({
   nickname: [{ required: true, message: "请填写昵称", trigger: "blur" }],
