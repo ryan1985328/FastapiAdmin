@@ -177,7 +177,7 @@ onLoad((options) => {
         </view>
       </view>
 
-      <wd-gap height="150rpx" safe-area-bottom />
+      <view class="product-detail-page__bottom-spacer" aria-hidden="true" />
 
       <view class="product-purchase-bar" style="padding-bottom: env(safe-area-inset-bottom);">
         <view class="product-purchase-bar__amount">
@@ -233,6 +233,10 @@ onLoad((options) => {
 <style lang="scss" scoped>
 .product-detail-page {
   min-height: 100%;
+}
+
+.product-detail-page__bottom-spacer {
+  height: calc(180rpx + env(safe-area-inset-bottom));
 }
 
 .product-gallery {
