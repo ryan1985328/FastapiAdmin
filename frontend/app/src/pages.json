@@ -53,6 +53,15 @@
       }
     },
     {
+      "path": "pages/mall/index",
+      "type": "page",
+      "name": "mall",
+      "layout": "tabbar",
+      "style": {
+        "navigationBarTitleText": "商城"
+      }
+    },
+    {
       "path": "pages/mine/index",
       "type": "page",
       "name": "mine",
@@ -155,6 +164,30 @@
           "name": "bank-accounts",
           "style": {
             "navigationBarTitleText": "我的银行卡"
+          }
+        },
+        {
+          "path": "module_app/order/detail",
+          "type": "page",
+          "name": "order-detail",
+          "style": {
+            "navigationBarTitleText": "订单详情"
+          }
+        },
+        {
+          "path": "module_app/order/index",
+          "type": "page",
+          "name": "orders",
+          "style": {
+            "navigationBarTitleText": "我的订单"
+          }
+        },
+        {
+          "path": "module_product/product-detail/index",
+          "type": "page",
+          "name": "product-detail",
+          "style": {
+            "navigationBarTitleText": "商品详情"
           }
         },
         {

@@ -2,6 +2,7 @@
 from typing import Any
 
 from fastapi import UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.base_schema import AuthSchema, BatchSetAvailable, PageResultSchema
@@ -10,6 +11,7 @@ from app.core.logger import logger
 from app.utils.common_util import search_to_dict
 from app.utils.excel_util import ExcelUtil
 
+from .constants import ProductStatus
 from .crud import ProductCRUD
 from .schema import (
     ProductCreateSchema,
@@ -85,6 +87,26 @@ class ProductService:
         for id_ in ids:
             if id_ not in obj_map:
                 raise CustomException(msg="删除失败，该数据不存在")
+
+        # Product rows are historical references once an order has been
+        # created.  A pending/paid order blocks even a soft delete; a
+        # cancelled order does not.  The Product CRUD still owns the actual
+        # soft-delete operation below.
+        from app.plugin.module_product.order.model import ProductOrderItemModel, ProductOrderModel
+
+        referenced = await self.db.execute(
+            select(ProductOrderItemModel.id)
+            .join(ProductOrderModel, ProductOrderModel.id == ProductOrderItemModel.order_id)
+            .where(
+                ProductOrderItemModel.product_id.in_(ids),
+                ProductOrderItemModel.is_deleted.is_(False),
+                ProductOrderModel.is_deleted.is_(False),
+                ProductOrderModel.status != "CANCELLED",
+            )
+            .limit(1)
+        )
+        if referenced.scalar_one_or_none() is not None:
+            raise CustomException(msg="商品已被未取消订单引用，无法删除", status_code=409)
         await ProductCRUD(self.auth, self.db).delete(ids=ids)
 
     async def set_available(self, data: BatchSetAvailable) -> None:
@@ -110,7 +132,7 @@ class ProductService:
 
         data = obj_list.copy()
         for item in data:
-            item["status"] = "启用" if item.get("status") == 0 else "停用"
+            item["status"] = "上架" if item.get("status") == ProductStatus.ON_SALE else "下架"
             creator_info = item.get("created_id")
             if isinstance(creator_info, dict):
                 item["created_id"] = creator_info.get("name", "未知")

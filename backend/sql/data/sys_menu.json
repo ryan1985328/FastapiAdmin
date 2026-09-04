@@ -4161,7 +4161,7 @@
         ]
     },
     {
-        "name": "业务示例",
+        "name": "商城管理",
         "type": 1,
         "icon": "ri:box-3-line",
         "order": 7,
@@ -4173,15 +4173,15 @@
         "keep_alive": true,
         "hidden": false,
         "always_show": false,
-        "title": "业务示例",
+        "title": "商城管理",
         "params": null,
         "affix": false,
         "redirect": "/product/product",
-        "description": "通用 Product reference module",
+        "description": "商城商品与订单管理",
         "scope": "web",
         "children": [
             {
-                "name": "产品",
+                "name": "商品管理",
                 "type": 2,
                 "icon": "ri:price-tag-3-line",
                 "order": 1,
@@ -4193,11 +4193,11 @@
                 "keep_alive": true,
                 "hidden": false,
                 "always_show": false,
-                "title": "产品",
+                "title": "商品管理",
                 "params": null,
                 "affix": false,
                 "redirect": null,
-                "description": "通用产品参考模块",
+                "description": "商城商品管理",
                 "scope": "web",
                 "children": [
                     {
@@ -4370,6 +4370,66 @@
                         "affix": false,
                         "redirect": null,
                         "description": "下载导入模板"
+                    }
+                ]
+            },
+            {
+                "name": "订单管理",
+                "type": 2,
+                "icon": "ri:receipt-line",
+                "order": 2,
+                "permission": "module_product:order:query",
+                "route_name": "ProductOrder",
+                "route_path": "order",
+                "component_path": "module_product/order/index",
+                "status": 0,
+                "keep_alive": true,
+                "hidden": false,
+                "always_show": false,
+                "title": "订单管理",
+                "params": null,
+                "affix": false,
+                "redirect": null,
+                "description": "商城订单只读查询",
+                "scope": "web",
+                "children": [
+                    {
+                        "name": "查询",
+                        "type": 3,
+                        "icon": null,
+                        "order": 1,
+                        "permission": "module_product:order:query",
+                        "route_name": null,
+                        "route_path": null,
+                        "component_path": null,
+                        "status": 0,
+                        "keep_alive": true,
+                        "hidden": false,
+                        "always_show": false,
+                        "title": "查询",
+                        "params": null,
+                        "affix": false,
+                        "redirect": null,
+                        "description": "查询商城订单"
+                    },
+                    {
+                        "name": "详情",
+                        "type": 3,
+                        "icon": null,
+                        "order": 2,
+                        "permission": "module_product:order:detail",
+                        "route_name": null,
+                        "route_path": null,
+                        "component_path": null,
+                        "status": 0,
+                        "keep_alive": true,
+                        "hidden": false,
+                        "always_show": false,
+                        "title": "详情",
+                        "params": null,
+                        "affix": false,
+                        "redirect": null,
+                        "description": "查看商城订单详情"
                     }
                 ]
             }

@@ -51,6 +51,7 @@ function handleLogout() {
 }
 
 const settingsList = [
+  { titleKey: 'mine.orders', name: 'orders' },
   { titleKey: 'common.profile', name: 'profile' },
   { titleKey: 'mine.kyc', name: 'kyc' },
   { titleKey: 'mine.addresses', name: 'addresses' },

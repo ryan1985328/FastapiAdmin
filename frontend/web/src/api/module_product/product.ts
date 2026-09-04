@@ -91,6 +91,7 @@ export default ProductAPI;
 export interface ProductPageQuery extends PageQuery, UserByQueryParams {
   name?: string;
   code?: string;
+  status?: number;
 }
 
 /** 列表展示项 */

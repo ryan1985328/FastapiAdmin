@@ -13,6 +13,8 @@ export const PROTECTED_ROUTE_NAMES = new Set([
   'address-form',
   'bank-accounts',
   'bank-account-form',
+  'orders',
+  'order-detail',
 ])
 
 export const AUTH_ROUTE_NAMES = new Set(['login', 'register', 'forget'])

@@ -7,6 +7,7 @@ type _LocationUrl =
   "/pages/index/index" |
   "/pages/error/index" |
   "/pages/login/index" |
+  "/pages/mall/index" |
   "/pages/mine/index" |
   "/pages/login/forget/index" |
   "/pages/login/register/index" |
@@ -16,6 +17,9 @@ type _LocationUrl =
   "/subPages/module_app/address/index" |
   "/subPages/module_app/bank-account/form" |
   "/subPages/module_app/bank-account/index" |
+  "/subPages/module_app/order/detail" |
+  "/subPages/module_app/order/index" |
+  "/subPages/module_product/product-detail/index" |
   "/subPages/module_system/account/index" |
   "/subPages/module_system/kyc/index" |
   "/subPages/module_system/notices/index" |

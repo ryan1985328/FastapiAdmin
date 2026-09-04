@@ -6,6 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.base_model import ModelMixin, UserMixin
 
+from .constants import ProductStatus
+
 
 class ProductModel(ModelMixin, UserMixin):
     """Product reference table."""
@@ -18,6 +20,12 @@ class ProductModel(ModelMixin, UserMixin):
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True, comment='图片或存储标识')
     price: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal('0.00'), comment='价格')
     stock: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment='库存')
-    status: Mapped[int] = mapped_column(Integer, nullable=False, default=0, index=True, comment='状态(0启用 1停用)')
+    status: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=ProductStatus.OFF_SALE,
+        index=True,
+        comment='销售状态(0上架 1下架)',
+    )
     sort: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment='排序')
     remark: Mapped[str | None] = mapped_column(String(255), nullable=True, comment='备注')

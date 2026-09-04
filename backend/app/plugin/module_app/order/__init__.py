@@ -1,0 +1,1 @@
+"""Public Mall order endpoints."""

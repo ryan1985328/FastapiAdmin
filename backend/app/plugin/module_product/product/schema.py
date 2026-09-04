@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.base_schema import BaseQueryParam, BaseSchema, UserByQueryParam, UserBySchema
 
+from .constants import ProductStatus
+
 
 class ProductCreateSchema(BaseModel):
     """Product reference record creation payload."""
@@ -15,7 +17,7 @@ class ProductCreateSchema(BaseModel):
     image_url: str | None = Field(default=None, max_length=512, description='图片或存储标识')
     price: Decimal = Field(default=Decimal('0.00'), ge=Decimal('0'), max_digits=12, decimal_places=2, description='价格')
     stock: int = Field(default=0, ge=0, description='库存')
-    status: int = Field(default=0, ge=0, le=1, description='状态')
+    status: int = Field(default=ProductStatus.OFF_SALE, ge=0, le=1, description='销售状态(0上架 1下架)')
     sort: int = Field(default=0, ge=0, description='排序')
     remark: str | None = Field(default=None, max_length=255, description='备注')
 
@@ -37,7 +39,7 @@ class ProductUpdateSchema(BaseModel):
     image_url: str | None = Field(default=None, max_length=512, description='图片或存储标识')
     price: Decimal | None = Field(default=None, ge=Decimal('0'), max_digits=12, decimal_places=2, description='价格')
     stock: int | None = Field(default=None, ge=0, description='库存')
-    status: int | None = Field(default=None, ge=0, le=1, description='状态')
+    status: int | None = Field(default=None, ge=0, le=1, description='销售状态(0上架 1下架)')
     sort: int | None = Field(default=None, ge=0, description='排序')
     remark: str | None = Field(default=None, max_length=255, description='备注')
 
@@ -63,4 +65,4 @@ class ProductQueryParam(BaseQueryParam, UserByQueryParam):
 
     name: str | None = Field(None, description="名称", json_schema_extra={"q": "like"})
     code: str | None = Field(None, description="编码", json_schema_extra={"q": "like"})
-    status: int | None = Field(None, ge=0, le=1, description="状态", json_schema_extra={"q": "eq"})
+    status: int | None = Field(None, ge=0, le=1, description="销售状态(0上架 1下架)", json_schema_extra={"q": "eq"})

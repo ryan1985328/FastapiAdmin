@@ -54,7 +54,7 @@
     "subscribeContent": "您已关闭消息通知，是否前往设置开启？",
     "subscribeGoSetting": "去设置",
     "retry": "重试",
-    "tab": { "home": "首页", "mine": "我的" },
+    "tab": { "home": "首页", "mall": "商城", "mine": "我的" },
     "nav": {
       "notices": "通知公告"
     },
@@ -194,11 +194,46 @@
     "guestSubtitle": "登录或注册后查看个人资料",
     "login": "登录",
     "register": "注册",
+    "orders": "我的订单",
     "kyc": "实名认证",
     "addresses": "我的地址",
     "bankAccounts": "我的银行卡",
     "security": "安全设置",
     "accountFallback": "账户"
+  },
+  "mall": {
+    "navTitle": "商城",
+    "detailTitle": "商品详情",
+    "searchPlaceholder": "搜索商品名称",
+    "search": "搜索",
+    "empty": "暂无在售商品",
+    "noMore": "没有更多商品",
+    "soldOut": "已售罄",
+    "stock": "库存 {count}",
+    "description": "商品描述",
+    "noDescription": "暂无描述",
+    "quantity": "购买数量",
+    "buyNow": "立即购买",
+    "orderCreated": "订单已创建",
+    "detailLoadFailed": "商品不存在或已下架"
+  },
+  "order": {
+    "navTitle": "我的订单",
+    "detailTitle": "订单详情",
+    "empty": "暂无订单",
+    "detailLoadFailed": "订单不存在",
+    "statusLabel": "订单状态",
+    "total": "订单总额",
+    "cancel": "取消订单",
+    "developmentPayment": "Development Payment",
+    "developmentPaymentNote": "当前为开发环境支付，订单已完成扣库存。",
+    "paySuccess": "支付成功",
+    "cancelSuccess": "订单已取消",
+    "status": {
+      "pending": "待支付",
+      "paid": "已支付",
+      "cancelled": "已取消"
+    }
   },
   "address": {
     "navTitle": "我的地址",

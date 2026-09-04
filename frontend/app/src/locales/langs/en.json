@@ -54,7 +54,7 @@
     "subscribeContent": "You have disabled message notifications. Go to settings to enable?",
     "subscribeGoSetting": "Go to Settings",
     "retry": "Retry",
-    "tab": { "home": "Home", "mine": "Me" },
+    "tab": { "home": "Home", "mall": "Mall", "mine": "Me" },
     "nav": {
       "notices": "Notices"
     },
@@ -194,11 +194,46 @@
     "guestSubtitle": "Sign in or register to view your profile",
     "login": "Sign in",
     "register": "Register",
+    "orders": "My orders",
     "kyc": "Identity verification",
     "addresses": "My addresses",
     "bankAccounts": "My bank cards",
     "security": "Security",
     "accountFallback": "Account"
+  },
+  "mall": {
+    "navTitle": "Mall",
+    "detailTitle": "Product detail",
+    "searchPlaceholder": "Search products",
+    "search": "Search",
+    "empty": "No products on sale",
+    "noMore": "No more products",
+    "soldOut": "Sold out",
+    "stock": "Stock {count}",
+    "description": "Description",
+    "noDescription": "No description",
+    "quantity": "Quantity",
+    "buyNow": "Buy now",
+    "orderCreated": "Order created",
+    "detailLoadFailed": "Product not found or unavailable"
+  },
+  "order": {
+    "navTitle": "My orders",
+    "detailTitle": "Order detail",
+    "empty": "No orders",
+    "detailLoadFailed": "Order not found",
+    "statusLabel": "Order status",
+    "total": "Order total",
+    "cancel": "Cancel order",
+    "developmentPayment": "Development Payment",
+    "developmentPaymentNote": "Development payment completed; inventory has been deducted.",
+    "paySuccess": "Payment successful",
+    "cancelSuccess": "Order cancelled",
+    "status": {
+      "pending": "Pending payment",
+      "paid": "Paid",
+      "cancelled": "Cancelled"
+    }
   },
   "address": {
     "navTitle": "My addresses",

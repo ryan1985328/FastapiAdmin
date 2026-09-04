@@ -159,8 +159,8 @@ defineOptions({
 
 // 常量定义
 const STATUS_OPTIONS = [
-  { label: "启用", value: 0 },
-  { label: "停用", value: 1 },
+  { label: "上架", value: 0 },
+  { label: "下架", value: 1 },
 ] as const;
 
 const createInitialFormData = (): ProductForm => ({
@@ -170,7 +170,7 @@ const createInitialFormData = (): ProductForm => ({
   image_url: undefined,
   price: undefined,
   stock: undefined,
-  status: 0,
+  status: 1,
   sort: undefined,
   remark: undefined,
 });
@@ -178,6 +178,7 @@ const createInitialFormData = (): ProductForm => ({
 type ProductSearchFormParams = {
   name?: string;
   code?: string;
+  status?: number;
 } & AuditSearchFormParams;
 
 const searchForm = ref<ProductSearchFormParams>({
@@ -211,6 +212,13 @@ const businessSearchItems = computed(() => [
     type: "input",
     placeholder: "请输入编码",
     clearable: true,
+    span: 6,
+  },
+  {
+    label: "销售状态",
+    key: "status",
+    type: "select",
+    props: { placeholder: "请选择销售状态", options: STATUS_OPTIONS, clearable: true },
     span: 6,
   },
 ]);
@@ -278,8 +286,8 @@ const {
         label: "状态",
         width: 88,
         status: {
-          0: { type: "success", text: "启用" },
-          1: { type: "info", text: "停用" },
+          0: { type: "success", text: "上架" },
+          1: { type: "info", text: "下架" },
         },
       },
       { prop: "sort", label: "排序", minWidth: 120, showOverflowTooltip: true },
@@ -333,7 +341,7 @@ const detailItems: import("@/components/display/fa-descriptions/index.vue").Desc
   { label: "图片", prop: "image_url" },
   { label: "价格", prop: "price" },
   { label: "库存", prop: "stock" },
-  { label: "状态", prop: "status", tag: { map: { "0": { type: "success", text: "启用" }, "1": { type: "danger", text: "停用" } } } },
+  { label: "销售状态", prop: "status", tag: { map: { "0": { type: "success", text: "上架" }, "1": { type: "danger", text: "下架" } } } },
   { label: "排序", prop: "sort" },
   { label: "备注", prop: "remark" },
 ];
@@ -377,8 +385,8 @@ const dialogFormItems: FormItem[] = [
     type: "radiogroup",
     props: {
       options: [
-        { label: "启用", value: 0 },
-        { label: "停用", value: 1 },
+        { label: "上架", value: 0 },
+        { label: "下架", value: 1 },
       ],
     },
   },
@@ -460,6 +468,7 @@ const handleSearch = async (params: ProductSearchFormParams) => {
   replaceSearchParams({
     name: params.name,
     code: params.code,
+    status: params.status ?? undefined,
     created_id: params.created_id ?? undefined,
     updated_id: params.updated_id ?? undefined,
     created_time:
@@ -478,6 +487,7 @@ const onResetSearch = async () => {
   searchForm.value = {
     name: undefined,
     code: undefined,
+    status: undefined,
     created_id: undefined,
     updated_id: undefined,
     created_time: [],
@@ -574,7 +584,7 @@ async function runBatchStatus(value: "enable" | "disable") {
   }
   try {
     await confirmAction(
-      `确认对选中的 ${ids.length} 条数据${value === "enable" ? "启用" : "停用"}？`,
+      `确认对选中的 ${ids.length} 条商品${value === "enable" ? "上架" : "下架"}？`,
       "批量设置"
     );
     const status = value === "enable" ? 0 : 1;

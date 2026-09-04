@@ -1,0 +1,1 @@
+"""Public Mall product projection."""
