@@ -13,13 +13,13 @@
     >
       <template #error>
         <div class="fa-storage-image__placeholder">
-          <FaIcon icon="ri:image-line" />
+          <FaSvgIcon icon="ri:image-line" />
         </div>
       </template>
     </ElImage>
     <div v-else class="fa-storage-image__placeholder">
       <ElIcon v-if="loading" class="is-loading"><Loading /></ElIcon>
-      <FaIcon v-else icon="ri:image-line" />
+      <FaSvgIcon v-else icon="ri:image-line" />
     </div>
   </div>
 </template>
@@ -28,6 +28,7 @@
 import { onBeforeUnmount, ref, watch } from "vue";
 import { Loading } from "@element-plus/icons-vue";
 import FileAPI from "@/api/module_storage/file";
+import FaSvgIcon from "@/components/base/fa-svg-icon/index.vue";
 
 defineOptions({ name: "FaStorageImage", inheritAttrs: false });
 

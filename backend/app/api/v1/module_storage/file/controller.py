@@ -1,8 +1,8 @@
 import os
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Form, Query, Security, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Form, Path, Query, Request, Security, UploadFile
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_storage.core.base import StorageObject
@@ -12,6 +12,7 @@ from app.core.dependencies import AuthPermission, db_getter
 from app.core.router_class import OperationLogRoute
 
 from .service import StorageFileService
+from .public_media import PublicMediaService
 
 StorageFileRouter = APIRouter(route_class=OperationLogRoute, prefix="/file", tags=["存储文件"])
 
@@ -26,14 +27,31 @@ def _delete_temp_file(path: str) -> None:
 
 @StorageFileRouter.post("/upload", summary="上传文件到存储源", response_model=ResponseSchema[dict])
 async def upload_storage_file_controller(
+    request: Request,
     auth: Annotated[AuthSchema, Security(AuthPermission(["module_storage:file:upload"]))],
     db: Annotated[AsyncSession, Depends(db_getter)],
     file: Annotated[UploadFile, File(description="上传文件")],
     source_id: Annotated[int | None, Form(description="存储源ID（不传使用默认存储源）")] = None,
     remote_path: Annotated[str | None, Form(description="远端目录路径（不传自动生成文件名）")] = None,
 ) -> JSONResponse:
-    result = await StorageFileService(auth, db).upload(source_id=source_id, file=file, remote_path=remote_path)
+    result = await StorageFileService(auth, db).upload(
+        source_id=source_id,
+        file=file,
+        remote_path=remote_path,
+        request=request,
+    )
     return SuccessResponse(data=result, msg="上传文件成功")
+
+
+@StorageFileRouter.get("/public/{remote_path:path}", summary="读取公共媒体文件", response_model=None)
+async def read_public_storage_file_controller(
+    remote_path: Annotated[str, Path(description="精确的相对存储 key")],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+    source_id: Annotated[int | None, Query(ge=1, description="存储源ID（不传使用默认存储源）")] = None,
+) -> Response:
+    """Public read only: no auth, no list, no arbitrary local path access."""
+
+    return await PublicMediaService(db).response(remote_path=remote_path, source_id=source_id)
 
 
 @StorageFileRouter.post("/download", summary="下载存储源文件", response_model=None)

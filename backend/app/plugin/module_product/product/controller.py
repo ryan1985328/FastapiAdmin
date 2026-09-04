@@ -1,7 +1,7 @@
 import urllib.parse
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, File, Path, Query, UploadFile, status
+from fastapi import APIRouter, Body, Depends, File, Path, Query, Request, UploadFile, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,17 +19,19 @@ ProductRouter = APIRouter(route_class=OperationLogRoute, prefix="/product", tags
 
 @ProductRouter.get("/detail/{id}", summary="获取Product详情", response_model=ResponseSchema[ProductOutSchema])
 async def get_obj_detail_controller(
+    request: Request,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_product:product:detail"]))],
     id: Annotated[int, Path(description="ProductID")],
     db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
     service = ProductService(auth, db)
-    result_dict = await service.detail(id=id)
+    result_dict = await service.detail(id=id, request=request)
     return SuccessResponse(data=result_dict, msg="获取Product详情成功")
 
 
 @ProductRouter.get("/list", summary="分页查询Product", response_model=ResponseSchema[PageResultSchema[ProductOutSchema]])
 async def get_obj_list_controller(
+    request: Request,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_product:product:query"]))],
     page: Annotated[PaginationQueryParam, Depends()],
     search: Annotated[ProductQueryParam, Query()],
@@ -41,30 +43,33 @@ async def get_obj_list_controller(
         page_size=page.page_size,
         search=search,
         order_by=page.order_by,
+        request=request,
     )
     return SuccessResponse(data=result_dict, msg="查询Product列表成功")
 
 
 @ProductRouter.post("/create", status_code=status.HTTP_201_CREATED, summary="创建Product", response_model=ResponseSchema[ProductOutSchema])
 async def create_obj_controller(
+    request: Request,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_product:product:create"]))],
     data: Annotated[ProductCreateSchema, Body(description="创建参数")],
     db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
     service = ProductService(auth, db)
-    result_dict = await service.create(data=data)
+    result_dict = await service.create(data=data, request=request)
     return SuccessResponse(data=result_dict, msg="创建Product成功")
 
 
 @ProductRouter.put("/update/{id}", summary="修改Product", response_model=ResponseSchema[ProductOutSchema])
 async def update_obj_controller(
+    request: Request,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_product:product:update"]))],
     id: Annotated[int, Path(description="ProductID")],
     data: Annotated[ProductUpdateSchema, Body(description="修改参数")],
     db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
     service = ProductService(auth, db)
-    result_dict = await service.update(id=id, data=data)
+    result_dict = await service.update(id=id, data=data, request=request)
     return SuccessResponse(data=result_dict, msg="修改Product成功")
 
 

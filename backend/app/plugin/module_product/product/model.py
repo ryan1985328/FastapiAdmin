@@ -1,13 +1,40 @@
 
+from __future__ import annotations
+
 from decimal import Decimal
 
-from sqlalchemy import DECIMAL, Integer, String, Text
+from sqlalchemy import DECIMAL, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.base_model import ModelMixin, UserMixin
 
 from .constants import ProductStatus
 
+
+class ProductImageModel(ModelMixin, UserMixin):
+    """Ordered media association for a Product.
+
+    Removing an association is a soft delete. The referenced storage object
+    is intentionally never deleted as part of product editing.
+    """
+
+    __tablename__: str = "product_image"
+    __table_args__: dict[str, str] = {"comment": "商品图片关联"}
+
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("product.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="商品ID",
+    )
+    storage_key: Mapped[str] = mapped_column(String(512), nullable=False, comment="存储对象key")
+    source_id: Mapped[int | None] = mapped_column(
+        ForeignKey("storage_source.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
+        index=True,
+        comment="存储源ID",
+    )
+    sort: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="展示顺序")
 
 class ProductModel(ModelMixin, UserMixin):
     """Product reference table."""

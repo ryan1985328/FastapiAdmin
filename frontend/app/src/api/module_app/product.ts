@@ -27,6 +27,7 @@ export interface AppProductListItem {
   id: number
   name: string
   cover_url?: string | null
+  images: AppProductImage[]
   price: string
   stock: number
   sold_out: boolean
@@ -34,6 +35,11 @@ export interface AppProductListItem {
 
 export interface AppProductDetail extends AppProductListItem {
   description?: string | null
+}
+
+export interface AppProductImage {
+  url: string
+  sort: number
 }
 
 export interface AppProductPage {

@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 
 import aiofiles
-from fastapi import UploadFile
+from fastapi import Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_storage.core.base import StorageAdapterConfig, StorageObject
@@ -14,6 +14,8 @@ from app.api.v1.module_storage.source.service import StorageSourceService
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 from app.utils.upload_util import UploadUtil
+
+from .public_media import PublicMediaService, validate_public_storage_key
 
 
 class StorageFileService:
@@ -28,12 +30,7 @@ class StorageFileService:
     @staticmethod
     def _validate_remote_path(remote_path: str) -> str:
         """规范化并校验远端相对路径（禁止路径穿越）。"""
-        if not remote_path or not remote_path.strip():
-            raise CustomException(msg="请提供文件路径")
-        parts = [p for p in remote_path.replace("\\", "/").split("/") if p not in ("", ".")]
-        if any(p == ".." for p in parts) or "\x00" in remote_path:
-            raise CustomException(msg="非法的文件路径")
-        return "/".join(parts)
+        return validate_public_storage_key(remote_path)
 
     async def _get_source(self, source_id: int | None) -> StorageAdapterConfig:
         """获取存储源并构造适配器配置（密码已解密）。"""
@@ -75,6 +72,7 @@ class StorageFileService:
         source_id: int | None,
         file: UploadFile,
         remote_path: str | None = None,
+        request: Request | None = None,
     ) -> dict:
         """上传文件到远端存储。remote_path 为空时自动生成安全文件名。"""
         if not file or not file.filename:
@@ -93,7 +91,7 @@ class StorageFileService:
         if remote_path:
             if remote_path.endswith("/"):
                 # 以 / 结尾视为目录：保留原文件名，拼接到目录下
-                dir_path = self._validate_remote_path(remote_path)
+                dir_path = self._validate_remote_path(remote_path.rstrip("/"))
                 target = f"{dir_path}/{file.filename}"
             else:
                 target = self._validate_remote_path(remote_path)
@@ -112,11 +110,17 @@ class StorageFileService:
             await adapter.close()
             os.unlink(temp_path)
 
+        # Local Storage has no provider URL. Return the same safe public-read
+        # URL used by Product/App rich media while keeping upload protected.
+        if not file_url:
+            file_url = await PublicMediaService(self.db).url_for(target, source_id=source_id, request=request)
+
         return {
             "file_path": target,
             "file_name": Path(target).name,
             "origin_name": file.filename,
             "file_url": file_url,
+            "source_id": source_id,
         }
 
     async def download(self, source_id: int | None, remote_path: str) -> tuple[str, str]:
@@ -155,7 +159,7 @@ class StorageFileService:
             await adapter.close()
 
     async def list(self, source_id: int | None, prefix: str = "") -> list[StorageObject]:
-        safe_prefix = self._validate_remote_path(prefix) if prefix else ""
+        safe_prefix = self._validate_remote_path(prefix.rstrip("/")) if prefix else ""
         config = await self._get_source(source_id)
         adapter = StorageAdapterFactory.create(config)
         try:

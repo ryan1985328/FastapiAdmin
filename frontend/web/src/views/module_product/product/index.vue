@@ -77,14 +77,18 @@
             label-width="120px"
             :scrollbar="false"
           >
-            <template #image_url="{ row }">
-              <FaStorageImage
-                v-if="row?.image_url"
-                :src="String(row.image_url)"
-                class="product-detail-image"
-                :preview="true"
-                fit="contain"
-              />
+            <template #images="{ row }">
+              <div v-if="getDetailImages(row).length" class="product-detail-images">
+                <FaStorageImage
+                  v-for="(image, index) in getDetailImages(row)"
+                  :key="image.id ?? image.url ?? index"
+                  :src="image.url || image.storage_key"
+                  class="product-detail-image"
+                  :alt="`商品图片 ${index + 1}`"
+                  :preview="true"
+                  fit="contain"
+                />
+              </div>
               <span v-else class="text-g-400">—</span>
             </template>
             <template #price="{ value }">
@@ -156,66 +160,84 @@
             <section class="product-editor-section">
               <div class="product-section-heading">
                 <div>
-                  <h2>商品主图</h2>
-                  <p>用于商城列表和商品详情页展示，单张主图即可。</p>
+                  <h2>商品图片</h2>
+                  <p>用于商城列表和商品详情页展示，第一张为主图，最多上传 9 张。</p>
                 </div>
-                <ElTag type="info" effect="plain">建议 1:1</ElTag>
+                <ElTag type="info" effect="plain">{{ managedImageCount }}/9</ElTag>
               </div>
-              <ElFormItem label="商品主图" prop="image_url" class="product-form-item--full">
-                <div class="product-cover-field">
+              <ElFormItem label="商品图片" class="product-form-item--full">
+                <div class="product-media-field">
+                  <input
+                    ref="replaceInputRef"
+                    class="product-media-replace-input"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.gif,.svg,.ico,image/jpeg,image/png,image/gif,image/svg+xml,image/x-icon"
+                    @change="handleReplaceFile"
+                  >
+                  <div v-if="formData.images?.length" class="product-media-grid">
+                    <div
+                      v-for="(image, index) in formData.images"
+                      :key="image.id ?? `${image.storage_key ?? image.url}-${index}`"
+                      class="product-media-card"
+                    >
+                      <FaStorageImage
+                        :src="image.url || image.storage_key"
+                        class="product-media-card__image"
+                        :alt="`商品图片 ${index + 1}`"
+                        :preview="true"
+                        fit="contain"
+                      />
+                      <ElTag v-if="index === 0" class="product-media-card__primary" type="success" size="small" effect="dark">
+                        主图
+                      </ElTag>
+                      <div class="product-media-card__actions">
+                        <ElButton link type="primary" size="small" :disabled="imageUploading" @click="replaceProductImage(index)">
+                          替换
+                        </ElButton>
+                        <ElButton v-if="index !== 0" link type="primary" size="small" :disabled="imageUploading" @click="setPrimaryImage(index)">
+                          设为主图
+                        </ElButton>
+                        <ElButton v-if="index > 0" link size="small" :disabled="imageUploading" @click="moveProductImage(index, -1)">
+                          前移
+                        </ElButton>
+                        <ElButton v-if="index < formData.images.length - 1" link size="small" :disabled="imageUploading" @click="moveProductImage(index, 1)">
+                          后移
+                        </ElButton>
+                        <ElButton link type="danger" size="small" :disabled="imageUploading" @click="removeProductImage(index)">
+                          移除
+                        </ElButton>
+                      </div>
+                    </div>
+                  </div>
                   <ElUpload
                     ref="coverUploadRef"
-                    class="product-cover-upload"
-                    :class="{ 'is-filled': Boolean(formData.image_url) }"
+                    class="product-media-upload"
                     drag
                     :show-file-list="false"
-                    :disabled="imageUploading"
+                    :disabled="imageUploading || managedImageCount >= PRODUCT_IMAGE_LIMIT"
                     accept=".jpg,.jpeg,.png,.gif,.svg,.ico,image/jpeg,image/png,image/gif,image/svg+xml,image/x-icon"
                     :before-upload="validateProductImage"
                     :http-request="uploadProductImage"
                   >
-                    <template v-if="formData.image_url">
-                      <FaStorageImage
-                        :src="String(formData.image_url)"
-                        class="product-cover-upload__preview"
-                        :preview="true"
-                        fit="contain"
-                        @error="handleCoverPreviewError"
-                      />
-                      <div class="product-cover-upload__overlay">
-                        <ElIcon><UploadFilled /></ElIcon>
-                        <span>点击更换主图</span>
-                      </div>
-                    </template>
-                    <template v-else>
-                      <ElIcon class="product-cover-upload__icon"><UploadFilled /></ElIcon>
-                      <div class="product-cover-upload__title">上传商品主图</div>
-                      <div class="product-cover-upload__hint">支持拖拽或点击选择图片</div>
-                    </template>
-                    <div v-if="imageUploading" class="product-cover-upload__loading">
+                    <ElIcon class="product-media-upload__icon"><UploadFilled /></ElIcon>
+                    <div class="product-media-upload__title">上传商品图片</div>
+                    <div class="product-media-upload__hint">支持拖拽或点击选择图片</div>
+                    <div v-if="imageUploading" class="product-media-upload__loading">
                       <ElIcon class="is-loading"><Loading /></ElIcon>
                       <span>正在上传...</span>
                     </div>
                   </ElUpload>
-                  <div class="product-cover-actions">
-                    <span>支持 JPG、PNG、GIF、SVG、ICO，大小不超过 10MB。</span>
-                    <ElButton
-                      v-if="formData.image_url"
-                      link
-                      type="danger"
-                      :disabled="imageUploading"
-                      @click="clearProductImage"
-                    >
-                      移除主图
-                    </ElButton>
+                  <div class="product-media-actions">
+                    <span>支持 JPG、PNG、GIF、SVG、ICO，单张不超过 10MB。移除图片只解除商品关联，不删除存储文件。</span>
+                    <span v-if="formData.images?.some(image => image.legacy)" class="product-media-legacy-tip">当前包含旧版主图，可上传新图替换。</span>
                   </div>
                   <ElAlert
                     v-if="coverUploadError || coverPreviewError"
-                    class="product-cover-alert"
+                    class="product-media-alert"
                     type="error"
                     :closable="false"
                     show-icon
-                    :title="coverUploadError || '主图预览失败，可重新上传'"
+                    :title="coverUploadError || '图片预览失败，可重新上传'"
                   />
                 </div>
               </ElFormItem>
@@ -366,6 +388,7 @@ import FaWangEditor from "@/components/forms/fa-wang-editor/index.vue";
 import FaTableHeader from "@/components/tables/fa-table-header/index.vue";
 import ProductAPI, {
   type ProductForm,
+  type ProductImage,
   type ProductPageQuery,
   type ProductTable,
 } from "@/api/module_product/product";
@@ -383,6 +406,7 @@ const STATUS_OPTIONS = [
 
 const IMAGE_ACCEPT_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico"]);
 const PRODUCT_IMAGE_MAX_SIZE = 10 * 1024 * 1024;
+const PRODUCT_IMAGE_LIMIT = 9;
 
 const richContentUploadConfig = {
   server: "/storage/file/upload",
@@ -396,12 +420,18 @@ const createInitialFormData = (): ProductForm => ({
   code: "",
   description: "",
   image_url: null,
+  images: [],
   price: "0.00",
   stock: 0,
   status: 1,
   sort: 0,
   remark: "",
 });
+
+function normalizeProductImages(value: unknown): ProductImage[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((image): image is ProductImage => Boolean(image && typeof image === "object"));
+}
 
 type ProductSearchFormParams = {
   name?: string;
@@ -522,14 +552,14 @@ const {
         formatter: (row: ProductTable) => productRichTextSummary(row.description),
       },
       {
-        prop: "image_url",
-        label: "商品主图",
+        prop: "cover_url",
+        label: "商品图片",
         width: 104,
         align: "center",
         formatter: (row: ProductTable) => {
-          if (!row.image_url) return h("span", { class: "text-g-400" }, "—");
+          if (!row.cover_url && !row.image_url) return h("span", { class: "text-g-400" }, "—");
           return h(FaStorageImage, {
-            src: String(row.image_url),
+            src: String(row.cover_url || row.image_url),
             class: "product-table-thumb",
             preview: true,
             fit: "cover",
@@ -596,7 +626,7 @@ const detailFormData = ref<ProductTable>({});
 const detailItems: import("@/components/display/fa-descriptions/index.vue").DescriptionsItem[] = [
   { label: "商品名称", prop: "name" },
   { label: "商品编码", prop: "code" },
-  { label: "商品主图", prop: "image_url", slot: "image_url" },
+  { label: "商品图片", prop: "images", slot: "images" },
   { label: "价格", prop: "price", slot: "price" },
   { label: "库存", prop: "stock" },
   { label: "销售状态", prop: "status", slot: "status" },
@@ -605,6 +635,18 @@ const detailItems: import("@/components/display/fa-descriptions/index.vue").Desc
   { label: "商品详情", prop: "description", slot: "description", span: 2 },
 ];
 
+type ProductDetailMediaRow = {
+  images?: ProductImage[];
+  cover_url?: string | null;
+};
+
+function getDetailImages(value: unknown): ProductImage[] {
+  if (!value || typeof value !== "object") return [];
+  const row = value as ProductDetailMediaRow;
+  if (row.images?.length) return row.images;
+  return row.cover_url ? [{ url: row.cover_url }] : [];
+}
+
 const formData = ref<ProductForm>(createInitialFormData());
 const editorFormRef = ref<FormInstance>();
 type RichEditorExposed = {
@@ -612,12 +654,18 @@ type RichEditorExposed = {
 };
 const richEditorRef = ref<RichEditorExposed>();
 const coverUploadRef = ref<UploadInstance>();
+const replaceInputRef = ref<HTMLInputElement>();
 const formRenderKey = ref(0);
 const submitLoading = ref(false);
 const editorLoading = ref(false);
 const imageUploading = ref(false);
 const coverUploadError = ref<string | null>(null);
 const coverPreviewError = ref(false);
+const replaceImageIndex = ref<number | null>(null);
+
+const managedImageCount = computed(() =>
+  (formData.value.images ?? []).filter((image) => !image.legacy && Boolean(image.storage_key)).length,
+);
 
 function validateRequiredText(_rule: unknown, value: unknown, callback: (error?: Error) => void) {
   if (!String(value ?? "").trim()) callback(new Error("请输入内容"));
@@ -692,7 +740,7 @@ function formatProductPrice() {
   formData.value.price = formatMoney(formData.value.price);
 }
 
-function validateProductImage(file: UploadRawFile) {
+function validateProductImage(file: UploadRawFile | File) {
   const extension = file.name.includes(".") ? `.${file.name.split(".").pop()?.toLowerCase()}` : "";
   if (!IMAGE_ACCEPT_EXTENSIONS.has(extension)) {
     ElMessage.error("仅支持 JPG、PNG、GIF、SVG、ICO 图片");
@@ -705,24 +753,49 @@ function validateProductImage(file: UploadRawFile) {
   return true;
 }
 
+async function requestProductImageUpload(file: UploadRawFile | File): Promise<Record<string, unknown>> {
+  const uploadData = new FormData();
+  uploadData.append("file", file);
+  const response = await FileAPI.uploadFile(uploadData);
+  const result = response.data.data as Record<string, unknown> | null | undefined;
+  const storageKey = result?.file_path;
+  if (!storageKey) throw new Error("missing_storage_reference");
+  return {
+    ...result,
+    file_path: String(storageKey),
+    file_url: result?.file_url || String(storageKey),
+  };
+}
+
+function imageFromUpload(result: Record<string, unknown>): ProductImage {
+  const sourceId = Number(result.source_id);
+  return {
+    id: null,
+    storage_key: String(result.file_path),
+    source_id: Number.isInteger(sourceId) && sourceId > 0 ? sourceId : null,
+    sort: managedImageCount.value,
+    url: String(result.file_url || result.file_path),
+    legacy: false,
+  };
+}
+
 async function uploadProductImage(options: UploadRequestOptions) {
   if (imageUploading.value) return;
+  if (managedImageCount.value >= PRODUCT_IMAGE_LIMIT) {
+    ElMessage.warning("最多上传 9 张商品图片");
+    return;
+  }
   imageUploading.value = true;
   coverUploadError.value = null;
   coverPreviewError.value = false;
   try {
-    const uploadData = new FormData();
-    uploadData.append("file", options.file);
-    const response = await FileAPI.uploadFile(uploadData);
-    const result = response.data.data as Record<string, unknown> | null | undefined;
-    const reference = result?.file_url || result?.file_path;
-    if (!reference) throw new Error("missing_storage_reference");
-    formData.value.image_url = String(reference);
+    const result = await requestProductImageUpload(options.file);
+    formData.value.images = [...(formData.value.images ?? []), imageFromUpload(result)];
     options.onSuccess(result ?? {});
-    ElMessage.success("商品主图上传成功");
+    ElMessage.success("商品图片上传成功");
   } catch (error) {
-    coverUploadError.value = "商品主图上传失败，请重试";
-    const uploadError = Object.assign(new Error("商品主图上传失败"), {
+    coverUploadError.value = "商品图片上传失败，请重试";
+    const uploadError = Object.assign(new Error("商品图片上传失败"), {
       status: 0,
       method: "POST",
       url: "/storage/file/upload",
@@ -736,14 +809,66 @@ async function uploadProductImage(options: UploadRequestOptions) {
   }
 }
 
-function handleCoverPreviewError() {
-  coverPreviewError.value = true;
+function replaceProductImage(index: number) {
+  replaceImageIndex.value = index;
+  if (replaceInputRef.value) replaceInputRef.value.value = "";
+  replaceInputRef.value?.click();
 }
 
-function clearProductImage() {
-  formData.value.image_url = null;
+async function handleReplaceFile(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  const index = replaceImageIndex.value;
+  if (!file || index === null) return;
+  if (!validateProductImage(file)) {
+    input.value = "";
+    replaceImageIndex.value = null;
+    return;
+  }
+  imageUploading.value = true;
+  coverUploadError.value = null;
+  try {
+    const result = await requestProductImageUpload(file);
+    const images = [...(formData.value.images ?? [])];
+    images[index] = imageFromUpload(result);
+    formData.value.images = images;
+    ElMessage.success("商品图片替换成功");
+  } catch (error) {
+    coverUploadError.value = "商品图片替换失败，请重试";
+    if (import.meta.env.DEV) console.error("[Product] image replace failed", error);
+  } finally {
+    imageUploading.value = false;
+    replaceImageIndex.value = null;
+    input.value = "";
+  }
+}
+
+function removeProductImage(index: number) {
+  const image = formData.value.images?.[index];
+  if (image?.legacy) formData.value.image_url = null;
+  formData.value.images = (formData.value.images ?? []).filter((_, imageIndex) => imageIndex !== index);
   coverUploadError.value = null;
   coverPreviewError.value = false;
+}
+
+function setPrimaryImage(index: number) {
+  if (index <= 0) return;
+  const images = [...(formData.value.images ?? [])];
+  const [selected] = images.splice(index, 1);
+  if (selected) images.unshift(selected);
+  formData.value.images = images;
+}
+
+function moveProductImage(index: number, offset: -1 | 1) {
+  const targetIndex = index + offset;
+  const images = [...(formData.value.images ?? [])];
+  if (targetIndex < 0 || targetIndex >= images.length) return;
+  const current = images[index];
+  const target = images[targetIndex];
+  if (!current || !target) return;
+  images[index] = target;
+  images[targetIndex] = current;
+  formData.value.images = images;
 }
 
 async function openProductEditor(type: "create" | "update", id?: number) {
@@ -762,7 +887,9 @@ async function openProductEditor(type: "create" | "update", id?: number) {
   editorLoading.value = true;
   try {
     const response = await ProductAPI.getProductDetail(id);
-    Object.assign(formData.value, response.data.data ?? createInitialFormData());
+    const detail = response.data.data ?? createInitialFormData();
+    Object.assign(formData.value, detail);
+    formData.value.images = normalizeProductImages(detail.images);
     formData.value.price = formatMoney(formData.value.price);
   } catch (error) {
     dialogVisible.visible = false;
@@ -803,6 +930,8 @@ async function handleCloseDialog() {
   editorLoading.value = false;
   coverUploadError.value = null;
   coverPreviewError.value = false;
+  replaceImageIndex.value = null;
+  if (replaceInputRef.value) replaceInputRef.value.value = "";
 }
 
 async function handleSubmit() {
@@ -813,6 +942,14 @@ async function handleSubmit() {
   const valid = await form.validate().catch(() => false);
   if (!valid) return;
   formatProductPrice();
+  const images = (formData.value.images ?? [])
+    .filter((image) => !image.legacy && Boolean(image.storage_key))
+    .map((image, index) => ({
+      id: image.id ?? undefined,
+      storage_key: image.storage_key as string,
+      source_id: image.source_id ?? undefined,
+      sort: index,
+    }));
   const payload: ProductForm = {
     ...formData.value,
     name: formData.value.name?.trim(),
@@ -824,6 +961,7 @@ async function handleSubmit() {
     status: formData.value.status ?? 1,
     sort: formData.value.sort ?? 0,
     remark: formData.value.remark?.trim() ?? "",
+    images,
   };
   submitLoading.value = true;
   try {
@@ -1072,11 +1210,52 @@ const { importVisible, exportVisible, openImport, openExport } = useImportExport
   align-items: center;
 }
 
-.product-cover-field {
+.product-media-field {
   width: 100%;
 }
 
-.product-cover-upload {
+.product-media-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.product-media-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
+}
+
+.product-media-card__image {
+  width: 100%;
+  height: 164px;
+  background: var(--el-fill-color-light);
+}
+
+.product-media-card__primary {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+.product-media-card__actions {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px 8px;
+  padding: 4px 8px;
+  overflow: auto;
+  border-top: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
+  white-space: nowrap;
+}
+
+.product-media-upload {
   width: min(100%, 420px);
 
   :deep(.el-upload) {
@@ -1088,7 +1267,7 @@ const { importVisible, exportVisible, openImport, openExport } = useImportExport
     position: relative;
     display: flex;
     width: 100%;
-    min-height: 220px;
+    min-height: 150px;
     align-items: center;
     justify-content: center;
     padding: 20px;
@@ -1103,58 +1282,26 @@ const { importVisible, exportVisible, openImport, openExport } = useImportExport
     border-color: var(--el-color-primary);
     background: var(--el-color-primary-light-9);
   }
-
-  &.is-filled :deep(.el-upload-dragger) {
-    padding: 0;
-    border-style: solid;
-  }
 }
 
-.product-cover-upload__preview {
-  width: 100%;
-  height: 220px;
-  background: var(--el-fill-color-light);
-}
-
-.product-cover-upload__overlay {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px;
-  color: #fff;
-  background: rgb(0 0 0 / 58%);
-  font-size: 13px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.product-cover-upload:hover .product-cover-upload__overlay {
-  opacity: 1;
-}
-
-.product-cover-upload__icon {
+.product-media-upload__icon {
   margin-bottom: 8px;
   color: var(--el-color-primary);
-  font-size: 34px;
+  font-size: 32px;
 }
 
-.product-cover-upload__title {
+.product-media-upload__title {
   color: var(--el-text-color-primary);
   font-size: 15px;
 }
 
-.product-cover-upload__hint {
+.product-media-upload__hint {
   margin-top: 5px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
 }
 
-.product-cover-upload__loading {
+.product-media-upload__loading {
   position: absolute;
   inset: 0;
   display: flex;
@@ -1165,21 +1312,34 @@ const { importVisible, exportVisible, openImport, openExport } = useImportExport
   background: rgb(255 255 255 / 72%);
 }
 
-.product-cover-actions {
+.product-media-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: min(100%, 420px);
+  flex-direction: column;
+  gap: 3px;
+  width: min(100%, 560px);
   padding-top: 9px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.4;
 }
 
-.product-cover-alert {
-  width: min(100%, 420px);
+.product-media-legacy-tip {
+  color: var(--el-color-warning);
+}
+
+.product-media-alert {
+  width: min(100%, 560px);
   margin-top: 10px;
+}
+
+.product-media-replace-input {
+  display: none;
+}
+
+.product-detail-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .product-detail-image {
@@ -1238,16 +1398,14 @@ const { importVisible, exportVisible, openImport, openExport } = useImportExport
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .product-cover-upload,
-  .product-cover-actions,
-  .product-cover-alert {
+  .product-media-upload,
+  .product-media-actions,
+  .product-media-alert {
     width: 100%;
   }
 
-  .product-cover-actions {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
+  .product-media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

@@ -100,6 +100,8 @@ export interface ProductTable extends BaseType {
   code?: string;
   description?: string | null;
   image_url?: string | null;
+  cover_url?: string | null;
+  images?: ProductImage[];
   price?: string;
   stock?: number;
   status?: number;
@@ -113,9 +115,19 @@ export interface ProductForm extends BaseFormType {
   code?: string;
   description?: string | null;
   image_url?: string | null;
+  images?: ProductImage[];
   price?: string;
   stock?: number;
   status?: number;
   sort?: number;
   remark?: string | null;
+}
+
+export interface ProductImage {
+  id?: number | null;
+  storage_key?: string | null;
+  source_id?: number | null;
+  sort?: number;
+  url?: string | null;
+  legacy?: boolean;
 }
