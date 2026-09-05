@@ -82,4 +82,7 @@ class DictDataCRUD(CRUDBase[DictDataModel, DictDataCreateSchema, DictDataUpdateS
         search: dict[str, Any] = {"dict_type": dict_type}
         if status is not None:
             search["status"] = status
-        return await self.get_list(search=search, order_by=[{"id": "asc"}])
+        return await self.get_list(
+            search=search,
+            order_by=[{"dict_sort": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
+        )

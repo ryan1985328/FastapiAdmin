@@ -134,7 +134,12 @@ class PageResultSchema[T](BaseModel):
 
 
 class PaginationQueryParam(BaseModel):
-    """分页 —— order_by 以 JSON 字符串传递，避免 Depends() 模式下 list 字段被当 body 验证。"""
+    """分页参数。
+
+    ``order_by`` 以 JSON 字符串传递，避免 Depends() 模式下 list 字段被当
+    body 验证。省略排序时保留 ``None``，由具体列表服务按业务语义选择默认
+    顺序；调用方显式传入的排序仍原样保留。
+    """
 
     page_no: int = Field(default=1, description="当前页码", ge=1)
     page_size: int = Field(default=10, description="每页数量", ge=1, le=100)
@@ -146,9 +151,9 @@ class PaginationQueryParam(BaseModel):
     @field_validator("order_by")
     @classmethod
     def validate_order_by(cls, v: Any) -> Any:
-        """校验 order_by：None→默认升序，str→json.loads 转 list，list→直接返回，其他→抛异常。"""
+        """校验 order_by：省略时返回 None，字符串解析为 list，其余按类型校验。"""
         if v is None:
-            return [{"id": "asc"}]
+            return None
         if isinstance(v, str):
             try:
                 result = json.loads(v)

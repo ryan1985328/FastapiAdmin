@@ -39,7 +39,7 @@ class SmsLogService:
         result = await SmsLogCRUD(self.auth, self.db).page(
             offset=(page_no - 1) * page_size,
             limit=page_size,
-            order_by=order_by or [{"id": "desc"}],
+            order_by=order_by or [{"sent_at": "desc"}, {"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search),
         )
         return PageResultSchema[SmsLogOutSchema](

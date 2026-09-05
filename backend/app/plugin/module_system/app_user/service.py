@@ -153,7 +153,7 @@ class AppUserService:
                     continue
                 column = getattr(AppUserModel, field)
                 columns.append(column.desc() if direction.lower() == "desc" else column.asc())
-        return columns or [AppUserModel.id.asc()]
+        return [AppUserModel.created_time.desc(), AppUserModel.id.desc()] if not columns else columns
 
     async def _get_referral_user(self, id: int) -> AppUserModel:
         result = await self.db.execute(

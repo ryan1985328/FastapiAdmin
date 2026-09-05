@@ -39,7 +39,10 @@ class PositionService:
         search: PositionQueryParam | None = None,
         order_by: list[dict] | None = None,
     ) -> list[PositionOutSchema]:
-        position_list = await PositionCRUD(self.auth, self.db).get_list(search=search_to_dict(search), order_by=order_by)
+        position_list = await PositionCRUD(self.auth, self.db).get_list(
+            search=search_to_dict(search),
+            order_by=order_by or [{"order": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
+        )
         return [PositionOutSchema.model_validate(position) for position in position_list]
 
     async def page(
@@ -53,7 +56,7 @@ class PositionService:
         return await PositionCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,
-            order_by=order_by or [{"id": "asc"}],
+            order_by=order_by or [{"order": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search),
             out_schema=PositionOutSchema,
         )

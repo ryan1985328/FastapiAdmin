@@ -38,7 +38,7 @@ class VersionService:
         return await VersionCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,
-            order_by=order_by or [{"sort": "asc"}, {"id": "desc"}],
+            order_by=order_by or [{"sort": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search, {}),
             out_schema=VersionOutSchema,
         )
@@ -71,6 +71,6 @@ class VersionService:
     async def get_published(self) -> list[VersionOutSchema]:
         objs = await VersionCRUD(self.auth, self.db).get_list(
             search={"status": ("eq", 1)},
-            order_by=[{"sort": "asc"}],
+            order_by=[{"sort": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
         )
         return [VersionOutSchema.model_validate(obj) for obj in objs]

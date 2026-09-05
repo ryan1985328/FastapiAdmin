@@ -59,7 +59,11 @@ class RoleService:
         返回:
         - list[RoleOutSchema]: 角色响应模型列表
         """
-        role_list = await RoleCRUD(self.auth, self.db).get_list(search=search_to_dict(search), order_by=order_by, preload=_ROLE_PRELOAD)
+        role_list = await RoleCRUD(self.auth, self.db).get_list(
+            search=search_to_dict(search),
+            order_by=order_by or [{"order": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
+            preload=_ROLE_PRELOAD,
+        )
         return [RoleOutSchema.model_validate(role) for role in role_list]
 
     async def page(
@@ -84,7 +88,7 @@ class RoleService:
         return await RoleCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,
-            order_by=order_by or [{"id": "asc"}],
+            order_by=order_by or [{"order": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search),
             out_schema=RoleOutSchema,
             preload=_ROLE_PRELOAD,

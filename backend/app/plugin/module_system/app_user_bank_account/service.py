@@ -54,7 +54,7 @@ class AppUserBankAccountService:
 
     @classmethod
     def _order_columns(cls, order_by: list[dict[str, str]] | None) -> list[Any]:
-        if not order_by or order_by == [{"id": "asc"}]:
+        if not order_by:
             return [
                 AppUserBankAccountModel.is_default.desc(),
                 AppUserBankAccountModel.created_time.desc(),

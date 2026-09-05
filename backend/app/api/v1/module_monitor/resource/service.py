@@ -433,7 +433,16 @@ class ResourceService:
     def _sort_results(results: list[ResourceItemSchema], order_by: str | None = None) -> list[ResourceItemSchema]:
         try:
             if not order_by:
-                return sorted(results, key=lambda x: x.name, reverse=False)
+                # File operations are easier to monitor when recently changed
+                # entries are visible first. Keep directories together for
+                # navigation and use the name as a deterministic tie-breaker.
+                by_name = sorted(results, key=lambda item: item.name.casefold())
+                by_modified = sorted(
+                    by_name,
+                    key=lambda item: item.modified_time.timestamp() if item.modified_time else float("-inf"),
+                    reverse=True,
+                )
+                return sorted(by_modified, key=lambda item: item.is_dir, reverse=True)
 
             sort_conditions = ast.literal_eval(order_by)
             if isinstance(sort_conditions, list):

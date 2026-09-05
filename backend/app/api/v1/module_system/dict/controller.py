@@ -121,7 +121,8 @@ async def get_data_list_controller(
     search: Annotated[DictDataQueryParam, Query()],
     db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
-    order_by = [{"order": "asc"}]
+    # DictDataModel uses ``dict_sort`` as its domain-order field.
+    order_by = [{"dict_sort": "asc"}, {"created_time": "desc"}, {"id": "desc"}]
     if page.order_by:
         order_by = page.order_by
     result_dict = await DictDataService(auth, db).page(

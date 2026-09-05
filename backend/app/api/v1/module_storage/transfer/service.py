@@ -139,7 +139,7 @@ class StorageTransferService:
         result = await self._crud().page(
             offset=(page_no - 1) * page_size,
             limit=page_size,
-            order_by=order_by or [{"id": "desc"}],
+            order_by=order_by or [{"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search),
         )
         return PageResultSchema[TransferTaskOutSchema](

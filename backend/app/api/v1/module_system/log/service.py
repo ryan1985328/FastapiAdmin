@@ -46,7 +46,7 @@ class LoginLogService:
         return await LoginLogCRUD(self.auth, self.db).page(
             offset=(page_no - 1) * page_size,
             limit=page_size,
-            order_by=order_by or [{"updated_time": "desc"}],
+            order_by=order_by or [{"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search),
             out_schema=LoginLogOutSchema,
         )
@@ -100,7 +100,7 @@ class OperationLogService:
         return await crud.page(
             offset=(page_no - 1) * page_size,
             limit=page_size,
-            order_by=order_by or [{"id": "desc"}],
+            order_by=order_by or [{"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search),
             out_schema=OperationLogOutSchema,
         )
@@ -129,7 +129,7 @@ class OperationLogService:
         crud = OperationLogCRUD(self.auth, self.db)
         obj_list = await crud.get_list(
             search=search_to_dict(search),
-            order_by=order_by or [{"id": "desc"}],
+            order_by=order_by or [{"created_time": "desc"}, {"id": "desc"}],
         )
         return [OperationLogOutSchema.model_validate(obj) for obj in obj_list]
 

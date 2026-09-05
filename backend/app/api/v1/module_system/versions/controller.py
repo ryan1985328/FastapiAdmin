@@ -29,7 +29,12 @@ async def get_version_list_controller(
     search: Annotated[VersionQueryParam, Query()],
 ) -> JSONResponse:
     service = VersionService(auth, db)
-    result = await service.page(page_no=page.page_no, page_size=page.page_size, search=search)
+    result = await service.page(
+        page_no=page.page_no,
+        page_size=page.page_size,
+        search=search,
+        order_by=page.order_by,
+    )
     return SuccessResponse(data=result, msg="查询版本列表成功")
 
 

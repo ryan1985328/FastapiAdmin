@@ -88,7 +88,7 @@ class GenTableCRUD(CRUDBase[GenTableModel, GenTableSchema, GenTableSchema]):
         """
         return await self.get_list(
             search=search_to_dict(search, {}),
-            order_by=[{"created_time": "desc"}],
+            order_by=[{"created_time": "desc"}, {"id": "desc"}],
             preload=preload,
         )
 

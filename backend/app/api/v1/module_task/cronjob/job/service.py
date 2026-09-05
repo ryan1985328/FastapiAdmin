@@ -28,7 +28,7 @@ class JobService:
         order_by: list[dict[str, str]] | None = None,
     ) -> list[JobOutSchema]:
         if order_by is None:
-            order_by = [{"created_time": "desc"}]
+            order_by = [{"created_time": "desc"}, {"id": "desc"}]
         obj_list = await JobCRUD(self.auth, self.db).get_obj_list_crud(search=search_to_dict(search, {}), order_by=order_by)
         return [JobOutSchema.model_validate(obj) for obj in obj_list]
 
@@ -40,7 +40,7 @@ class JobService:
         order_by: list[dict[str, str]] | None = None,
     ) -> PageResultSchema[JobOutSchema]:
         offset = (page_no - 1) * page_size
-        ob = order_by or [{"created_time": "desc"}]
+        ob = order_by or [{"created_time": "desc"}, {"id": "desc"}]
         return await JobCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,

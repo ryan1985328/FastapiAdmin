@@ -57,7 +57,11 @@ class UserService:
         search: UserQueryParam | None = None,
         order_by: list[dict[str, str]] | None = None,
     ) -> list[UserOutSchema]:
-        user_list = await UserCRUD(self.auth, self.db).get_list(search=search_to_dict(search), order_by=order_by, preload=_USER_PRELOAD)
+        user_list = await UserCRUD(self.auth, self.db).get_list(
+            search=search_to_dict(search),
+            order_by=order_by or [{"created_time": "desc"}, {"id": "desc"}],
+            preload=_USER_PRELOAD,
+        )
         result = [UserOutSchema.model_validate(user) for user in user_list]
         for user, item in zip(user_list, result, strict=True):
             if user.dept:
@@ -77,7 +81,7 @@ class UserService:
         page_result = await UserCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,
-            order_by=order_by or [{"id": "asc"}],
+            order_by=order_by or [{"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search),
             preload=_USER_PRELOAD,
         )

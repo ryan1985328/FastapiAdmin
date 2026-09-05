@@ -70,5 +70,8 @@ class RoleCRUD(CRUDBase[RoleModel, RoleCreateSchema, RoleUpdateSchema]):
 
     async def get_options(self) -> list[dict[str, Any]]:
         """获取角色下拉选项，返回 [{value, label}]（自动按状态过滤）"""
-        items = await self.get_list(search={"status": 0})
+        items = await self.get_list(
+            search={"status": 0},
+            order_by=[{"order": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
+        )
         return [{"value": item.id, "label": item.name} for item in items]

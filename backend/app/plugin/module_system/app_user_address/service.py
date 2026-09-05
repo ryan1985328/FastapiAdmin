@@ -26,7 +26,7 @@ class AppUserAddressService:
 
     @classmethod
     def _order_columns(cls, order_by: list[dict[str, str]] | None) -> list[Any]:
-        if not order_by or order_by == [{"id": "asc"}]:
+        if not order_by:
             return [
                 AppUserAddressModel.is_default.desc(),
                 AppUserAddressModel.created_time.desc(),

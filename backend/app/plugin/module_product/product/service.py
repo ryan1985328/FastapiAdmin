@@ -15,6 +15,7 @@ from app.utils.time_util import application_now
 
 from .constants import ProductStatus
 from .crud import ProductCRUD
+from .model import ProductImageModel
 from .schema import (
     ProductCreateSchema,
     ProductImageInputSchema,
@@ -23,7 +24,6 @@ from .schema import (
     ProductQueryParam,
     ProductUpdateSchema,
 )
-from .model import ProductImageModel
 
 
 class ProductService:
@@ -113,7 +113,10 @@ class ProductService:
         order_by: list[dict[str, str]] | None = None,
         request: Request | None = None,
     ) -> list[ProductOutSchema]:
-        obj_list = await ProductCRUD(self.auth, self.db).get_list(search=search_to_dict(search), order_by=order_by)
+        obj_list = await ProductCRUD(self.auth, self.db).get_list(
+            search=search_to_dict(search),
+            order_by=order_by or [{"sort": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
+        )
         objects = list(obj_list)
         media = await self._media_for_products(objects, request=request)
         outputs: list[ProductOutSchema] = []
@@ -136,7 +139,7 @@ class ProductService:
         result = await ProductCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,
-            order_by=order_by or [{"sort": "asc"}, {"id": "asc"}],
+            order_by=order_by or [{"sort": "asc"}, {"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search, {}),
             out_schema=None,
         )

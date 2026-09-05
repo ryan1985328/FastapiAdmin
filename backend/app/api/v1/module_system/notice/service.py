@@ -45,7 +45,10 @@ class NoticeService:
         返回:
         - list[NoticeOutSchema]: 公告列表
         """
-        notice_obj_list = await NoticeCRUD(self.auth, self.db).get_list(search=search_to_dict(search), order_by=order_by)
+        notice_obj_list = await NoticeCRUD(self.auth, self.db).get_list(
+            search=search_to_dict(search),
+            order_by=order_by or [{"created_time": "desc"}, {"id": "desc"}],
+        )
         return [NoticeOutSchema.model_validate(notice_obj) for notice_obj in notice_obj_list]
 
     async def page(
@@ -70,7 +73,7 @@ class NoticeService:
         return await NoticeCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,
-            order_by=order_by or [{"id": "asc"}],
+            order_by=order_by or [{"created_time": "desc"}, {"id": "desc"}],
             search=search_to_dict(search),
             out_schema=NoticeOutSchema,
         )
@@ -80,7 +83,7 @@ class NoticeService:
         return await NoticeCRUD(self.auth, self.db).page(
             offset=0,
             limit=10,
-            order_by=[{"id": "asc"}],
+            order_by=[{"created_time": "desc"}, {"id": "desc"}],
             search={"status": ("eq", 0)},
             out_schema=NoticeOutSchema,
         )

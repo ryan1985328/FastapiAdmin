@@ -266,7 +266,7 @@ class GenTableService:
         - dict: 分页结果。
         """
         offset = (page_no - 1) * page_size
-        order = order_by or [{"created_time": "desc"}]
+        order = order_by or [{"created_time": "desc"}, {"id": "desc"}]
         return await GenTableCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,

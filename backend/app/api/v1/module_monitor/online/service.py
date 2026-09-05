@@ -62,7 +62,10 @@ class OnlineService:
                 await RedisCURD(redis).delete(f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}")
                 continue
 
-        online_users.sort(key=lambda x: x.get("login_time", ""), reverse=True)
+        online_users.sort(
+            key=lambda x: (x.get("login_time") or "", x.get("session_id") or ""),
+            reverse=True,
+        )
         return online_users
 
     @staticmethod
@@ -136,7 +139,7 @@ class OnlineService:
             select(LoginLogModel.username, LoginLogModel.status, LoginLogModel.created_time,
                    LoginLogModel.login_ip, LoginLogModel.login_location)
             .where(LoginLogModel.is_deleted.is_(False))
-            .order_by(LoginLogModel.created_time.desc())
+            .order_by(LoginLogModel.created_time.desc(), LoginLogModel.id.desc())
             .limit(10)
         )
         recent_rows = (await db.execute(recent_stmt)).all()

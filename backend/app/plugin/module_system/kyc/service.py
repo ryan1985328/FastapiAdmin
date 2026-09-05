@@ -45,9 +45,7 @@ class AppUserKycService:
     def _order_columns(cls, order_by: list[dict[str, str]] | None) -> list[Any]:
         """Use newest submissions by default while keeping explicit sort support."""
 
-        # PaginationQueryParam materializes an omitted order_by as id ASC. Treat
-        # that framework default as omitted for this review workspace.
-        if not order_by or order_by == [{"id": "asc"}]:
+        if not order_by:
             return [AppUserKycModel.created_time.desc(), AppUserKycModel.id.desc()]
 
         columns: list[Any] = []

@@ -90,6 +90,8 @@ class DictTypeService:
         return await DictTypeCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,
+            # Dictionary types are stable configuration; they have no
+            # domain sort field, so keep the existing ID order.
             order_by=order_by or [{"id": "asc"}],
             search=search_to_dict(search),
             out_schema=DictTypeOutSchema,
@@ -168,7 +170,10 @@ class DictTypeService:
         redis_key = f"{RedisInitKeyConfig.SYSTEM_DICT.key}:1:{data.dict_type}"
         try:
             # 获取当前字典类型的所有字典数据，确保包含最新状态
-            dict_data_list = await DictDataCRUD(self.auth, self.db).get_list(search={"dict_type": data.dict_type})
+            dict_data_list = await DictDataCRUD(self.auth, self.db).get_list(
+                search={"dict_type": data.dict_type},
+                order_by=DictDataService._default_order(),
+            )
             dict_data = [DictDataOutSchema.model_validate(row).model_dump(mode="json") for row in dict_data_list if row]
 
             value = json.dumps(dict_data, ensure_ascii=False)
@@ -202,7 +207,10 @@ class DictTypeService:
         dict_types = {obj.dict_type for obj in existing if obj.id in ids}
         dict_type_has_data: set[str] = set()
         for dt in dict_types:
-            if await DictDataCRUD(self.auth, self.db).get_list(search={"dict_type": dt}):
+            if await DictDataCRUD(self.auth, self.db).get_list(
+                search={"dict_type": dt},
+                order_by=DictDataService._default_order(),
+            ):
                 dict_type_has_data.add(dt)
         for nid in ids:
             if nid not in existing_map:
@@ -243,6 +251,11 @@ class DictDataService:
         self.auth = auth
         self.db = db
 
+    @staticmethod
+    def _default_order() -> list[dict[str, str]]:
+        """Keep dictionary values in their configured domain order."""
+        return [{"dict_sort": "asc"}, {"created_time": "desc"}, {"id": "desc"}]
+
     async def detail(self, id: int) -> DictDataOutSchema:
         """获取数据字典数据详情
 
@@ -269,7 +282,10 @@ class DictDataService:
         返回:
         - list[DictDataOutSchema]: 字典数据响应模型列表
         """
-        obj_list = await DictDataCRUD(self.auth, self.db).get_list(search=search_to_dict(search), order_by=order_by)
+        obj_list = await DictDataCRUD(self.auth, self.db).get_list(
+            search=search_to_dict(search),
+            order_by=order_by or self._default_order(),
+        )
         return [DictDataOutSchema.model_validate(obj) for obj in obj_list]
 
     async def page(
@@ -294,7 +310,7 @@ class DictDataService:
         return await DictDataCRUD(self.auth, self.db).page(
             offset=offset,
             limit=page_size,
-            order_by=order_by or [{"id": "asc"}],
+            order_by=order_by or self._default_order(),
             search=search_to_dict(search),
             out_schema=DictDataOutSchema,
         )
@@ -320,7 +336,10 @@ class DictDataService:
                 for obj in obj_list:
                     dict_type = obj.dict_type
                     try:
-                        dict_data_list = await DictDataCRUD(init_auth, session).get_list(search={"dict_type": dict_type})
+                        dict_data_list = await DictDataCRUD(init_auth, session).get_list(
+                            search={"dict_type": dict_type},
+                            order_by=DictDataService._default_order(),
+                        )
                         dict_data = [DictDataOutSchema.model_validate(row).model_dump(mode="json") for row in dict_data_list if row]
                         redis_key = f"{RedisInitKeyConfig.SYSTEM_DICT.key}:1:{dict_type}"
                         value = json.dumps(dict_data, ensure_ascii=False)
@@ -392,7 +411,10 @@ class DictDataService:
         - dict_type (str): 字典类型
         """
         redis_key = f"{RedisInitKeyConfig.SYSTEM_DICT.key}:1:{dict_type}"
-        dict_data_list = await DictDataCRUD(self.auth, self.db).get_list(search={"dict_type": dict_type})
+        dict_data_list = await DictDataCRUD(self.auth, self.db).get_list(
+            search={"dict_type": dict_type},
+            order_by=self._default_order(),
+        )
         dict_data = [DictDataOutSchema.model_validate(row).model_dump(mode="json") for row in dict_data_list if row]
         value = json.dumps(dict_data, ensure_ascii=False)
         await RedisCURD(redis).set(key=redis_key, value=value, expire=None)

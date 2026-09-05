@@ -24,7 +24,7 @@ async def gen_table_list_controller(
     search: Annotated[GenTableQueryParam, Query()],
     db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
-    order_by = [{"created_time": "desc"}]
+    order_by = [{"created_time": "desc"}, {"id": "desc"}]
     if page.order_by:
         order_by = page.order_by
     result_dict = await GenTableService(auth, db).get_gen_table_page(

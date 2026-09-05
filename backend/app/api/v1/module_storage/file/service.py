@@ -32,6 +32,17 @@ class StorageFileService:
         """规范化并校验远端相对路径（禁止路径穿越）。"""
         return validate_public_storage_key(remote_path)
 
+    @staticmethod
+    def _sort_objects(objects: list[StorageObject]) -> list[StorageObject]:
+        """Show navigable directories first, then recently modified files."""
+        by_key = sorted(objects, key=lambda item: item.key.casefold())
+        by_modified = sorted(
+            by_key,
+            key=lambda item: item.modified_time.timestamp() if item.modified_time else float("-inf"),
+            reverse=True,
+        )
+        return sorted(by_modified, key=lambda item: item.is_dir, reverse=True)
+
     async def _get_source(self, source_id: int | None) -> StorageAdapterConfig:
         """获取存储源并构造适配器配置（密码已解密）。"""
         source = await StorageSourceService(self.auth, self.db).get_active_source(source_id)
@@ -163,7 +174,7 @@ class StorageFileService:
         config = await self._get_source(source_id)
         adapter = StorageAdapterFactory.create(config)
         try:
-            return await adapter.list(safe_prefix)
+            return self._sort_objects(await adapter.list(safe_prefix))
         finally:
             await adapter.close()
 
